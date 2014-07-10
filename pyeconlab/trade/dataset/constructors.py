@@ -6,7 +6,7 @@
 
 	This Class will load the RAW Data from RAW Source Files from Various Formats, and undertake Standardization to Produce Harmonized Key Variables
 
-	The main usefulness of Constructor Classes is to simply remove compilation code from the Core Objects
+	The main usefulness of Constructor Classes is to simply remove compilation code from the Core Data Objects as this process only occurs infrequently
 
 	Harmonisation:
 	-------------
@@ -40,7 +40,7 @@ import pandas as pd
 import numpy as np
 
 # - Dataset Object - #
-from .Dataset import NBERFeenstraWTF
+from dataset import NBERFeenstraWTF
 
 # - Data Constructors - #
 
@@ -75,10 +75,14 @@ class NBERFeenstraWTFConstructor(object):
 
 	# - Attributes - #
 	source_web 			= u"http://cid.econ.ucdavis.edu/nberus.html"
-	source_last_checked =  np.datetime64('2014-07-04')
+	source_last_checked = np.datetime64('2014-07-04')
+	complete_dataset 	= False
+	years 				= []
+	_available_years 	= xrange(1962,2000+1,1)
 	_fn_prefix			= u'wtf'
 	_fn_postfix			= u'.dta'
 	_raw_units 			= 1000
+	_file_interface 	= [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot', u'value', u'quantity']
 	
 	def set_fn_prefix(self, prefix):
 		self._fn_prefix = prefix
@@ -92,7 +96,8 @@ class NBERFeenstraWTFConstructor(object):
 		'''
 		if verbose: print "Fetching NBER-Feenstra Data from %s" % source_dir
 		if years == []:
-			years = self.available_years 	# Default Years
+			self.complete_dataset = True
+			years = self._available_years 	# Default Years
 		# - Fetch Raw Data for Years - #
 		self.years 	= years
 		self.raw_data 	= pd.DataFrame()
@@ -105,8 +110,8 @@ class NBERFeenstraWTFConstructor(object):
 			if verbose: print "Running Standardization updating 'exporter' -> 'exporteriso3c' etc."
 			self.standardize_data(verbose=False)
 		# - Generate Dataset Object - #
-		dataset = NBERFeenstraWTF(data=self.raw_data, years=self.years, verbose=verbose)
-		return dataset
+		#dataset = NBERFeenstraWTF(data=self.raw_data, years=self.years, verbose=verbose)
+		#return dataset
 
 	## - Clean Data Tasks - ##
 
@@ -115,14 +120,43 @@ class NBERFeenstraWTFConstructor(object):
 			Run Appropriate Standardization over the Raw Data
 			
 				[1] Countries to ISO3C Codes
-				[2] SITC4 Values to Properly Formated STRINGS (Note: Dataset contains non-standard SITC rev 2 Codes)
 				[3] Trade Values in $'s
+
+			Notes:
+			-----
+				[1] Raw Dataset has Non-Standard SITC rev2 Codes 
 		'''
-
-		# - WORKING HERE - #
-
+		from ..concordance import NBERFeenstraExporterToISO3C
+		# - Change Units to $'s - #
+		self.raw_data['value'] = self.raw_data['value'] * 1000
+		# - Update Country Names - #
 		raise NotImplementedError()
 
+	def generate_exporter_list(self):
+		'''
+			Return Unique List of Exporters
+			Useful as Input to NBERFeenstraExporterToISO3C
+
+			To Do:
+			------
+				[1] Should I write an Error Decorator? 
+		'''
+		if self.complete_dataset == True:
+			exporters = self.raw_data['exporter'].unique()
+			return list(exporters.sort())
+		else:
+			raise ValueError("Raw Dataset must be complete - currently %s years have been loaded") % self.years
+
+	def generate_importer_list(self):
+		'''
+			Return Unique List of Importers
+			Useful as Input to NBERFeenstraImporterToISO3C
+		'''
+		if self.complete_dataset == True:
+			importers = self.raw_data['importer'].unique()
+			return list(importers.sort())
+		else:
+			raise ValueError("Raw Dataset must be complete - currently %s years have been loaded") % self.years
 
 
 

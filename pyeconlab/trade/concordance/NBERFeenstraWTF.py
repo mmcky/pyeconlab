@@ -2,20 +2,21 @@
 	NBER Feenstra Concordances
 '''
 
-# - Exporters - #
+# - Exporters to ISO3C - #
 
-NBERFeenstraExportersToISO3C = {
+ExporterToISO3C = {
 	'World' 	: 'WLD'
 	# - More Here - #
 }
 
-# - Importers - #
+# - Importers to ISO3C - #
 
-NBERFeenstraImporters = {
+ImporterToISO3C = {
 	
 }
 
-# - Country Concordances - #
+# - Country Code Concordances - #
 
-CountryNameToISO3C = {}
-CountryCodeToISO3C = {}
+ecodeToISO3C = {}
+
+icodeToISO3C = {}
