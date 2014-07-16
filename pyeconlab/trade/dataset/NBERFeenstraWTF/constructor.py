@@ -11,9 +11,8 @@
 import pandas as pd
 import numpy as np
 
-# - Dataset Object - #
-
 from dataset import NBERFeenstraWTF 
+from pyeconlab.util import from_series_to_pyfile 			#Reference requires installation!
 
 class NBERFeenstraWTFConstructor(object):
 	'''
@@ -39,6 +38,9 @@ class NBERFeenstraWTFConstructor(object):
 	'''
 
 	# - Attributes - #
+	_exporters 			= None
+	_importers 			= None 
+	_name 				= u'NBERFeenstraWTF'
 	source_web 			= u"http://cid.econ.ucdavis.edu/nberus.html"
 	source_last_checked = np.datetime64('2014-07-04')
 	complete_dataset 	= False
@@ -63,7 +65,7 @@ class NBERFeenstraWTFConstructor(object):
 		'''
 		if verbose: print "Fetching NBER-Feenstra Data from %s" % source_dir
 		if years == []:
-			self.complete_dataset = True
+			self.complete_dataset = True	# This forces object to be imported based on the whole dataset
 			years = self._available_years 	# Default Years
 		# - Fetch Raw Data for Years - #
 		self.years 	= years
@@ -99,9 +101,17 @@ class NBERFeenstraWTFConstructor(object):
 		# - Update Country Names - #
 		raise NotImplementedError()
 
+	# - Properties - #
+
+	@property
+	def exporters(self):
+		if self._exporters == None:
+			self._exporters = self.generate_exporter_list()
+		return self._exporters	
+
 	def generate_exporter_list(self):
 		'''
-			Return Unique List of Exporters
+			Return Sorted Unique List of Exporters
 			Useful as Input to Concordances such as NBERFeenstraExporterToISO3C
 
 			To Do:
@@ -114,9 +124,15 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			raise ValueError("Raw Dataset must be complete - currently %s years have been loaded" % self.years)
 
+	@property
+	def importers(self):
+		if self._importers == None:
+			self._importers = self.generate_importer_list()
+		return self._importers
+	
 	def generate_importer_list(self):
 		'''
-			Return Unique List of Importers
+			Return Sorted Unique List of Importers
 			Useful as Input to Concordances such as NBERFeenstraImporterToISO3C
 		'''
 		if self.complete_dataset == True:
@@ -125,7 +141,15 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			raise ValueError("Raw Dataset must be complete - currently %s years have been loaded" % self.years)
 
-	def reinit_info(self):
+	@property
+	def country_list(self):
+		if self._country_list == None:
+			self._country_list = list(set(self.exporters).union(set(self.importers))).sort()
+		return self._country_list	
+
+	# - Generate Files for data/ folder - #
+
+	def reinit_info(self, target_dir='data/'):
 		'''
 			Reconstruct Global Information About the Dataset 
 			Automatically import ALL data and reconstruct:
@@ -136,4 +160,35 @@ class NBERFeenstraWTFConstructor(object):
 			Usage:
 			-----
 				Useful if NBER Feenstra's Dataset get's updated
+
+			Future Work:
+			------------
+				[1] Update so that the new files are saved in the package location, not a local folder
+					Currently this will produce the files, that will need to be relocated to package
 		'''
+
+		if self.complete_dataset != True:
+			raise ValueError("Dataset must be complete. Try running the constructor without defining years=[]")
+		if out_type == 'csv':
+			# - Exporters - #
+			pd.Series(self.exporters).write_csv(target_dir + 'exporters_list.csv')
+			# - Importers - #
+			pd.Series(self.importers).write_cst(target_dir + 'data/importers_list.csv')
+			# - Country List - #
+			pd.Series(self.country_list).write_csv(target_dir + 'data/countryname_list.csv')
+		elif out_type == 'py':
+			# - Exporters - #
+			s = pd.Series(self.exporters)
+			s.name = 'exporters'
+			from_series_to_pyfile(s, target_dir=target_dir, fl='exporters.py', docstring=self._name+': exporters'+'\n'+self._source_web)
+			# - Importers - #
+			s = pd.Series(self.importers)
+			s.name = 'importers'
+			from_series_to_pyfile(s, target_dir=target_dir, fl='importers.py', docstring=self._name+': importers'+'\n'+self._source_web)
+			# - Country List - #
+			s = pd.Series(self.country_list)
+			s.name = 'importers'
+			from_series_to_pyfile(s, target_dir=target_dir, fl='country_list.py', docstring=self._name+': country list'+'\n'+self._source_web)
+		else:
+			raise TypeError("out_type: Must be of type 'csv' or 'py'")
+

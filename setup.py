@@ -2,7 +2,12 @@ from distutils.core import setup
 
 setup(
   name = 'pyeconlab',
-  packages = ['pyeconlab'], 
+  packages = ['pyeconlab',
+  			  'pyeconlab.util',
+  			  #'pyeconlab.trade',
+  			  #'pyeconlab.trade.dataset',
+  			  #'pyeconlab.wdi',
+  			  ], 
   version = '0.1-alpha',
   description = 'Python Package For Economists',
   author = 'Matthew McKay',
