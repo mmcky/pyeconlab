@@ -2,10 +2,10 @@ from distutils.core import setup
 
 setup(
   name = 'pyeconlab',
-  packages = ['pyeconlab',
-  			  'pyeconlab.util',
-  			  #'pyeconlab.trade',
-  			  #'pyeconlab.trade.dataset',
+  packages = [  'pyeconlab',
+  			       'pyeconlab.util',
+  			       'pyeconlab.trade',
+  			       #'pyeconlab.trade.dataset',
   			  #'pyeconlab.wdi',
   			  ], 
   version = '0.1-alpha',

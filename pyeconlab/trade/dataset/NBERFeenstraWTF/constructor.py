@@ -40,6 +40,8 @@ class NBERFeenstraWTFConstructor(object):
 	# - Attributes - #
 	_exporters 			= None
 	_importers 			= None 
+	_country_list 		= None
+	# - Dataset Attributes - #
 	_name 				= u'NBERFeenstraWTF'
 	source_web 			= u"http://cid.econ.ucdavis.edu/nberus.html"
 	source_last_checked = np.datetime64('2014-07-04')
@@ -105,13 +107,17 @@ class NBERFeenstraWTFConstructor(object):
 
 	@property
 	def exporters(self):
+		'''
+			Returns List of Exporters
+		'''
 		if self._exporters == None:
-			self._exporters = self.generate_exporter_list()
+			self._exporters = list(self.raw_data['exporter'].unique())
+			self._exporters.sort()
 		return self._exporters	
 
-	def generate_exporter_list(self):
+	def global_exporter_list(self):
 		'''
-			Return Sorted Unique List of Exporters
+			Return Global Sorted Unique List of Exporters
 			Useful as Input to Concordances such as NBERFeenstraExporterToISO3C
 
 			To Do:
@@ -119,47 +125,53 @@ class NBERFeenstraWTFConstructor(object):
 				[1] Should I write an Error Decorator? 
 		'''
 		if self.complete_dataset == True:
-			exporters = self.raw_data['exporter'].unique()
-			return list(exporters.sort())
+			return self.exporters
 		else:
 			raise ValueError("Raw Dataset must be complete - currently %s years have been loaded" % self.years)
 
 	@property
 	def importers(self):
+		'''
+			Returns List of Importers
+		'''
 		if self._importers == None:
-			self._importers = self.generate_importer_list()
+			self._importers = list(self.raw_data['importer'].unique())
+			self._importers.sort()
 		return self._importers
 	
-	def generate_importer_list(self):
+	def global_importer_list(self):
 		'''
-			Return Sorted Unique List of Importers
+			Return Global Sorted Unique List of Importers
 			Useful as Input to Concordances such as NBERFeenstraImporterToISO3C
 		'''
 		if self.complete_dataset == True:
-			importers = self.raw_data['importer'].unique()
-			return list(importers.sort())
+			return self.importers
 		else:
 			raise ValueError("Raw Dataset must be complete - currently %s years have been loaded" % self.years)
 
 	@property
 	def country_list(self):
+		'''
+			Returns a Country List (Union of Exporters and Importers)
+		'''
 		if self._country_list == None:
-			self._country_list = list(set(self.exporters).union(set(self.importers))).sort()
+			self._country_list = list(set(self.exporters).union(set(self.importers)))
+			self._country_list.sort()
 		return self._country_list	
 
 	# - Generate Files for data/ folder - #
 
-	def reinit_info(self, target_dir='data/'):
+	def generate_global_info(self, target_dir='data/'):
 		'''
-			Reconstruct Global Information About the Dataset 
-			Automatically import ALL data and reconstruct:
+			Construct Global Information About the Dataset 
+			Automatically import ALL data and Construt:
 				[1] Country List
 				[2] Exporter List
 				[3] Importer List
 
 			Usage:
 			-----
-				Useful if NBER Feenstra's Dataset get's updated
+				Useful if NBER Feenstra's Dataset get's updated etc.
 
 			Future Work:
 			------------
