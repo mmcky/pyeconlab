@@ -20,41 +20,52 @@ Organisation
 
 The basic organisation of the project is:
 
-	/pyecontrade
-		/test 							Tests for Package
-		
-		/trade 							Subpackage: International Trade
-			/classification 			Subpackage: Classifications of Trade Data: HS, SITC
-				/data
-					*.meta 				Meta Data of Data
-					*.csv	
+	pyecontrade
+		tests/ 							Tests for Package
+		country/ 						Country Subpackge
+			__init__.py
+			aggregates/
+				ldc.py
+				...
+			iso3c.py
+			iso2c.py
+			iso3n.py
+			...
+		trade/ 							Subpackage: International Trade
+			classification/ 			Subpackage: Product Information include classification tables of HS, SITC, HH Communities
+				data/	 				Raw Data for Classifications
 				__init__.py
 				classification.py
+				sitc.py
+				hs.py
 			/concordance 				Subpackage: Concordances and Correlation Tables
-				/data
-					*.meta 				Meta Data of Data
-					*.csv	
-				__init__.py
+				__init__.py 			Promote BEST one to top level
+				un/
+				wits/
+				usitc/
 				concordance.py
 			/dataset     	 			DataSet Constructors & Compilation from RAW data		
-				DataConstructors.py 	-> Convert /raw files into DataSets
-				Datasets.py 			-> Cleaned Dataset Objects
-				
-				?? - OR - ??
-				
-				/compile
-					DataConstructor.py
-				Datasets.py
-	
-			/test						Tests for SubModule
-			
-			__init.py
+				__init__.py 				Promote Basic Dataset Objects 
+				NBERFeenstraWTF
+					__init__.py
+					tests/
+					data/ 					Contains Meta Data (i.e. Countries)
+					meta.py 				Contains Meta Data
+		 			concordance.py 			Contains Special / Unique Concordances
+					constructor.py 			Contains Dataset Constructor of Object
+					dataset.py 				Contains Dataset Object
+				BACI
+					tests/
+					data/
+					...
+			/tests						Tests for SubModule	
+			__init__.py
 			CountryLevelExportSystem.py
 			CountryLevelExportNetwork.py
 			ProductLevelExportSystem.py
 			ProductLevelExportNetwork.py
 
-		?? - FUTURE -??
+		?? - FUTURE - ??
 
 			/cplevel 						Country, Product Level Trade Systems
 				ProductLevelExportSystem.py
@@ -63,7 +74,6 @@ The basic organisation of the project is:
 			/clevel 						Country Level Trade Systems
 				CountryLevelExportSystem.py
 				CountryLevelExportNetwork.py
-
 		/wdi
 			/data
 			__init__.py
