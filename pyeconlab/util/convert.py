@@ -16,8 +16,13 @@ def from_series_to_pyfile(series, target_dir='data/', fl=None, docstring=None):
 		raise TypeError("series: must be a pd.Series")
 	doc_string = u'\'\'\'\n\t%s\n\'\'\'\n\n' % docstring 	# DocString
 	items = u'%s = [' % series.name.replace(' ', '_')		# Replace spaces with _
-	for item in series.values:
-		items += '%s'%item + ','
+	for idx, item in enumerate(series.values):
+		# - Spacing for Vertical List of Items - #
+		if idx == 0:
+			tabs = 1
+		else:
+			tabs = 4
+		items += '\t'*tabs + '\'' + '%s'%item + '\''  + ',' + '\n'
 	doc = doc_string + items[:-1] + ']\n'
 	if fl == None:
 		return doc	 

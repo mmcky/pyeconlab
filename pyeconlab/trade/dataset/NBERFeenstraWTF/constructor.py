@@ -45,7 +45,7 @@ class NBERFeenstraWTFConstructor(object):
 	_name 				= u'NBERFeenstraWTF'
 	source_web 			= u"http://cid.econ.ucdavis.edu/nberus.html"
 	source_last_checked = np.datetime64('2014-07-04')
-	complete_dataset 	= False
+	complete_dataset 	= False 										#Make this harder to set
 	years 				= []
 	_available_years 	= xrange(1962,2000+1,1)
 	_fn_prefix			= u'wtf'
@@ -83,25 +83,6 @@ class NBERFeenstraWTFConstructor(object):
 		# - Generate Dataset Object - #
 		#dataset = NBERFeenstraWTF(data=self.raw_data, years=self.years, verbose=verbose)
 		#return dataset
-
-	## - Clean Data Tasks - ##
-
-	def standardize_data(self, verbose=False):
-		'''
-			Run Appropriate Standardization over the Raw Data
-			
-				[1] Countries to ISO3C Codes
-				[3] Trade Values in $'s
-
-			Notes:
-			-----
-				[1] Raw Dataset has Non-Standard SITC rev2 Codes 
-		'''
-		from ..concordance import NBERFeenstraExporterToISO3C
-		# - Change Units to $'s - #
-		self.raw_data['value'] = self.raw_data['value'] * 1000
-		# - Update Country Names - #
-		raise NotImplementedError()
 
 	# - Properties - #
 
@@ -161,7 +142,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	# - Generate Files for data/ folder - #
 
-	def generate_global_info(self, target_dir='data/'):
+	def generate_global_info(self, target_dir='data/', out_type='py', verbose=False):
 		'''
 			Construct Global Information About the Dataset 
 			Automatically import ALL data and Construt:
@@ -185,22 +166,41 @@ class NBERFeenstraWTFConstructor(object):
 			# - Exporters - #
 			pd.Series(self.exporters).write_csv(target_dir + 'exporters_list.csv')
 			# - Importers - #
-			pd.Series(self.importers).write_cst(target_dir + 'data/importers_list.csv')
+			pd.Series(self.importers).write_cst(target_dir + 'importers_list.csv')
 			# - Country List - #
-			pd.Series(self.country_list).write_csv(target_dir + 'data/countryname_list.csv')
+			pd.Series(self.country_list).write_csv(target_dir + 'countryname_list.csv')
 		elif out_type == 'py':
 			# - Exporters - #
 			s = pd.Series(self.exporters)
 			s.name = 'exporters'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='exporters.py', docstring=self._name+': exporters'+'\n'+self._source_web)
+			from_series_to_pyfile(s, target_dir=target_dir, fl='exporters.py', docstring=self._name+': exporters'+'\n\t'+self.source_web)
 			# - Importers - #
 			s = pd.Series(self.importers)
 			s.name = 'importers'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='importers.py', docstring=self._name+': importers'+'\n'+self._source_web)
+			from_series_to_pyfile(s, target_dir=target_dir, fl='importers.py', docstring=self._name+': importers'+'\n\t'+self.source_web)
 			# - Country List - #
 			s = pd.Series(self.country_list)
-			s.name = 'importers'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='country_list.py', docstring=self._name+': country list'+'\n'+self._source_web)
+			s.name = 'countries'
+			from_series_to_pyfile(s, target_dir=target_dir, fl='country_list.py', docstring=self._name+': country list'+'\n\t'+self.source_web)
 		else:
 			raise TypeError("out_type: Must be of type 'csv' or 'py'")
 
+
+	## - Clean Data Tasks - ##
+
+	def standardize_data(self,verbose=False):
+		'''
+			Run Appropriate Standardization over the Raw Data
+			
+				[1] Countries to ISO3C Codes
+				[3] Trade Values in $'s
+
+			Notes:
+			-----
+				[1] Raw Dataset has Non-Standard SITC rev2 Codes 
+		'''
+		from ..concordance import NBERFeenstraExporterToISO3C
+		# - Change Units to $'s - #
+		self.raw_data['value'] = self.raw_data['value'] * 1000
+		# - Update Country Names - #
+		raise NotImplementedError()
