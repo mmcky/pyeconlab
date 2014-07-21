@@ -8,11 +8,17 @@
 		[1] Basic Cleaning of Data a) Add ISO3C country codes, b) Add SITCR2 Markers
 '''
 
+import os
+import copy
 import pandas as pd
 import numpy as np
 
 from dataset import NBERFeenstraWTF 
-from pyeconlab.util import from_series_to_pyfile 			#Reference requires installation!
+from pyeconlab.util import from_series_to_pyfile, check_directory 			#Reference requires installation!
+
+# - Data in data/ - #
+this_dir, this_filename = os.path.split(__file__)
+DATA_PATH = os.path.join(this_dir, "data")
 
 class NBERFeenstraWTFConstructor(object):
 	'''
@@ -70,6 +76,7 @@ class NBERFeenstraWTFConstructor(object):
 			self.complete_dataset = True	# This forces object to be imported based on the whole dataset
 			years = self._available_years 	# Default Years
 		# - Fetch Raw Data for Years - #
+		source_dir = check_directory(source_dir) 	#Performs basic tests on the Specified Directory
 		self.years 	= years
 		self.raw_data 	= pd.DataFrame()
 		for year in self.years:
@@ -166,7 +173,7 @@ class NBERFeenstraWTFConstructor(object):
 			# - Exporters - #
 			pd.Series(self.exporters).write_csv(target_dir + 'exporters_list.csv')
 			# - Importers - #
-			pd.Series(self.importers).write_cst(target_dir + 'importers_list.csv')
+			pd.Series(self.importers).write_csv(target_dir + 'importers_list.csv')
 			# - Country List - #
 			pd.Series(self.country_list).write_csv(target_dir + 'countryname_list.csv')
 		elif out_type == 'py':
@@ -199,8 +206,14 @@ class NBERFeenstraWTFConstructor(object):
 			-----
 				[1] Raw Dataset has Non-Standard SITC rev2 Codes 
 		'''
-		from ..concordance import NBERFeenstraExporterToISO3C
+		from .data.exporters import exporters
+
+		# - WORKING HERE - #
+
+
+		# - Copy Data - #
+		self.data = copy.deepcopy(self.raw_data) 
 		# - Change Units to $'s - #
-		self.raw_data['value'] = self.raw_data['value'] * 1000
+		self.data['value'] = self.data['value'] * 1000
 		# - Update Country Names - #
-		raise NotImplementedError()
+		

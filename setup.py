@@ -9,6 +9,7 @@ setup(
                'pyeconlab.trade.dataset.NBERFeenstraWTF',
   			       'pyeconlab.wdi',
   			  ], 
+  package_data = {'pyeconlab.trade.dataset.NBERFeenstraWTF' : ['data/*.py']},
   version = '0.1-alpha',
   description = 'Python Package For Economists',
   author = 'Matthew McKay',
