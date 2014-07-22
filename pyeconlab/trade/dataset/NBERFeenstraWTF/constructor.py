@@ -1,14 +1,16 @@
-'''
-	NBERFeenstraWTF Constructer
+"""
+NBERFeenstraWTF Constructer
 
-	Compile NBERFeenstra RAW data Files and Perform Basic Data Preparation Tasks
+Compile NBERFeenstra RAW data Files and Perform Basic Data Preparation Tasks
 
-	Tasks:
-	-----
-		Basic Cleaning of Data 
-		  [a] Add ISO3C country codes
-		  [b] Add SITCR2 Markers
-'''
+Tasks:
+-----
+	Basic Cleaning of Data 
+	  [a] Add ISO3C country codes
+	  [b] Add SITCR2 Markers
+
+	Return Standardised Data in the Form of NBERFeenstraWTF
+"""
 
 import os
 import copy
@@ -26,7 +28,7 @@ class NBERFeenstraWTFConstructor(object):
 	'''
 		Data Constructor / Compilation Object for Feenstra NBER World Trade Data
 		Years: 1962 to 2000
-		Classification: SITC R2 L4
+		Classification: SITC R2 L4 (Not Entirely Standard)
 		Notes: Pre-1974 care is required for constructing intertemporally consistent data
 
 		Interface:
@@ -50,10 +52,13 @@ class NBERFeenstraWTFConstructor(object):
 	'''
 
 	# - Attributes - #
+
 	_exporters 			= None
 	_importers 			= None 
 	_country_list 		= None
+	
 	# - Dataset Attributes - #
+	
 	_name 				= u'NBERFeenstraWTF'
 	source_web 			= u"http://cid.econ.ucdavis.edu/nberus.html"
 	source_last_checked = np.datetime64('2014-07-04')
@@ -65,8 +70,10 @@ class NBERFeenstraWTFConstructor(object):
 	_source_dir 		= None
 	_raw_units 			= 1000
 	_file_interface 	= [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot', u'value', u'quantity']
+	
 	# - Other Data in NBER Feenstra WTF -#
 	_supp_data 			= dict
+	
 	# - Dataset Reference - #
 	_mydataset_md5 		= u'36a376e5a01385782112519bddfac85e' 
 
@@ -77,11 +84,15 @@ class NBERFeenstraWTFConstructor(object):
 		self._fn_postfix = postfix
 
 	def __init__(self, source_dir, years=[], standardize=True, export=False, verbose=True):
-		''' 
-			Load RAW Data into Object
+		""" 
+		Load RAW Data into Object
 
-			export 	: [True] Return NBERFeenstraWTF Object or this Constructor
-		'''
+		Parameters
+		----------
+			source_dir 	: Must contain the raw stata files (*.dta)
+			years 		: Apply a Year Filter [Default: ALL]
+			export 		: [True] Return NBERFeenstraWTF Object or this Constructor
+		"""
 		if verbose: print "Fetching NBER-Feenstra Data from %s" % source_dir
 		if years == []:
 			self.complete_dataset = True	# This forces object to be imported based on the whole dataset
@@ -101,32 +112,39 @@ class NBERFeenstraWTFConstructor(object):
 		# - Generate Dataset Object - #
 		if export == True:
 			#return NBERFeenstraWTF(data=self.raw_data, years=self.years, verbose=verbose)
-		
+			pass
 
 	def __repr__(self):
-		pass
-
+		"""
+		Representation String Of Object
+		"""
+		string = "Class: %s\n" % (self.__class__) 							+ \
+				 "Years: %s\n" % (self.years)								+ \
+				 "Complete Dataset: %s\n" % (self.complete_dataset) 		+ \
+				 "Source Last Checked: %s\n" % (self.source_last_checked)
+		return string
+	
 	# - Properties - #
 
 	@property
 	def exporters(self):
-		'''
-			Returns List of Exporters
-		'''
+		"""
+		Returns List of Exporters
+		"""
 		if self._exporters == None:
 			self._exporters = list(self.raw_data['exporter'].unique())
 			self._exporters.sort()
 		return self._exporters	
 
 	def global_exporter_list(self):
-		'''
-			Return Global Sorted Unique List of Exporters
-			Useful as Input to Concordances such as NBERFeenstraExporterToISO3C
+		"""
+		Return Global Sorted Unique List of Exporters
+		Useful as Input to Concordances such as NBERFeenstraExporterToISO3C
 
-			To Do:
-			------
-				[1] Should I write an Error Decorator? 
-		'''
+		To Do:
+		------
+			[1] Should I write an Error Decorator? 
+		"""
 		if self.complete_dataset == True:
 			return self.exporters
 		else:
@@ -134,9 +152,9 @@ class NBERFeenstraWTFConstructor(object):
 
 	@property
 	def importers(self):
-		'''
-			Returns List of Importers
-		'''
+		"""
+		Returns List of Importers
+		"""
 		if self._importers == None:
 			self._importers = list(self.raw_data['importer'].unique())
 			self._importers.sort()
