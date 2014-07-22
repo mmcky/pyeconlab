@@ -1,11 +1,13 @@
 '''
 	NBERFeenstraWTF Constructer
 
-	Compile NBERFeenstra RAW data Files into an NBERFeenstraWTF Object
+	Compile NBERFeenstra RAW data Files and Perform Basic Data Preparation Tasks
 
 	Tasks:
 	-----
-		[1] Basic Cleaning of Data a) Add ISO3C country codes, b) Add SITCR2 Markers
+		Basic Cleaning of Data 
+		  [a] Add ISO3C country codes
+		  [b] Add SITCR2 Markers
 '''
 
 import os
@@ -37,6 +39,10 @@ class NBERFeenstraWTFConstructor(object):
 		--------
 			[1] 	standardize 	: 	This does not add or remove any data points. 
 										It only adds standardized variables such as iso3c and productcode etc.  
+
+		Notes:
+		------
+		[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1] 
 
 		Future Work:
 		-----------
@@ -70,9 +76,11 @@ class NBERFeenstraWTFConstructor(object):
 	def set_fn_postfix(self, postfix):
 		self._fn_postfix = postfix
 
-	def __init__(self, source_dir, years=[], standardize=True, verbose=True):
+	def __init__(self, source_dir, years=[], standardize=True, export=False, verbose=True):
 		''' 
 			Load RAW Data into Object
+
+			export 	: [True] Return NBERFeenstraWTF Object or this Constructor
 		'''
 		if verbose: print "Fetching NBER-Feenstra Data from %s" % source_dir
 		if years == []:
@@ -88,11 +96,12 @@ class NBERFeenstraWTFConstructor(object):
 			self.raw_data = self.raw_data.append(pd.read_stata(fn))
 		# - Simple Standardization - #
 		if standardize == True: 
-			if verbose: print "Running Standardization updating 'exporter' -> 'exporteriso3c' etc."
+			if verbose: print "Running Interface Standardization ..."
 			self.standardize_data(verbose=False)
 		# - Generate Dataset Object - #
-		#dataset = NBERFeenstraWTF(data=self.raw_data, years=self.years, verbose=verbose)
-		#return dataset
+		if export == True:
+			#return NBERFeenstraWTF(data=self.raw_data, years=self.years, verbose=verbose)
+		
 
 	def __repr__(self):
 		pass
@@ -342,4 +351,31 @@ class NBERFeenstraWTFConstructor(object):
 		# - Change Units to $'s - #
 		self.data['value'] = self.data['value'] * 1000
 		# - Update Country Names - #
-		
+
+	def split_countrycodes(self, verbose=True):
+		"""
+		Split CountryCodes into components ('icode', 'ecode')
+		XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+
+		Notes:
+		-----
+		[1] Should this be done more efficiently? 
+			Current timeit result: 975ms per loop for 1 year
+		"""	
+		# - Importers - #
+		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
+		self.raw_data['iregion'] = self.raw_data['icode'].apply(lambda x: x[:2])
+		self.raw_data['iiso3n']  = self.raw_data['icode'].apply(lambda x: x[2:5])
+		self.raw_data['imod'] 	 = self.raw_data['icode'].apply(lambda x: x[-1])
+		# - Exporters - #
+		if verbose: print "Spliting ecode into (eregion, eiso3n, emod)"
+		self.raw_data['eregion'] = self.raw_data['ecode'].apply(lambda x: x[:2])
+		self.raw_data['eiso3n']  = self.raw_data['ecode'].apply(lambda x: x[2:5])
+		self.raw_data['emod'] 	 = self.raw_data['ecode'].apply(lambda x: x[-1])
+
+	def to_nberfeenstrawtf(self, verbose=True):
+		"""
+		Construct NBERFeenstraWTF Object with Common Core Object Names
+		Interface: ['year', iiso3c', 'eiso3c', 'sitc4', 'value', 'quantity']
+		"""
+		raise NotImplementedError

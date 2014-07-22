@@ -1,13 +1,87 @@
 """
 UN Country Codes Information
+
+Organisation
+------------
+[1] SuperClass
+	CountryCodes 	: 	SuperClass for Common Methods
+
+[2] ChildClasses 
+	UNCountryCodes 	: 	Wrapper for UN Country Codes Data
+
 """
 
 import pandas as _pd
 import pyeconlab.util as _util
 
-class UNCountryCodes(object):
+class CountryCodes(object):
 	"""
-	United Nations ISO3C Country Code Classifications
+	SuperClass for CountryCode Datasets
+	Contains Common Properties and Methods to CountryCode Objects
+
+	Interface
+	---------
+	data attribute must contain => ['iso3c', 'iso3n', 'countryname']
+
+	Notes:
+	-----
+	[1] For Data that isn't standard (like UN countrycodes) then individual methods will need to be implemented
+
+	Future Work
+	-----------
+	[1] Improve Error Handling
+	"""
+	
+	data = _pd.DataFrame
+
+	# - Properties - #
+	@property 
+	def num_iso3c(self):
+		return len(self.data['iso3c'].dropna())
+
+	# - Series Properties - #
+
+	@property 
+	def iso3c(self):
+		return list(self.data['iso3c'].dropna()) 			#Some Countries don't have official iso3c codes
+
+	# - Generate Concordance Dictionaries - #
+
+	@property 
+	def name_to_iso3c(self):
+		concord = self.data[['iso3c', 'countryname']].dropna().set_index('countryname') 	#Drop Codes with No Pair
+		return concord['iso3c'].to_dict()
+
+	@property 
+	def iso3c_to_name(self):
+		concord = self.data[['iso3c', 'countryname']].dropna().set_index('iso3c') 			#Drop Codes with No Pair
+		return concord['countryname'].to_dict()
+
+	@property 
+	def iso3n_to_iso3c(self):
+		concord = self.data[['iso3c', 'iso3n']].dropna().set_index('iso3n') 				#Drop Codes with No Pair
+		return concord['iso3c'].to_dict()
+
+	@property 
+	def iso3c_to_iso3n(self):
+		concord = self.data[['iso3c', 'iso3n']].dropna().set_index('iso3c') 				#Drop Codes with No Pair
+		return concord['iso3n'].to_dict()
+
+	@property 
+	def name_to_iso3n(self):
+		concord = self.data[['iso3n', 'countryname']].dropna().set_index('countryname') 	#Drop Codes with No Pair
+		return concord['iso3n'].to_dict()
+
+	@property 
+	def iso3n_to_name(self):
+		concord = self.data[['iso3n', 'countryname']].dropna().set_index('iso3n') 			#Drop Codes with No Pair
+		return concord['iso3n'].to_dict()
+
+
+
+class UNCountryCodes(CountryCodes):
+	"""
+	United Nations Country Code Classifications
 
 	DataSource:
 	----------
@@ -24,7 +98,7 @@ class UNCountryCodes(object):
 
 	Recodes:
 	--------
-	Country Code 			-> countrycode
+	Country Code 			-> iso3n 				#UN CountryCode = iso3n
 	Country Name English 	-> countryname 
 	Country Fullname English -> countryfullname
 	ISO2-digit Alpha 		-> iso2c
@@ -39,6 +113,7 @@ class UNCountryCodes(object):
 	Notes
 	-----
 	[1] Should Numeric Country Codes be String's with Leading Zero's?
+
 	"""
 
 	drop 	= [
@@ -47,7 +122,7 @@ class UNCountryCodes(object):
 	]
 
 	recodes = {
-		u'Country Code' 			: 'countrycode',
+		u'Country Code' 			: 'iso3n',
 		u'Country Name English' 	: 'countryname',
 		u'Country Fullname English' : 'countryfullname',
 		u'ISO2-digit Alpha'			: 'iso2c',
@@ -58,7 +133,11 @@ class UNCountryCodes(object):
 
 	def __init__(self, verbose=True):
 		"""
-			Initialise Class and Populate with Data From Package
+		Initialise Class and Populate with Data From Package
+
+		Future Work
+		-----------
+		[1] Allow specification of User File
 		"""
 		# - Attributes - #
 		self._fn 	= u"unstats_CountryCodeAndNameToISO2ISO3.xls"
@@ -81,24 +160,3 @@ class UNCountryCodes(object):
 		# - Recode Data - #
 		self.data = _util.recode_index(self.data, self.recodes, axis='columns', verbose=verbose)
 
-	# - These should be in a SUPER CLASS to reduce duplication - #
-
-	# - Series Properties - #
-
-	@property 
-	def iso3c(self):
-		return list(self.data['iso3c'].dropna()) 			#Some Countries don't have official iso3c codes
-
-	# - Dictionary Properties - #
-
-	@property 
-	def name_to_iso3c(self):
-		pass
-
-	@property 
-	def iso3c_to_name(self):
-		pass
-
-	@property 
-	def iso3n_to_iso3c(self):
-		pass

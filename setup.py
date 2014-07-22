@@ -1,3 +1,11 @@
+"""
+Setup File for PyEconLab
+
+Future Work
+-----------
+[1] Add Install Dependancies
+"""
+
 from distutils.core import setup
 
 setup(
@@ -19,5 +27,6 @@ setup(
   author_email = 'mamckay@gmail.com',
   url = 'https://github.com/sanguineturtle/pyeconlab',
   download_url = 'https://github.com/sanguineturtle/pyeconlab/tarball/0.1-alpha', 
-  keywords = ['quantitative', 'economics', 'international trade', 'complexity'] 
+  keywords = ['quantitative', 'economics', 'international trade', 'complexity'],
+  #install_requires = ['countrycode'],
 )
