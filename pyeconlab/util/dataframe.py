@@ -79,23 +79,29 @@ def merge_report(ldf, rdf, on, verbose):
 	"""
 	pass
 
-def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value'), dominant='right', verbose=True):
+def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value'), dominant='right', output='final', verbose=True):
 	"""
 	Merge a LEFT and RIGHT DataFrame on a set of columns and merge columns _x and _y specified in columns
+	via a dominant rule. 
 
 	Parameters
 	----------
 	on 		: 	list of items to merge on (common to both dataframes)
 	column 	: 	Merge a Column to a Single Column Matched by on
-	collapse_columns : After Performing Outer Merge Collapse Columns (LEFT, RIGHT, FINAL)
+	collapse_columns : 	After Performing Outer Merge Collapse Columns (LEFT, RIGHT, FINAL)
+						Note: This is disaggregated to allow great flexibility on L,R columns that don't share the same pre-word.
+	dominant : 	'right'/'left' [Default: 'right'] Anything else will return a list the CONFLICTS
+	output 	: 	'final'/'stages' [Default: 'final'] 
 
 	Future Work
 	-----------
+	[1] Could Change this to allow lists(collapse_columns)
 	[1] Write Tests
 
 	"""
 	#-Parse collapse_columns-#
 	left_col, right_col, final_col = collapse_columns
+	
 	#-Number of Observations in Both-#
 	num_ldf = len(ldf)
 	num_rdf = len(rdf)
@@ -118,10 +124,13 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 		num_discarded_from_right = 0
 		num_overwrite_from_right = len(right[right[left_col] != right[right_col]])
 		num_equal_left_right = len(right[right[left_col] == right[right_col]])
-		# - Fill Empty RIGHT Values with Final Values - #
-		np.where(outer[right_col].isnull(), outer[final_col], outer[right_col])
-		# - Update Unequal Values in Final Column with Right Values - #
-		np.where(outer[final_col] != outer[right_col], outer[right_col], outer[final_col])
+			## --> REMOVE <-- ##
+			# - Fill Missing RIGHT_COL Values with Final Values - #
+			#outer['tmp_right_col'] = np.where(outer[right_col].isnull(), outer[final_col], outer[right_col])
+			# - Update Unequal Values in Final Column with Right Values - #
+			#outer[final_col] = np.where(outer[final_col] != outer['tmp_right_col'], outer['tmp_right_col'], outer[final_col])
+			## -------------- ##
+		outer[final_col] = np.where(outer[right_col].isnull(), outer[final_col], outer[right_col])
 	elif dominant.lower() == 'left':
 		# - This is the default state in initial construction of outer [final_col] Merging New Observations - #
 		num_discarded_from_right = len(right[right[left_col] != right[right_col]])
@@ -136,7 +145,7 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 		return conflicts
 
 	#-Write Report-#
-	report = 	u"MERGE Report\n" 														+ \
+	report = 	u"MERGE Report [Rule: %s]\n" % dominant									+ \
 				u"------------\n" 														+ \
 				u"# of Left Observations: \t%s\n" % (num_ldf) 							+ \
 				u"# of Right Observations: \t%s\n" % (num_rdf) 							+ \
@@ -154,7 +163,24 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 				u"# of Left values OVERWRITTEN in preference of Right: \t%s\n" % (num_overwrite_from_right) + \
 				u"\n" 																	+ \
 				u"# of Left values EQUAL to Right values [No Change]: \t%s\n" % (num_equal_left_right) + \
-				u"Total Number of Observations: \t%s\n" % (len(outer)) 					
+				u"\n" 																	+ \
+				u"Total Number of FINAL Observations: \t%s\n" % (len(outer)) 					
+	
+	#-Output Type-#
+	if output == 'final':
+		# Note: If other data is present, they will retain _x and _y variables
+		del outer[left_col]
+		del outer[right_col]
+			## -> REMOVE <- ##
+			# if dominant == 'right':
+			# 	del outer['tmp_right_col']
+			## ------------ ##
+	elif output == 'stages':
+		pass
+	else:
+		raise ValueError("Output type must be `final` or `stages`")	
+
+	#-Parse Verbosity-#
 	if verbose: 
 		print report
 	return outer
