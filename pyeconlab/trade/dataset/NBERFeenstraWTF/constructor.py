@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 
 from dataset import NBERFeenstraWTF 
-from pyeconlab.util import from_series_to_pyfile, check_directory 			#Reference requires installation!
+from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index 			#Reference requires installation!
 
 # - Data in data/ - #
 this_dir, this_filename = os.path.split(__file__)
@@ -200,10 +200,15 @@ class NBERFeenstraWTFConstructor(object):
 
 	# - Special Data Objects - #
 
-	def china_hongkongdata(self, verbose=False):
+	def china_hongkongdata(self, years=[], return_dataset=False, verbose=True):
 		"""
 		Load China Kong Kong Adjustment Data into Supplementary Data with key ['chn_hk_adjust']
 		
+		Parameters
+		----------
+		years 			: 	Apply Year Filter
+		return_dataset 	: 	Returns a reference to the data in supp_data dictionary
+
 		File Pattern: 
 		-------------
 		CHINA_HK??.dta (?? = 88,89,...,00)
@@ -215,13 +220,17 @@ class NBERFeenstraWTFConstructor(object):
 		Future Work:
 		-----------
 			[1] Currently this method uses the source_dir that is defined when the object is initialised. 
-				Could add in the option to specify a different source_dir but this probably won't get used
+				Could add in the option to specify a different source_dir but this probably won't get used. Not Wasting Time Now
 		"""
 		# - Attributes of China Hong-Kong Adjustment - #
 		fn_prefix 	= u'china_hk'
 		fn_postfix 	= u'.dta'
-		years 		= xrange(1988, 2000 + 1)
+		available_years = xrange(1988, 2000 + 1)
 		key 		= u'chn_hk_adjust'
+		
+		#- Parse Year Filter - #
+		if years == []:
+			years = available_years
 		# - Import Data - #
 		try: 
 			self._supp_data[key]
@@ -240,6 +249,8 @@ class NBERFeenstraWTFConstructor(object):
 							u'Source: ' + self._source_dir 
 			# - Assign Data to Supp_Data with Key - #
 			self._supp_data = {key : data}
+		# - Option to Return Dataset - #
+		if return_dataset:
 			return self._supp_data[key]
 			
 
@@ -247,8 +258,22 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
 		"""
+		#- Merge over the first 8 Columns -#
+		if verbose: print "Outer Merge on: %s" % self.raw_data.columns[0:8]
+		tmp = self.raw_data.merge(self._supp_data('chn_hk_adjust'),  how='outer', on=self.raw_data.columns[0:8])
+		
+
+		# - Generate Report - #
+		report = 	u"Number of 'Value' Matches: %s\n" % (len(tmp[tmp['value_x'] == tmp['value_y']])) + \
+					u"Number of 'Quantity' Matches: %s\n" % (len(tmp[tmp['quantity_x'] == tmp['quantity_y']])) + \
+					u"Number of New Data Rows from (Right DF): %s\n" % () + \
+					u"Number of Inner Merges: %s\n" % (len(self.raw_data.merge(self._supp_data('chn_hk_adjust'),  how='inner', on=self.raw_data.columns[0:8]))) + \
+					u""
 
 		# - Working Here - #
+
+		#-Merge in Data-#
+		data = self.raw_data.merge()		
 
 		raise NotImplementedError
 
@@ -390,6 +415,9 @@ class NBERFeenstraWTFConstructor(object):
 		self.raw_data['eregion'] = self.raw_data['ecode'].apply(lambda x: x[:2])
 		self.raw_data['eiso3n']  = self.raw_data['ecode'].apply(lambda x: x[2:5])
 		self.raw_data['emod'] 	 = self.raw_data['ecode'].apply(lambda x: x[-1])
+
+
+	# - Construct a Dataset - #
 
 	def to_nberfeenstrawtf(self, verbose=True):
 		"""
