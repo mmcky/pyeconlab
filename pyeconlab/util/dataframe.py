@@ -189,16 +189,17 @@ def random_sample(df, sample_size = 1000):
 def update_operations(df, add_op_string):
 	""" Update a Special operations attribute on a DataFrame """
 	try:
-		if type(df.operations) == str:
+		if type(df.operations) == str or type(df.operations) == unicode:
 			df.operations += add_op_string
 	except:
 		df.operations = add_op_string
 	# return df
 
 
-def check_operations(df, op_string):
+def check_operations(df, op_string, verbose=False):
 	""" Check if operation has been conducted on a DataFrame with re.search(op, df.operation) """
 	try:
+		if verbose: print "Searching for %s in %s" % (op_string, df.operations)
 		if re.search(op_string, df.operations):
 			print "[INFO] Operation %s has already been conducted on dataset" % (op_string)
 			return True

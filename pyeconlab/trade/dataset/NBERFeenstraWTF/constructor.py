@@ -331,7 +331,7 @@ class NBERFeenstraWTFConstructor(object):
 		---------
 		return_dataset 		: 	True/False [Default: False -> The Dataset is writen to self.dataset
 		"""
-		op_string = u'|adjust_raw_china_hongkongdata|'
+		op_string = u'(adjust_raw_china_hongkongdata)'
 		
 		#-Check if Operation has been conducted-#
 		if check_operations(self._dataset, op_string):
@@ -375,7 +375,7 @@ class NBERFeenstraWTFConstructor(object):
 			return self._dataset
 		
 
-	# - Generate Files for data/ folder - #
+	# - Generate Supporting Files for a data/ folder - #
 
 	def generate_global_info(self, target_dir=DATA_PATH, out_type='py', verbose=False):
 		"""
@@ -444,13 +444,18 @@ class NBERFeenstraWTFConstructor(object):
 			-----
 				[1] Raw Dataset has Non-Standard SITC rev2 Codes 
 		'''
-		from .data.exporters import exporters
+		op_string = u"(standardize_data)"
+		#-Check if Operation has been conducted-#
+		if check_operations(self._dataset, op_string): return None
 
-		# - Copy Data - #
-		self.data = copy.deepcopy(self.__raw_data) 
 		# - Change Units to $'s - #
-		self.data['value'] = self.data['value'] * 1000
+		self._dataset['value'] = self._dataset['value'] * 1000
+		
 		# - Update Country Names - #
+
+		#- Add Operation to df attribute -#
+		update_operations(self._dataset, op_string)
+
 
 	def split_countrycodes(self, verbose=True):
 		"""
@@ -459,20 +464,26 @@ class NBERFeenstraWTFConstructor(object):
 
 		Notes:
 		-----
-		[1] Should this be done more efficiently? 
+		[1] Should this be done more efficiently? (i.e. over a single pass of the data) 
 			Current timeit result: 975ms per loop for 1 year
-		"""	
+		"""
+		op_string = u"(split_countrycodes)"
+		#-Check if Operation has been conducted-#
+		if check_operations(self._dataset, op_string): return None
+
 		# - Importers - #
 		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
-		self.__raw_data['iregion'] = self.__raw_data['icode'].apply(lambda x: x[:2])
-		self.__raw_data['iiso3n']  = self.__raw_data['icode'].apply(lambda x: x[2:5])
-		self.__raw_data['imod'] 	 = self.__raw_data['icode'].apply(lambda x: x[-1])
+		self._dataset['iregion'] = self._dataset['icode'].apply(lambda x: x[:2])
+		self._dataset['iiso3n']  = self._dataset['icode'].apply(lambda x: x[2:5])
+		self._dataset['imod'] 	 = self._dataset['icode'].apply(lambda x: x[-1])
 		# - Exporters - #
 		if verbose: print "Spliting ecode into (eregion, eiso3n, emod)"
-		self.__raw_data['eregion'] = self.__raw_data['ecode'].apply(lambda x: x[:2])
-		self.__raw_data['eiso3n']  = self.__raw_data['ecode'].apply(lambda x: x[2:5])
-		self.__raw_data['emod'] 	 = self.__raw_data['ecode'].apply(lambda x: x[-1])
+		self._dataset['eregion'] = self._dataset['ecode'].apply(lambda x: x[:2])
+		self._dataset['eiso3n']  = self._dataset['ecode'].apply(lambda x: x[2:5])
+		self._dataset['emod'] 	 = self._dataset['ecode'].apply(lambda x: x[-1])
 
+		#- Add Operation to df attribute -#
+		update_operations(self._dataset, op_string)
 
 	# - Construct a Dataset - #
 
