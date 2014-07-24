@@ -145,12 +145,11 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 		return conflicts
 
 	#-Write Report-#
-	report = 	u"MERGE Report [Rule: %s]\n" % dominant									+ \
+	report = 	u"MERGE Report [Rule: %s, LEFT: %s, RIGHT: %s]\n" % (dominant, left_col, right_col) + \
 				u"------------\n" 														+ \
 				u"# of Left Observations: \t%s\n" % (num_ldf) 							+ \
 				u"# of Right Observations: \t%s\n" % (num_rdf) 							+ \
-				u"# of Total Observations: \t%s\n" % (num_ldf + num_rdf) 				+ \
-				u"  `ON` Matched Observations: \t%s\n" % (num_matched) 						+ \
+				u"  `ON` Matched Observations: \t%s\n" % (num_matched) 					+ \
 				u"\n" 																	+ \
 				u"LEFT [%s] STATS:\n" % left_col 										+ \
 				u"----------\n" 														+ \
@@ -179,6 +178,8 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 		pass
 	else:
 		raise ValueError("Output type must be `final` or `stages`")	
+
+
 
 	#-Parse Verbosity-#
 	if verbose: 

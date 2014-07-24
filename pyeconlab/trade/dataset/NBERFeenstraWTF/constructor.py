@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 
 from dataset import NBERFeenstraWTF 
-from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index 			#Reference requires installation!
+from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index, merge_columns 			#Reference requires installation!
 
 # - Data in data/ - #
 this_dir, this_filename = os.path.split(__file__)
@@ -254,28 +254,38 @@ class NBERFeenstraWTFConstructor(object):
 			return self._supp_data[key]
 			
 
-	def adjust_raw_china_hongkongdata(self, verbose=False):
+	def adjust_raw_china_hongkongdata(self, replace_raw=True, verbose=False):
 		"""
 		Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
 		"""
-		#- Merge over the first 8 Columns -#
-		if verbose: print "Outer Merge on: %s" % self.raw_data.columns[0:8]
-		tmp = self.raw_data.merge(self._supp_data('chn_hk_adjust'),  how='outer', on=self.raw_data.columns[0:8])
+		#-Merge Settings-#
+		on 			= list(self.raw_data.columns[0:8])
+		#-Note: Current merge_columns utility merges one column set at a time-#
+		#-Merge over the first 8 Columns for Value and Quantity-#
+		#-Values-#
+		raw_value = self.raw_data[on+['value']].rename(columns={'value' : 'value_raw'})
+		supp_value = self._supp_data[u'chn_hk_adjust'][on+['value_adj']]
+		value = merge_columns(raw_value, supp_value, on, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
+		#-Quantity-#
+		raw_quantity = self.raw_data[on+['quantity']]
+		supp_quantity = self._supp_data[u'chn_hk_adjust'][on+['quantity']]
+		quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='right', output='final', verbose=verbose)
+	
+		#-Join Values and Quantity-#
+		updated_raw_values = value.merge(quantity, how='outer', on=on)
 		
+		report = 	u"# of Observations in Original Raw Dataset: \t%s\n" % (len(self.raw_data)) +\
+					u"# of Observations in Updated Dataset: \t\t%s\n" % (len(updated_raw_values))
+		if verbose: print report
 
-		# - Generate Report - #
-		report = 	u"Number of 'Value' Matches: %s\n" % (len(tmp[tmp['value_x'] == tmp['value_y']])) + \
-					u"Number of 'Quantity' Matches: %s\n" % (len(tmp[tmp['quantity_x'] == tmp['quantity_y']])) + \
-					u"Number of New Data Rows from (Right DF): %s\n" % () + \
-					u"Number of Inner Merges: %s\n" % (len(self.raw_data.merge(self._supp_data('chn_hk_adjust'),  how='inner', on=self.raw_data.columns[0:8]))) + \
-					u""
+		#-Cleanup of Temporary Objects-#
+		del raw_value, supp_value, value
+		del raw_quantity, supp_quantity, quantity
 
-		# - Working Here - #
-
-		#-Merge in Data-#
-		data = self.raw_data.merge()		
-
-		raise NotImplementedError
+		#-Parse Inplace Option-#
+		if replace_raw == True:
+			self.raw_data = updated_raw_values
+		return updated_raw_values
 
 	def bilateral_flows(self, verbose=False):
 		"""
