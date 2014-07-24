@@ -3,6 +3,7 @@
 """
 
 import copy
+import re
 import pandas as pd
 import numpy as np
 
@@ -70,14 +71,6 @@ def recode_index(df, recode, axis='columns', inplace=True, verbose=True):
 		raise ValueError("Axis must be 'rows' or 'columns'")
 	return df
 
-
-# - IN WORK - #
-
-def merge_report(ldf, rdf, on, verbose):
-	"""
-	Return a Merge Report
-	"""
-	pass
 
 def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value'), dominant='right', output='final', verbose=True):
 	"""
@@ -179,8 +172,6 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 	else:
 		raise ValueError("Output type must be `final` or `stages`")	
 
-
-
 	#-Parse Verbosity-#
 	if verbose: 
 		print report
@@ -193,6 +184,30 @@ def random_sample(df, sample_size = 1000):
 	"""
 	rows = np.random.choice(df.index.values, sample_size)
 	return df.ix[rows]
+
+
+def update_operations(df, add_op_string):
+	""" Update a Special operations attribute on a DataFrame """
+	try:
+		if type(df.operations) == str:
+			df.operations += add_op_string
+	except:
+		df.operations = add_op_string
+	# return df
+
+
+def check_operations(df, op_string):
+	""" Check if operation has been conducted on a DataFrame with re.search(op, df.operation) """
+	try:
+		if re.search(op_string, df.operations):
+			print "[INFO] Operation %s has already been conducted on dataset" % (op_string)
+			return True
+		else:
+			return False
+	except:
+		return False
+
+# - IN WORK - #
 
 def change_message(old_idx, recode):
 	"""

@@ -9,7 +9,14 @@ Tasks:
 	  [a] Add ISO3C country codes
 	  [b] Add SITCR2 Markers
 
-	Return Standardised Data in the Form of NBERFeenstraWTF
+Conventions
+-----------
+	__raw_data 	: Should be an exact copy of the imported files and protected. 
+	dataset 	: Contains the Modified Dataset
+
+Returns
+--------
+Return Standardised Data in the Form of NBERFeenstraWTF
 """
 
 import os
@@ -18,7 +25,7 @@ import pandas as pd
 import numpy as np
 
 from dataset import NBERFeenstraWTF 
-from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index, merge_columns 			#Reference requires installation!
+from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations 			#Reference requires installation!
 
 # - Data in data/ - #
 this_dir, this_filename = os.path.split(__file__)
@@ -44,7 +51,9 @@ class NBERFeenstraWTFConstructor(object):
 
 		Notes:
 		------
-		[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1] 
+		[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+		[2] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
+			Any modification prior to returning an NBERFeenstraWTF object should be carried out on ._dataset
 
 		Future Work:
 		-----------
@@ -56,9 +65,10 @@ class NBERFeenstraWTFConstructor(object):
 	_exporters 			= None
 	_importers 			= None 
 	_country_list 		= None
-	
+	_dataset 			= None 									#Place holder for a constructed
+
 	# - Dataset Attributes - #
-	
+
 	_name 				= u'NBERFeenstraWTF'
 	source_web 			= u"http://cid.econ.ucdavis.edu/nberus.html"
 	source_last_checked = np.datetime64('2014-07-04')
@@ -98,13 +108,19 @@ class NBERFeenstraWTFConstructor(object):
 			self.complete_dataset = True	# This forces object to be imported based on the whole dataset
 			years = self._available_years 	# Default Years
 		# - Fetch Raw Data for Years - #
-		self._source_dir = check_directory(source_dir) 	#Performs basic tests on the Specified Directory
-		self.years 	= years
-		self.raw_data 	= pd.DataFrame()
+		self._source_dir 	= check_directory(source_dir) 	#Performs basic tests on the Specified Directory
+		self.years 			= years
+		self.__raw_data 	= pd.DataFrame() 				#PRIVATE Attribute of the Class
 		for year in self.years:
 			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
 			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
-			self.raw_data = self.raw_data.append(pd.read_stata(fn))
+			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
+
+		#- Copy raw_data to a flexible dataset attribute - #
+		self._dataset = copy.deepcopy(self.__raw_data)
+
+		### --- WORKING HERE --- ###
+
 		# - Simple Standardization - #
 		if standardize == True: 
 			if verbose: print "Running Interface Standardization ..."
@@ -115,24 +131,25 @@ class NBERFeenstraWTFConstructor(object):
 			pass
 
 	def __repr__(self):
-		"""
-		Representation String Of Object
-		"""
+		""" Representation String Of Object """
 		string = "Class: %s\n" % (self.__class__) 							+ \
 				 "Years: %s\n" % (self.years)								+ \
 				 "Complete Dataset: %s\n" % (self.complete_dataset) 		+ \
 				 "Source Last Checked: %s\n" % (self.source_last_checked)
 		return string
 	
-	# - Properties - #
+	# - Raw Data Properties - #
+
+	@property
+	def raw_data(self):
+		""" Raw Data Property to Return Private Attribute """ 
+		return self.__raw_data
 
 	@property
 	def exporters(self):
-		"""
-		Returns List of Exporters
-		"""
+		""" Returns List of Exporters """
 		if self._exporters == None:
-			self._exporters = list(self.raw_data['exporter'].unique())
+			self._exporters = list(self.__raw_data['exporter'].unique())
 			self._exporters.sort()
 		return self._exporters	
 
@@ -152,19 +169,17 @@ class NBERFeenstraWTFConstructor(object):
 
 	@property
 	def importers(self):
-		"""
-		Returns List of Importers
-		"""
+		""" Returns List of Importers """
 		if self._importers == None:
-			self._importers = list(self.raw_data['importer'].unique())
+			self._importers = list(self.__raw_data['importer'].unique())
 			self._importers.sort()
 		return self._importers
 	
 	def global_importer_list(self):
-		'''
-			Return Global Sorted Unique List of Importers
-			Useful as Input to Concordances such as NBERFeenstraImporterToISO3C
-		'''
+		"""
+		Return Global Sorted Unique List of Importers
+		Useful as Input to Concordances such as NBERFeenstraImporterToISO3C
+		"""
 		if self.complete_dataset == True:
 			return self.importers
 		else:
@@ -172,9 +187,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	@property
 	def country_list(self):
-		'''
-			Returns a Country List (Union of Exporters and Importers)
-		'''
+		""" Returns a Country List (Union of Exporters and Importers) """
 		if self._country_list == None:
 			self._country_list = list(set(self.exporters).union(set(self.importers)))
 			self._country_list.sort()
@@ -182,23 +195,37 @@ class NBERFeenstraWTFConstructor(object):
 
 	@property
 	def supp_data(self, item):
-		"""
-		Return an Item from the Supplementary Data Dictionary
-		"""
+		""" Return an Item from the Supplementary Data Dictionary """
 		return self._supp_data[item]
 
 	@property 
 	def supp_data_items(self):
-		"""
-		Return a List of Items Available in Supplementary Data
-		"""
+		""" Return a List of Items Available in Supplementary Data """
 		items = []
 		for key in self._supp_data.keys():
 			if self._supp_data[key] != None:
 				items.append(key)
 		return sorted(items)
 
-	# - Special Data Objects - #
+	@property 
+	def dataset(self):
+		""" Dataset contains the Exportable Result to NBERFeenstraWTF """
+		return self._dataset 
+
+	def set_dataset(self, df, force=False):
+		""" 
+		Check if Dataset Exists Prior to Assignment
+		Q: Is this ever going to be used?
+		"""
+		if type(self._dataset) == pd.DataFrame:
+			if force == True:
+				pass
+			else:
+				print "[WARNING] The dataset attribute has previously been set. To force the replacement use 'force'=True"
+				return None
+		self._dataset = df
+		
+	# - Supplementary Data - #
 
 	def china_hongkongdata(self, years=[], return_dataset=False, verbose=True):
 		"""
@@ -254,42 +281,9 @@ class NBERFeenstraWTFConstructor(object):
 			return self._supp_data[key]
 			
 
-	def adjust_raw_china_hongkongdata(self, replace_raw=True, verbose=False):
-		"""
-		Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
-		"""
-		#-Merge Settings-#
-		on 			= list(self.raw_data.columns[0:8])
-		#-Note: Current merge_columns utility merges one column set at a time-#
-		#-Merge over the first 8 Columns for Value and Quantity-#
-		#-Values-#
-		raw_value = self.raw_data[on+['value']].rename(columns={'value' : 'value_raw'})
-		supp_value = self._supp_data[u'chn_hk_adjust'][on+['value_adj']]
-		value = merge_columns(raw_value, supp_value, on, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
-		#-Quantity-#
-		raw_quantity = self.raw_data[on+['quantity']]
-		supp_quantity = self._supp_data[u'chn_hk_adjust'][on+['quantity']]
-		quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='right', output='final', verbose=verbose)
-	
-		#-Join Values and Quantity-#
-		updated_raw_values = value.merge(quantity, how='outer', on=on)
-		
-		report = 	u"# of Observations in Original Raw Dataset: \t%s\n" % (len(self.raw_data)) +\
-					u"# of Observations in Updated Dataset: \t\t%s\n" % (len(updated_raw_values))
-		if verbose: print report
-
-		#-Cleanup of Temporary Objects-#
-		del raw_value, supp_value, value
-		del raw_quantity, supp_quantity, quantity
-
-		#-Parse Inplace Option-#
-		if replace_raw == True:
-			self.raw_data = updated_raw_values
-		return updated_raw_values
-
 	def bilateral_flows(self, verbose=False):
 		"""
-		Import Bilateral Trade Flows (summed across SITC commodities)
+		Load NBERFeenstra Bilateral Trade Flows (summed across SITC commodities)
 		
 		Example:
 		-------
@@ -306,10 +300,8 @@ class NBERFeenstraWTFConstructor(object):
 		Notes:
 		-----
 		[1] Can use this Supplementary Data to check Aggregations and how different they are etc.
-
-		Future Work:
-		------------
-		[1] This should Export to a CountryLevelExportSystem()
+		[2] This is Exportable to a CountryLevelExportSystem()
+		
 		"""
 		fn = u'WTF_BILAT.dta'
 		key = u'bilateral_flows'
@@ -327,6 +319,61 @@ class NBERFeenstraWTFConstructor(object):
 			# - Assign Data to supp_data - #
 			self._supp_data[key] = data
 			return self._supp_data[key]
+
+	# - Operations on Dataset  - #
+
+	def adjust_raw_china_hongkongdata(self, return_dataset=False, verbose=False):
+		"""
+		Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
+		This will merge in the Hong Kong / China Adjustments provided with the dataset for the years 1988 to 2000. 
+
+		Arguments
+		---------
+		return_dataset 		: 	True/False [Default: False -> The Dataset is writen to self.dataset
+		"""
+		op_string = u'|adjust_raw_china_hongkongdata|'
+		
+		#-Check if Operation has been conducted-#
+		if check_operations(self._dataset, op_string):
+			#-Parse Return Option-#
+			if return_dataset:
+				return self._dataset
+			else:
+				return None
+
+		#-Merge Settings-#
+		on 			= list(self._dataset.columns[0:8])
+		#-Note: Current merge_columns utility merges one column set at a time-#
+		#-Merge over the first 8 Columns for Value and Quantity-#
+		#-Values-#
+		raw_value = self._dataset[on+['value']].rename(columns={'value' : 'value_raw'})
+		supp_value = self._supp_data[u'chn_hk_adjust'][on+['value_adj']]
+		value = merge_columns(raw_value, supp_value, on, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
+		#-Quantity-#
+		raw_quantity = self._dataset[on+['quantity']]
+		supp_quantity = self._supp_data[u'chn_hk_adjust'][on+['quantity']]
+		quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='right', output='final', verbose=verbose)
+	
+		#-Join Values and Quantity-#
+		updated_raw_values = value.merge(quantity, how='outer', on=on)
+		
+		report = 	u"# of Observations in Original Raw Dataset: \t%s\n" % (len(self._dataset)) +\
+					u"# of Observations in Updated Dataset: \t\t%s\n" % (len(updated_raw_values))
+		if verbose: print report
+
+		#-Cleanup of Temporary Objects-#
+		del raw_value, supp_value, value
+		del raw_quantity, supp_quantity, quantity
+
+		#- Add Notes -#
+		update_operations(updated_raw_values, op_string)
+
+		#-Set Dataset to the Update Values-#
+		self._dataset = updated_raw_values
+		#-Parse Inplace Option-#
+		if return_dataset == True:
+			return self._dataset
+		
 
 	# - Generate Files for data/ folder - #
 
@@ -400,7 +447,7 @@ class NBERFeenstraWTFConstructor(object):
 		from .data.exporters import exporters
 
 		# - Copy Data - #
-		self.data = copy.deepcopy(self.raw_data) 
+		self.data = copy.deepcopy(self.__raw_data) 
 		# - Change Units to $'s - #
 		self.data['value'] = self.data['value'] * 1000
 		# - Update Country Names - #
@@ -417,14 +464,14 @@ class NBERFeenstraWTFConstructor(object):
 		"""	
 		# - Importers - #
 		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
-		self.raw_data['iregion'] = self.raw_data['icode'].apply(lambda x: x[:2])
-		self.raw_data['iiso3n']  = self.raw_data['icode'].apply(lambda x: x[2:5])
-		self.raw_data['imod'] 	 = self.raw_data['icode'].apply(lambda x: x[-1])
+		self.__raw_data['iregion'] = self.__raw_data['icode'].apply(lambda x: x[:2])
+		self.__raw_data['iiso3n']  = self.__raw_data['icode'].apply(lambda x: x[2:5])
+		self.__raw_data['imod'] 	 = self.__raw_data['icode'].apply(lambda x: x[-1])
 		# - Exporters - #
 		if verbose: print "Spliting ecode into (eregion, eiso3n, emod)"
-		self.raw_data['eregion'] = self.raw_data['ecode'].apply(lambda x: x[:2])
-		self.raw_data['eiso3n']  = self.raw_data['ecode'].apply(lambda x: x[2:5])
-		self.raw_data['emod'] 	 = self.raw_data['ecode'].apply(lambda x: x[-1])
+		self.__raw_data['eregion'] = self.__raw_data['ecode'].apply(lambda x: x[:2])
+		self.__raw_data['eiso3n']  = self.__raw_data['ecode'].apply(lambda x: x[2:5])
+		self.__raw_data['emod'] 	 = self.__raw_data['ecode'].apply(lambda x: x[-1])
 
 
 	# - Construct a Dataset - #
