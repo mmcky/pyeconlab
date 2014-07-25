@@ -89,7 +89,8 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 	Future Work
 	-----------
 	[1] Could Change this to allow lists(collapse_columns)
-	[1] Write Tests
+	[2] Write Tests
+	[3] This could be rewritten to make use of pandas.combine() to combine dataframes. Would be better tested
 
 	"""
 	#-Parse collapse_columns-#

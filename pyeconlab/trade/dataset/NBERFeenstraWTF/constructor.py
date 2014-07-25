@@ -40,20 +40,58 @@ class NBERFeenstraWTFConstructor(object):
 
 		Interface:
 		---------
-		Source Directory: 	Specified by User
+		Source Directory: 	Specified by source_dir
 		Filename Format: 	wtf##.dta where ## is 62-00 	[03/07/2014]
 							Note: Files currently need to be updated to the latest Stata .dta format MANUALLY
 
-		Options:
-		--------
-			[1] 	standardize 	: 	This does not add or remove any data points. 
-										It only adds standardized variables such as iso3c and productcode etc.  
+		Variables
+		---------
+		DOT 		:	Direction of trade (1=Data from importer, 2=Data from exporter)
+		SITC 		: 	Standard International Trade Classification Revision 2
+		ICode 		: 	Importer country code
+		ECode 		: 	Exporter country code
+		Importer 	: 	Importer country name
+		Exporter 	: 	Exporter country name
+		Unit 		: 	Units or measurement (see below)
+		Year 		: 	4-digit year
+ 		Quantity 	: 	Quantity (only for years 1984 – 2000)
+  		Value 		: 	Thousands of US dollars
+
+
+		Summary of Important Documentation:
+		-----------------------------------
+		Values:
+		------
+			years 	: 	1962-2000
+			units 	: 	Thousands of US dollars
+
+		Quantity:
+		---------
+			years 	: 	1984-2000
+			units 	: 	A Area (1,000 square meters) 
+						H Energy (1,000 kilowatt hours)
+						K Weight (kilograms)
+						L Length (1,000 meters)
+						N Units (number of items)
+						P Pairs (number of pairs)
+						V Volume (cubic meters)
+						W Weight (metric tons)
+
+		Types of Operations
+		-------------------
+		[1] Reduction/Collapse 	: 	This collapses data and applies a function like ADD to lines with the same idx 
+									These need to happen BEFORE adjust methods
+		[2] Merge 				: 	Merge methods that add data (such as Hong Kong adjusted data etc.)
+		[3] Adjust 				: 	Adjust Methods alter the data but don't change it's length (spliting codes etc.)
+
+		Order of Operations: 	Reduction/Collapse -> Merge -> Adjust
 
 		Notes:
 		------
 		[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
 		[2] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
 			Any modification prior to returning an NBERFeenstraWTF object should be carried out on ._dataset
+		[3] All Methods in this Class should operate on NON Indexed Data
 
 		Future Work:
 		-----------
@@ -93,15 +131,24 @@ class NBERFeenstraWTFConstructor(object):
 	def set_fn_postfix(self, postfix):
 		self._fn_postfix = postfix
 
-	def __init__(self, source_dir, years=[], standardize=True, export=False, verbose=True):
+	def __init__(self, source_dir, years=[], standardise=True, default_dataset=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
-		Parameters
-		----------
-			source_dir 	: Must contain the raw stata files (*.dta)
-			years 		: Apply a Year Filter [Default: ALL]
-			export 		: [True] Return NBERFeenstraWTF Object or this Constructor
+		Arguments
+		---------
+		source_dir 		: 	Must contain the raw stata files (*.dta)
+		years 			: 	Apply a Year Filter [Default: ALL]
+		standardise 	: 	Include Standardised Codes (Countries: ISO3C etc.)
+		default_dataset : 	[True/False] Return a Default NBERFeenstraWTF Dataset 
+								a. Collapse to Values ONLY
+								b. Merge HongKong-China Adjustments
+								c. Standardise
+									-> Values in US$
+									-> Add CountryCodes in ISO3C
+									-> Include Indicator for Standard SITCR2 Codes ('sitcr2')
+								c. Return NBERFeenstraWTF
+									[year, importer, exporter, sitc4, value, sitcr2]
 		"""
 		if verbose: print "Fetching NBER-Feenstra Data from %s" % source_dir
 		if years == []:
@@ -116,18 +163,27 @@ class NBERFeenstraWTFConstructor(object):
 			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
 			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
 
-		#- Copy raw_data to a flexible dataset attribute - #
+		#-Copy raw_data to a flexible dataset attribute-#
 		self._dataset = copy.deepcopy(self.__raw_data)
 
-		### --- WORKING HERE --- ###
+		#-Construct Default Dataset-#
+		if default_dataset == True:
+			#-Reduction/Collapse-#
+			self.collapse_to_valuesonly(verbose=verbose)
+			#-Merge-#
+			self.china_hongkongdata(years=years, verbose=verbose)
+			self.adjust_china_hongkongdata(verbose=verbose)
+			#-Adjust-#
+			#-Leave Standardisation to standardise option-#
 
-		# - Simple Standardization - #
-		if standardize == True: 
-			if verbose: print "Running Interface Standardization ..."
-			self.standardize_data(verbose=False)
-		# - Generate Dataset Object - #
-		if export == True:
-			#return NBERFeenstraWTF(data=self.raw_data, years=self.years, verbose=verbose)
+		#-Simple Standardization-#
+		if standardise == True: 
+			if verbose: print "[INFO] Running Interface Standardisation ..."
+			self.standardise_data(verbose=False)
+		
+		#-Return NBERFeenstraWTF Object-#
+		if default_dataset == True:
+			#return NBERFeenstraWTF(data=self._dataset, years=self.years, verbose=verbose)
 			pass
 
 	def __repr__(self):
@@ -284,23 +340,25 @@ class NBERFeenstraWTFConstructor(object):
 	def bilateral_flows(self, verbose=False):
 		"""
 		Load NBERFeenstra Bilateral Trade Flows (summed across SITC commodities)
-		
-		Example:
-		-------
-		'World' to 'South Africa' with a column for every year of total trade value
 
 		File: 
 		-----
 		WTF_BILAT.dta
+
+		Variables:
+		---------
+			ICode 		:	Importer country code
+			ECode 		:	Exporter country code
+			Importers 	: 	Importer country name
+			Exporter 	: 	Exporter country name
+			Value?? 	: 	Thousands of US dollars where ?? = 62, 63,...,00
 		
-		DataShape:
-		--------- 
-		Wide Data with value62 ... value00
+		DataShape: Wide
 
 		Notes:
 		-----
 		[1] Can use this Supplementary Data to check Aggregations and how different they are etc.
-		[2] This is Exportable to a CountryLevelExportSystem()
+		[2] This corresponds to a CountryLevelExportSystem()
 		
 		"""
 		fn = u'WTF_BILAT.dta'
@@ -322,7 +380,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	# - Operations on Dataset  - #
 
-	def adjust_raw_china_hongkongdata(self, return_dataset=False, verbose=False):
+	def adjust_china_hongkongdata(self, return_dataset=False, verbose=False):
 		"""
 		Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
 		This will merge in the Hong Kong / China Adjustments provided with the dataset for the years 1988 to 2000. 
@@ -347,7 +405,10 @@ class NBERFeenstraWTFConstructor(object):
 		#-Merge over the first 8 Columns for Value and Quantity-#
 		#-Values-#
 		raw_value = self._dataset[on+['value']].rename(columns={'value' : 'value_raw'})
-		supp_value = self._supp_data[u'chn_hk_adjust'][on+['value_adj']]
+		try:
+			supp_value = self._supp_data[u'chn_hk_adjust'][on+['value_adj']]
+		except:
+			raise ValueError("[ERROR] China/Hong Kong Data has not been loaded!")
 		value = merge_columns(raw_value, supp_value, on, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
 		#-Quantity-#
 		raw_quantity = self._dataset[on+['quantity']]
@@ -433,25 +494,30 @@ class NBERFeenstraWTFConstructor(object):
 
 	## - Clean Data Tasks - ##
 
-	def standardize_data(self,verbose=False):
+	def standardise_data(self,verbose=False):
 		'''
-			Run Appropriate Standardization over the Raw Data
-			
-				[1] Countries to ISO3C Codes
-				[3] Trade Values in $'s
+		Run Appropriate Standardization over the Dataset
+		
+		Actions
+		-------
+			[1] Trade Values in $'s 
+			[2] Countries to ISO3C Codes
+			[3] Marker for Standard SITC Revision 2 Codes
 
-			Notes:
-			-----
-				[1] Raw Dataset has Non-Standard SITC rev2 Codes 
+		Notes
+		-----
+			[1] Raw Dataset has Non-Standard SITC rev2 Codes 
 		'''
-		op_string = u"(standardize_data)"
+		op_string = u"(standardise_data)"
 		#-Check if Operation has been conducted-#
 		if check_operations(self._dataset, op_string): return None
 
-		# - Change Units to $'s - #
+		#-Change Units to $'s-#
 		self._dataset['value'] = self._dataset['value'] * 1000
-		
-		# - Update Country Names - #
+		#-Update Country Names-#
+		self.split_countrycodes(verbose=verbose) 		#Note: This won't run if it has run already#
+
+		###---WORKING HERE---####
 
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
@@ -467,8 +533,8 @@ class NBERFeenstraWTFConstructor(object):
 		[1] Should this be done more efficiently? (i.e. over a single pass of the data) 
 			Current timeit result: 975ms per loop for 1 year
 		"""
-		op_string = u"(split_countrycodes)"
 		#-Check if Operation has been conducted-#
+		op_string = u"(split_countrycodes)"
 		if check_operations(self._dataset, op_string): return None
 
 		# - Importers - #
@@ -485,11 +551,50 @@ class NBERFeenstraWTFConstructor(object):
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
 
+	def collapse_to_valuesonly(self, verbose=False):
+		"""
+		Adjust Dataset For Export Values that are defined multiple times due to Quantity Unit Codes ('unit')
+		Note: This will remove 'quantity', 'unit' ('dot'?)
+
+		Questions
+		---------
+		1. Does this need to be performed before adjust_china_hongkongdata (as this might match multiple times!)?
+		"""
+		#-Check if Operation has been conducted-#
+		op_string = u"(collapse_to_valuesonly)"
+		if check_operations(self._dataset, op_string): return None
+
+		idx = ['year', 'icode',	'importer',	'ecode', 'exporter', 'sitc4']	
+
+		# - Conduct Duplicate Analysis - #
+		dup = self._dataset.duplicated(subset=idx)  
+		if verbose:
+			print "[INFO] Current Dataset Length: %s" % self._dataset.shape[0]
+			print "[INFO] Current Number of Duplicate Entry's: %s" % len(dup[dup==True])
+			print "[INFO] Deleting 'quantity', 'unit' as cannot aggregate quantity data in different units"
+		
+		del self._dataset['quantity']
+		del self._dataset['unit']
+
+		#-Collapse/Sum Duplicates-#
+		self._dataset = self._dataset.groupby(by=idx).sum()
+		self._dataset = self._dataset.reset_index() 			#Remove IDX For Later Data Operations
+
+		if verbose:
+			print "[INFO] New Dataset Length: %s" % self._dataset.shape[0]
+
+		#- Add Operation to df attribute -#
+		update_operations(self._dataset, op_string)
+
 	# - Construct a Dataset - #
 
 	def to_nberfeenstrawtf(self, verbose=True):
 		"""
 		Construct NBERFeenstraWTF Object with Common Core Object Names
+		Note: This is constructed from the ._dataset attribute
+
 		Interface: ['year', iiso3c', 'eiso3c', 'sitc4', 'value', 'quantity']
+
+
 		"""
 		raise NotImplementedError
