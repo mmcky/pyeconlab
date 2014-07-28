@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 NBERFeenstraWTF Constructer
 
@@ -15,7 +16,7 @@ Conventions
 	dataset 	: Contains the Modified Dataset
 
 Returns
---------
+-------
 Return Standardised Data in the Form of NBERFeenstraWTF
 """
 
@@ -54,8 +55,8 @@ class NBERFeenstraWTFConstructor(object):
 		Exporter 	: 	Exporter country name
 		Unit 		: 	Units or measurement (see below)
 		Year 		: 	4-digit year
- 		Quantity 	: 	Quantity (only for years 1984 – 2000)
-  		Value 		: 	Thousands of US dollars
+		Quantity 	: 	Quantity (only for years 1984 – 2000)
+ 		Value 		: 	Thousands of US dollars
 
 
 		Summary of Important Documentation:
@@ -212,7 +213,7 @@ class NBERFeenstraWTFConstructor(object):
 		return string
 	
 	# - IO - #
-	
+
 	def from_csv(self, fl, test_data=True, verbose=True):
 		""" Load Data from CSV into self.__raw_data """
 		fl = self._source_dir + fl
@@ -222,7 +223,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	def from_df(self, df, test_data=True, verbose=True):
 		""" Load Data from Pandas DataFrame into self.__raw_data """
-		if verbose: print "[WARNING] Loading data from dataframe into __raw_data" % fl
+		if verbose: print "[WARNING] Loading data from dataframe into __raw_data"
 		self.__raw_data = df
 		self.test_data = test_data
 
