@@ -131,7 +131,7 @@ class NBERFeenstraWTFConstructor(object):
 	def set_fn_postfix(self, postfix):
 		self._fn_postfix = postfix
 
-	def __init__(self, source_dir, years=[], standardise=True, default_dataset=False, verbose=True):
+	def __init__(self, source_dir, years=[], standardise=True, default_dataset=False, skip_setup=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -149,13 +149,24 @@ class NBERFeenstraWTFConstructor(object):
 									-> Include Indicator for Standard SITCR2 Codes ('sitcr2')
 								c. Return NBERFeenstraWTF
 									[year, importer, exporter, sitc4, value, sitcr2]
+		skip_setup 		: 	[Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
+							This is mainly used for loading test data to check attributes and methods etc. 
 		"""
+		#-Assign Source Directory-#
+		self._source_dir 	= check_directory(source_dir) 	# check_directory() performs basic tests on the specified directory
+		
+		#-Parse Skip Setup-#
+		if skip_setup==True:
+			print "[INFO] Skipping Setup of NBERFeenstraWTFConstructor!"
+			return None
+		
+		#-Setup Object-#
 		if verbose: print "Fetching NBER-Feenstra Data from %s" % source_dir
 		if years == []:
 			self.complete_dataset = True	# This forces object to be imported based on the whole dataset
 			years = self._available_years 	# Default Years
+		
 		# - Fetch Raw Data for Years - #
-		self._source_dir 	= check_directory(source_dir) 	#Performs basic tests on the Specified Directory
 		self.years 			= years
 		self.__raw_data 	= pd.DataFrame() 				#PRIVATE Attribute of the Class
 		for year in self.years:
@@ -192,8 +203,29 @@ class NBERFeenstraWTFConstructor(object):
 				 "Years: %s\n" % (self.years)								+ \
 				 "Complete Dataset: %s\n" % (self.complete_dataset) 		+ \
 				 "Source Last Checked: %s\n" % (self.source_last_checked)
+		#-Parse TestData Indicator-#
+		try:
+			if self.test_data == True:
+				string += "\n[WARNING] TEST DATA LOADED IN OBJECT\n"
+		except:
+			pass
 		return string
 	
+	# - IO - #
+	
+	def from_csv(self, fl, test_data=True, verbose=True):
+		""" Load Data from CSV into self.__raw_data """
+		fl = self._source_dir + fl
+		if verbose: print "[WARNING] Loading data from %s into __raw_data" % fl
+		self.__raw_data = pd.read_csv(fl)
+		self.test_data = test_data
+
+	def from_df(self, df, test_data=True, verbose=True):
+		""" Load Data from Pandas DataFrame into self.__raw_data """
+		if verbose: print "[WARNING] Loading data from dataframe into __raw_data" % fl
+		self.__raw_data = df
+		self.test_data = test_data
+
 	# - Raw Data Properties - #
 
 	@property
