@@ -1,5 +1,5 @@
 """
-	Tests for DataFrame Utilities
+Tests for DataFrame Utilities
 """
 
 import unittest
@@ -13,7 +13,7 @@ from pyeconlab.util import merge_columns
 
 class TestSuite_merge_columns(unittest.TestCase):
 	"""
-		Test Suite for merge_columns()
+	Test Suite for merge_columns()
 	"""
 
 	columns = ['iso3c', 'sitc4', 'year', 'value', 'quantity']
@@ -37,7 +37,7 @@ class TestSuite_merge_columns(unittest.TestCase):
 
 	def test_merge_columns1(self, a=a, b=b, columns=columns):
 		"""
-			Simple Test Cases of merge_columns
+		Simple Test Cases of merge_columns
 		"""	
 
 		# Solution: Right Dominant #

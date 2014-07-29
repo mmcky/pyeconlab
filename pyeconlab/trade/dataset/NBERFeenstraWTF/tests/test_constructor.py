@@ -129,8 +129,24 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 		[1] number of observations
 		[2] number of unique icountries and ecountries
 		[3] number of unique sitc4 products
+
+		Notes:
+		-----
+		[1] These Test Values have been found using Stata
 		"""
-		pass
+		df = self.raw_data[self.raw_data['year'] == 1962]
+		#-Number of Observations-#
+		assert df.shape[0] == 470438, "Total Number of observations: %s != 470438" % (df.shape[0])
+		num_obs_117100 = len(df[df['icode'] == '117100'])
+		#-Number of 117100 observations-#
+		assert  num_obs_117100 == 4496, "number of icode: 117100 observations (%s) != 4496" % (num_obs_117100)
+		#- Number of Fiji observations-#
+		num_obs_Fiji = len(df[df['importer'] == 'Fiji'])
+		assert num_obs_Fiji == 972, "number of 'Fiji' observations (%s) != 972" % (num_obs_Fiji)
+		num_obs_0023 = len(df[df['sitc4'] == '0023'])
+		assert num_obs_0023 == 15, "number of SITC4: 0023 observations (%s) != 15" % (num_obs_0023)
+		num_sitc4_codes == len(df['sitc4'].unique())
+		assert num_sitc4_codes == 696, "number of SITC4 codes (%s) != 696" % (num_sitc4_codes)
 
 	def test_random_sample_1962(self):
 		""" 
@@ -150,7 +166,22 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 		[2] number of unique icountries and ecountries
 		[3] number of unique sitc4 products		
 		"""
-		pass 
+		df = self.raw_data[self.raw_data['year'] == 1985]
+		#-Number of Observations-#
+		assert df.shape[0] == 509175, "Total Number of observations: %s != 509175" % (df.shape[0])
+		num_obs_117100 = len(df[df['icode'] == '117100'])
+		#-Number of 117100 observations-#
+		assert  num_obs_117100 == 4666, "number of icode: 117100 observations (%s) != 4666" % (num_obs_117100)
+		#- Number of Fiji observations-#
+		num_obs_Fiji = len(df[df['importer'] == 'Fiji'])
+		assert num_obs_Fiji == 783, "number of 'Fiji' observations (%s) != 783" % (num_obs_Fiji)
+		#-Test Some Product Codes-#
+		num_obs_0023 = len(df[df['sitc4'] == '0023'])
+		assert num_obs_0023 == 0, "number of SITC4: 0023 observations (%s) != 0" % (num_obs_0023)
+		num_obs_0013 = len(df[df['sitc4']] == '0013')
+		assert num_obs_0013 == 145, "number of SITC4: 0013 observations (%s) != 145" % (num_obs_0013)
+		num_sitc4_codes == len(df['sitc4'].unique())
+		assert num_sitc4_codes == 1438, "number of SITC4 codes (%s) != 1438" % (num_sitc4_codes)
 	
 	def test_random_sample_1985(self):
 		""" 
@@ -171,7 +202,22 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 		[2] number of unique icountries and ecountries
 		[3] number of unique sitc4 products		
 		"""
-		pass 
+		df = self.raw_data[self.raw_data['year'] == 1990]
+		#-Number of Observations-#
+		assert df.shape[0] == 662705, "Total Number of observations: %s != 662705" % (df.shape[0])
+		num_obs_117100 = len(df[df['icode'] == '117100'])
+		#-Number of 117100 observations-#
+		assert  num_obs_117100 == 7354, "number of icode: 117100 observations (%s) != 7354" % (num_obs_117100)
+		#- Number of Fiji observations-#
+		num_obs_Fiji = len(df[df['importer'] == 'Fiji'])
+		assert num_obs_Fiji == 1182, "number of 'Fiji' observations (%s) != 1182" % (num_obs_Fiji)
+		#-Test Some Product Codes-#
+		num_obs_0023 = len(df[df['sitc4'] == '0023'])
+		assert num_obs_0023 == 0, "number of SITC4: 0023 observations (%s) != 0" % (num_obs_0023)
+		num_obs_0013 = len(df[df['sitc4']] == '0013')
+		assert num_obs_0013 == 190, "number of SITC4: 0013 observations (%s) != 190" % (num_obs_0013)
+		num_sitc4_codes == len(df['sitc4'].unique())
+		assert num_sitc4_codes == 1422, "number of SITC4 codes (%s) != 1422" % (num_sitc4_codes) 
 	
 	def test_random_sample_1990(self):
 		""" 
@@ -192,7 +238,22 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 		[2] number of unique icountries and ecountries
 		[3] number of unique sitc4 products		
 		"""
-		pass 
+		df = self.raw_data[self.raw_data['year'] == 2000]
+		#-Number of Observations-#
+		assert df.shape[0] == 857189, "Total Number of observations: %s != 857189" % (df.shape[0])
+		num_obs_117100 = len(df[df['icode'] == '117100'])
+		#-Number of 117100 observations-#
+		assert  num_obs_117100 == 8732, "number of icode: 117100 observations (%s) != 8732" % (num_obs_117100)
+		#- Number of Fiji observations-#
+		num_obs_Fiji = len(df[df['importer'] == 'Fiji'])
+		assert num_obs_Fiji == 1088, "number of 'Fiji' observations (%s) != 1088" % (num_obs_Fiji)
+		#-Test Some Product Codes-#
+		num_obs_0023 = len(df[df['sitc4'] == '0023'])
+		assert num_obs_0023 == 0, "number of SITC4: 0023 observations (%s) != 0" % (num_obs_0023)
+		num_obs_0013 = len(df[df['sitc4']] == '0013')
+		assert num_obs_0013 == 201, "number of SITC4: 0013 observations (%s) != 201" % (num_obs_0013)
+		num_sitc4_codes == len(df['sitc4'].unique())
+		assert num_sitc4_codes == 1288, "number of SITC4 codes (%s) != 1288" % (num_sitc4_codes) 
 	
 	def test_random_sample_2000(self):
 		""" 
