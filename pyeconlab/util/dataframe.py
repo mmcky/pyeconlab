@@ -209,7 +209,134 @@ def check_operations(df, op_string, verbose=False):
 	except:
 		return False
 
+# Methods for Find Rows in DataFrames #
+# ----------------------------------- #
+
+def find_row(df, row):
+	"""
+	Find and Return a Row in a DataFrame 
+	"""
+	for col in df:
+	        df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
+	return df
+
+def assert_unique_row_in_df(df, row):
+	"""
+	Assert a Unique Row in DataFrame
+	"""	
+	assert len(find_row(df, row)) == 1, "Row (%s) Not Found in DataFrame OR has multiple matches (try utils.find_row())" % row
+
+def assert_row_in_df(df, row):
+	"""
+	Assert Row is found in DataFrame 
+	"""
+	assert len(find_row(df, row)) >= 1, "Row (%s) Not Found in Dataset" % row
+
+def assert_unique_rows_in_df(df, rows):
+	"""
+	Assert All Unique Rows in a Dataframe of Rows in the DataFrame
+	"""
+	for idx, row in rows.iterrows():
+		assert_unique_row_in_df(df, row)
+
+def assert_rows_in_df(df, rows):
+	"""
+	Assert All Rows are found in the DataFrame 
+	"""
+	for idx, row in rows.iterrows():
+		assert_row_in_df(df, row)
+
+# - Examples of Different Ways to Impliment - #
+# ------------------------------------------- #
+
+def check_rows_from_random_sample_byduplicated(df, rs):
+	"""
+	Iterate over a Random Sample to Make Sure the row is contained in the DataFrame
+	Approach: Using Duplicated()
+
+	Notes:
+	------
+	[1] timeit: 9.39 s per loop [Same Data as Other check_rows*] 
+	"""
+	#-Check Duplicates Initial Condition-#
+	if len(df[df.duplicated()]) != 0:
+		raise ValueError("[ERROR] Dataset Already Contains Duplicate Rows!")
+	for idx, row in rs.iterrows():
+		#-Check if Row is in Data-#
+		tmp = df.append(row)
+		assert len(tmp[tmp.duplicated()]) == 1, "A duplicate row wasn't found for %s" % (row)
+
+def check_rows_from_random_sample_byiterating(df, rs):
+	"""
+	Iterate over a Random Sample to Make Sure the row is contained in the DataFrame
+	Iterating and using equal()
+
+	STATUS: [NOT-WORKING] 
+			Equality in the presence of NaN is not established. Using .equal() should account for this
+
+	Notes:
+	------
+	[1] timeit: N/A [Same Data as Other check_rows*] 
+	"""
+	match = False
+	for rsidx, rsrow in rs.iterrows():
+		for idx, s in df.iterrows():
+			if s.equals(rsrow):
+				match = True
+				break
+		assert match == True, "Iterating didn't find an equal row %s in the dataframe" % (rsrow)
+
+def check_rows_from_random_sample_byfiltering(df, rs):
+	"""
+	Iterate over a Random Sample to Make Sure the row is contained in the DataFrame
+	Filtering Approach
+
+	Notes:
+	------
+	[1] timeit: 1.72 s per loop [Same Data as Other check_rows*] 
+	"""
+	for rsidx, rsrow in rs.iterrows():
+		tmp = df
+		for idx, val in rsrow.iteritems():
+			try:
+				if np.isnan(val):
+					continue
+			except:
+				pass
+			tmp = tmp[tmp[idx] == val]
+		assert len(tmp) == 1, "Filtering didn't produce a unique line in the dataframe: %s" % (len(tmp))
+
+def check_rows_from_random_sample_bybroadcasting(df, rs):
+	"""
+	Brodcast over a DataFrame Looking for rows in DataFrame
+
+	Notes:
+	------
+	[1] timeit: 4.14 s per loop [Same Data as Other check_rows*] 
+	"""
+	for rsidx, rsrow in rs.iterrows():
+		assert len(df[((df == rsrow) | (df.isnull() & rsrow.isnull())).all(1)]) == 1
+
+def check_rows_from_random_sample_bybroadcasting_columniteration(df, rs):
+	"""
+	Broadcast and Iterate Over Columns (Smaller Dimension) due to long data relative to width
+
+	Notes:
+	------
+	[1] timeit: 1.63 s per loop [Same Data as Other check_rows*]
+	[2] This is the fastest implementation and is used in assert_functions 
+	"""
+	def finder(df, row):
+	    for col in df:
+	        df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
+	    return df
+	
+	for rsidx, rsrow in rs.iterrows():
+		assert len(finder(df, rsrow)) == 1
+
+# ----------- #
 # - IN WORK - #
+# ----------- #
 
 def change_message(old_idx, recode):
 	"""
