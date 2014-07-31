@@ -1,11 +1,11 @@
-'''
-	Meta Data for NBERFeenstra
+"""	
+Meta Data for NBERFeenstra
 
-	Lists
-	-----
-		[1] ExporterNames [From ALL CrossSections]
-		[2] ImporterNames [From ALL CrossSections]
-'''
+Lists
+-----
+	[1] ExporterNames [From ALL CrossSections]
+	[2] ImporterNames [From ALL CrossSections]
+"""
 
 ExporterNames = ['Afghanistan',
 				 'Afr.Other NS',

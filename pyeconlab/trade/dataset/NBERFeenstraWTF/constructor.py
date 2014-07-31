@@ -24,6 +24,7 @@ import os
 import copy
 import pandas as pd
 import numpy as np
+import countrycode as cc
 
 from dataset import NBERFeenstraWTF 
 from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations 			#Reference requires installation!
@@ -446,7 +447,7 @@ class NBERFeenstraWTFConstructor(object):
 		#-Quantity-#
 		raw_quantity = self._dataset[on+['quantity']]
 		supp_quantity = self._supp_data[u'chn_hk_adjust'][on+['quantity']]
-		quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='right', output='final', verbose=verbose)
+		quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='rights', output='final', verbose=verbose)
 	
 		#-Join Values and Quantity-#
 		updated_raw_values = value.merge(quantity, how='outer', on=on)
@@ -525,9 +526,45 @@ class NBERFeenstraWTFConstructor(object):
 			print "[INFO] Writing Exporter, Importer, and CountryLists to %s files in location:" % out_type
 			print target_dir
 
+	def cc_countryname_concordance(self, force=False, return_concord=False):
+		"""
+		Compute a Country Name Concordance
+		
+		pd.DataFrame( countryname, 	iso3c 	, 	iso3n )
+		 	
+		Dependancies:
+		-------------
+		[1] PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
+
+		Notes:
+		------
+		[1] pycountrycode has an issue with converting iso3n to iso3c so currently use country names
+
+		Future Work:
+		------------
+		[1] Build my own version of pycountrycode so that this work is internalised to this package and doesn't depend on PyCountryCode
+			I would like Time Varying Definitions of Country Codes, In addition to Time Varying Aggregates like LDC, MDC, etc.
+		[2] Add Option to Write Concordance to a py file or csv etc
+		"""
+		
+		#-Parse Complete Dataset Check-#
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("This is not a complete Dataset!\n If you want to build a concordance for a given year use force=True")
+		iso3c = cc.countrycode(codes=self.country_list, origin='country_name', target='iso3c')
+		#-Check Same Length-# 																		#This is probably redudant as zip will complain?
+		if len(iso3c) != len(self.country_list):
+			raise ValueError("Results != Length of Original Country List")
+		concord = pd.DataFrame(zip(self.country_list, iso3c), columns=['countryname', 'iso3c'])
+		concord['iso3c'] = concord['iso3c'].apply(lambda x: '' if len(x)!=3 else x)
+		concord['iso3n'] = cc.countrycode(codes=concord.iso3c, origin='iso3c', target='iso3n')
+		self.country_concordance = concord
+		if return_concord == True:
+			return self.country_concordance
+
 	## - Clean Data Tasks - ##
 
-	def standardise_data(self,verbose=False):
+	def standardise_data(self, force=False, verbose=False):
 		'''
 		Run Appropriate Standardization over the Dataset
 		
@@ -547,10 +584,22 @@ class NBERFeenstraWTFConstructor(object):
 
 		#-Change Units to $'s-#
 		self._dataset['value'] = self._dataset['value'] * 1000
-		#-Update Country Names-#
-		self.split_countrycodes(verbose=verbose) 		#Note: This won't run if it has run already#
+		
+		#-Build Country Name Concordance-#
+		concord = self.cc_countryname_concordance(return_concord=True, force=force)
+		#-Add ISO3C and ISO3N Data-#
+		#-Importers-#
+		self._dataset = self._dataset.merge(concord, left_on=['importer'], right_on=['countryname'])
+		del self._dataset['countryname']
+		self._dataset = self._dataset.rename_axis({'iso3c' : 'iiso3c', 'iso3n' : 'iiso3n'}, axis=1)
+		#-Exporters-#
+		self._dataset = self._dataset.merge(concord, left_on=['exporter'], right_on=['countryname'])
+		del self._dataset['countryname']
+		self._dataset = self._dataset.rename_axis({'iso3c' : 'eiso3c', 'iso3n' : 'eiso3n'}, axis=1)
+		
+		#-Build SITCR2 Marker-#
 
-		###---WORKING HERE---####
+		### --- Working Here --- ###
 
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
