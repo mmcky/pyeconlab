@@ -1,6 +1,15 @@
 '''
 	NBER Feenstra Concordances
+	1:1 Relationship Dictionaries
+
+	Notes:
+	------
+	[1] ISO3C 	=> 	ISO 3166-1-alpha3
 '''
+
+# ------------------------------------- #
+# - Manually Constructed Concordances - #
+# ------------------------------------- #
 
 # - Exporters to ISO3C - #
 
@@ -8,10 +17,10 @@ CountryNameToISO3C = {	'Afghanistan' 	: 'AFG',
 						'Afr.Other NS' 	: '.',
 						'Africa N.NES'	: '.',
 						'Albania' 		: 'ALB',
-					
-						# - WORKING HERE - #
+						
+						# - Working Here - #
 
-						# 'Algeria',
+						# 'Algeria' 		: ''
 						# 'Angola',
 						# 'Areas NES',
 						# 'Argentina',
