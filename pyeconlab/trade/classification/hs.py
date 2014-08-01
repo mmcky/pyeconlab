@@ -1,8 +1,8 @@
 """
-SITC Trade Classifications
-==========================
+HS Trade Classifications
+========================
 
-This package contains SITC trade classification details. This includes items such as Codes and Names. 
+This package contains HS trade classification details. This includes items such as Codes and Names. 
 If you are looking for conversion between trade classification tables (i.e. SITCR2-HS2002). 
 This information is contained in trade concordance
 
@@ -10,9 +10,14 @@ Data Files:
 ----------
 see data/README.md
 
+Notes:
+------
+[1] Could have implemented a generic ProductCode Class but I think this approach is easier to understand and edit etc.
+
 Future Work:
 -----------
-[1] Add Metadata to the SITC objects (i.e. applicable_years, data_available_years etc.)
+[1] Add Metadata to the HS objects (i.e. applicable_years, data_available_years etc.)
+[2] Find out what year data/H4.txt applies.
 
 """
 
@@ -25,9 +30,9 @@ from pyeconlab.util import check_directory
 this_dir, this_filename = os.path.split(__file__)
 DATA_PATH = check_directory(os.path.join(this_dir, "data"))
 
-class SITC(object):
+class HS(object):
 	"""
-	SITC Object
+	HS Object
 	"""
 
 	def __init__(self, revision, source_institution='un', verbose=False):
@@ -36,19 +41,26 @@ class SITC(object):
 		
 		Arguments
 		---------
-		revision 			: 	[1,2,3,4] 		[SITC Revision Number]
+		revision 			: 	[1992, 1996, 2002, 2007] 		[HS Revision Number]
 		source_institution 	:	['un', 'wits'] 	[Default: 'un']
 								See data/README.md for more information
 
 		"""
 		#-Attributes-@
-		self.revision 			= revision
-		self.source_institution = source_institution
+		self.revision 			= 	revision
+		self.revision_map 		= 	{ 	
+										1992 : 0, 		 
+										1996 : 1,
+										2002 : 2,
+										2007 : 3,
+										# ???? : 4
+									}
+		self.source_institution = 	source_institution
 
 		#-Source: United Nations-#
 		if source_institution == 'un':
-			self.source_web = u"http://unstats.un.org/unsd/tradekb/Knowledgebase/UN-Comtrade-Reference-Tables"
-			self.data = pd.read_csv(DATA_PATH + 'un/' + 'S'+str(revision)+'.txt')
+			self.source_web = u"http://wits.worldbank.org/referencedata.html"
+			self.data = pd.read_csv(DATA_PATH + 'un/' + 'H'+str(self.revision_map[revision])+'.txt')
 		#-Source: World Bank - WITS-#
 		elif source_institution == 'wits':
 			raise NotImplementedError('wits not yet implemented')
@@ -60,13 +72,14 @@ class SITC(object):
 
 	def __repr__(self):
 		""" Representation String """
-		obstring 	= 	"SITC Revision: %s\n" % self.revision 	+\
+		obstring 	= 	"HS Revision: %s\n" % self.revision 	+\
 						"-----------------\n"					+\
 						"Level 1 Codes: %s\n" % len(self.L1) 	+\
 						"Level 2 Codes: %s\n" % len(self.L2) 	+\
 						"Level 3 Codes: %s\n" % len(self.L3) 	+\
 						"Level 4 Codes: %s\n" % len(self.L4) 	+\
 						"Level 5 Codes: %s\n" % len(self.L5) 	+\
+						"Level 6 Codes: %s\n" % len(self.L6)  	+\
 						"\n"									+\
 						"Source: %s (%s)" % (self.source_institution, self.source_web)
 		return obstring
@@ -77,7 +90,7 @@ class SITC(object):
 
 	@property 
 	def L1(self):
-		return self.data[self.data['level'] == 1]
+		return self.data[self.data['level'] == 1] 			#Does this really make sense to list? Do I need to construct my own Level Codes based on Level 6
 
 	@property 
 	def L2(self):
@@ -85,7 +98,7 @@ class SITC(object):
 
 	@property 
 	def L3(self):
-		return self.data[self.data['level'] == 3]
+		return self.data[self.data['level'] == 3] 			#Does this really make sense to list? Do I need to construct my own Level Codes based on Level 6
 
 	@property 
 	def L4(self):
@@ -93,7 +106,11 @@ class SITC(object):
 
 	@property 
 	def L5(self):
-		return self.data[self.data['level'] == 5]
+		return self.data[self.data['level'] == 5]			#Does this really make sense to list? Do I need to construct my own Level Codes based on Level 6
+ 
+	@property 
+	def L6(self):
+		return self.data[self.data['level'] == 6]
 
 	def get_level(self, level):
 		""" Return Level Data based on a specified level """
@@ -107,8 +124,10 @@ class SITC(object):
 			return self.L4
 		elif level == 5:
 			return self.L5
+		elif level == 6:
+			return self.L6
 		else:
-			raise ValueError("[ERROR] Level can only be specifed as 1,2,3,4 or 5!")
+			raise ValueError("[ERROR] Level can only be specifed as 1,2,3,4,5 or 6!")
 
 	@property 
 	def codes(self):
@@ -133,14 +152,6 @@ class SITC(object):
 		-----
 		[1] Currently this doesn't look necessary. ShortDescription contains enough of the information
 		"""
-			# def decide_join(sd,ld):
-			# 	""" Decide How to Joing ShortDescription and LongDescription """
-			# 	if ld[0:2] == '--':
-			# 		return sd + ld[2:]
-			# 	elif sd == ld:
-			# 		return sd
-			# 	else:
-			# 		raise ValueError("What to do?")
 		self.data['Description'] = self.data[['ShortDescription']]
 
 	#---------------#
@@ -157,7 +168,7 @@ class SITC(object):
 	def code_description_dict(self, level=None):
 		""" 
 		Return a {Code: Description} Dictionary
-		level 	: 	Can be Specified [1,2,3,4, or 5]
+		level 	: 	Can be Specified [1,2,3,4,5 or 6]
 					[Default is to return the entire dictionary of ALL levels]
 		"""
 		if type(level) == int:
@@ -170,38 +181,27 @@ class SITC(object):
 #-Revision-#
 #----------#
 
-def SITCR1():
+def HS1992():
 	"""
-	Return an SITC Revision 1 Object
-	
-	Notes
-	-----
-	[1] By generating an object we can set attributes that are added by considering the example below.
-		Add:
-		----
-			applicable_years
-			data_years
+	Return a HS 1992 Object
 	"""
-	sitc = SITC(revision=1)
-	# sitc.applicable_years = ???
-	return sitc 
+	return HS(revision=1992)
 
-def SITCR2():
+def HS1996():
 	"""
-	Return an SITC Revision 2 Object
+	Return a HS 1996 Object
 	"""
-	return SITC(revision=2)
+	return HS(revision=1996)
 
-def SITCR3():
+def HS2002():
 	"""
-	Return an SITC Revision 3 Object
+	Return a HS 2002 Object
 	"""
-	return SITC(revision=3)
+	return HS(revision=2002)
 
-def SITCR4():
+def HS2007():
 	"""
-	Return an SITC Revision 4 Object
+	Return a HS 2007 Object
 	"""
-	return SITC(revision=4)
-
+	return HS(revision=2007)
 

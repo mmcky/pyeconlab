@@ -20,6 +20,40 @@ Folders
 =======
 
 	un/
+		HS (Harmonised System)
+		----------------------
+		H0.txt 				: 	Description: HS1992(1988 - Introduction, 1992 - Adoption)
+								Type: 		csv delimited text file
+								Headers: 	["Code","ShortDescription","LongDescription","isBasicLevel","AggregateLevel","parentCode"]
+								Downloaded: 31/07/2014
+								md5hash: 	c1a5806a5e4b44c7116398d7469e0d1f
+
+		H1.txt 				: 	Description: HS1996
+								Type: 		csv delimited text file
+								Headers: 	["Code","ShortDescription","LongDescription","isBasicLevel","AggregateLevel","parentCode"]
+								Downloaded: 31/07/2014
+								md5hash: 	7d00c9f7e0e5af26510a2ce6ea916352
+		
+		H2.txt 				: 	Description: HS2002
+								Type: 		csv delimited text file
+								Headers: 	["Code","ShortDescription","LongDescription","isBasicLevel","AggregateLevel","parentCode"]
+								Downloaded: 31/07/2014
+								md5hash: 	0fb0d725a64a24370bf04556071199ac
+
+		H3.txt 				: 	Description: HS2007
+								Type: 		csv delimited text file
+								Headers: 	["Code","ShortDescription","LongDescription","isBasicLevel","AggregateLevel","parentCode"]
+								Downloaded: 31/07/2014
+								md5hash: 	691ada3ec69a7b5e12b5a2de918dd82a
+
+		H4.txt 				: 	Description: HS???? 
+								Type: 		csv delimited text file
+								Headers: 	["code","ShortDescription","LongDescription","isBasicLevel","AggregateLevel","ParentCode"]
+								Downloaded: 31/07/2014
+								md5hash: 	0e08111f6aeb9e6b639c5604fa7074d7
+
+		SITC (Standard Industry Trade Classification)
+		---------------------------------------------
 		S1.txt 				: 	Description: SITC Revision 1 Classifications
 								Type:		csv separated text file
 								Headers: 	["Code","ShortDescription","LongDescription","isBasicLevel","AggregateLevel","parentCode"]
@@ -52,7 +86,6 @@ Folders
 								Type: 		ZIP Archive
 								Downloaded: 31/07/2014 
 								md5hash: 	8fa873eabaddcd23752ffdb82fbee94f
-								Notes: 		[1] Stored in Compressed ZIP file to save space in the repository
-											Can I decompress within the project on the fly using zip package?
+								Notes: 		Stored as an xls file (binary)
 
 		**Note:** There are other archives: http://wits.worldbank.org/referencedata.html
