@@ -18,6 +18,7 @@ Future Work:
 """
 
 import os
+import copy
 import pandas as pd
 
 from pyeconlab.util import check_directory
@@ -114,6 +115,17 @@ class SITC(object):
 	@property 
 	def codes(self):
 		return self.data['Code']
+
+	def get_codes(self, level):
+		"""
+		Retrive a Code List by Level
+		"""
+		data = copy.deepcopy(self.get_level(level)['Code']) 	#Copy to Make New List rather than a Slice
+		data = data.reset_index()
+		del data['index'] 										#Drop obs number from Original Data File
+		colname = 'SITCL' + str(level)
+		data.rename_axis({'Code' : colname}, axis=1, inplace=True)
+		return sorted(list(data[colname]))
 
 
 	#-------------------#

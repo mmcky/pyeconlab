@@ -19,6 +19,16 @@ Sources
 Folders
 =======
 
+
+	mit-medialabs/
+		SITC
+		----
+		sitc_classification.csv : 	Description: SITC Classification Table
+									Type: 		csv delimited text file
+									Headers: 	[SITC,Name]
+									Downloaded: 01/08/2014
+									md5hash: 	a27565834eb229f491ca36ac5c7f1f7e
+
 	un/
 		HS (Harmonised System)
 		----------------------

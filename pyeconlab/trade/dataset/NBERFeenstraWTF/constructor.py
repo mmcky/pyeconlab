@@ -28,6 +28,7 @@ import countrycode as cc
 
 from dataset import NBERFeenstraWTF 
 from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations 			#Reference requires installation!
+from pyeconlab.trade.classification import SITC
 
 # - Data in data/ - #
 this_dir, this_filename = os.path.split(__file__)
@@ -48,7 +49,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		Variables
 		---------
-		DOT 		:	Direction of trade (1=Data from importer, 2=Data from exporter)
+		DOT 		:	Direction of trade (1=Data from importer, 2=Data from exporter) [DOT=1 => CIF; DOT=2 => FOB]
 		SITC 		: 	Standard International Trade Classification Revision 2
 		ICode 		: 	Importer country code
 		ECode 		: 	Exporter country code
@@ -57,7 +58,7 @@ class NBERFeenstraWTFConstructor(object):
 		Unit 		: 	Units or measurement (see below)
 		Year 		: 	4-digit year
 		Quantity 	: 	Quantity (only for years 1984 – 2000)
- 		Value 		: 	Thousands of US dollars
+ 		Value 		: 	Nominal Thousands of US dollars
 
 
 		Summary of Important Documentation:
@@ -78,6 +79,40 @@ class NBERFeenstraWTFConstructor(object):
 						P Pairs (number of pairs)
 						V Volume (cubic meters)
 						W Weight (metric tons)
+
+		ProductCodes:
+		-------------
+
+			SITC Rev 1
+			----------
+				years 	: 	1962-1983 [Converted to SITC R2 [Section 2 of Documentation PDF]]
+									  [Table #3: SITC Rev1 and SITC Rev2 Concordance]
+
+			SITC Rev 2
+			----------
+				years 	: 	1984-2000
+
+			Notes:
+			------
+			[1] A and X codes for 1984-2000
+
+			[2] Codes Ending in 0: "4-digit SITC codes ending in zero were introduced into the data because we substituted the U.S.
+					values of exports and imports in place of the UN values, whenever the U.S. was a partner. In the
+					U.S. values, an SITC Rev. 2 code ending in zero has the same meaning as a code ending in A or
+					X; that is, it represents trade within that 3-digit code that could not be accurately assigned to a 4-
+					digit code. For example, trade within SITC 0220 really means trade within one of the SITC
+					industries 0222, 0223, or 0224." [FAQ]
+
+			[3] I am not currently sure what these SITC codes are. I have requested further information from Robert Feenstra
+				0021 	[Associated only with Malta]
+				0023 	[Various Eastern European Countries and Austria]
+				0024
+				0025
+				0031
+				0035
+				0039
+				2829	[Assume: 282 NES. The MIT MediaLabs has this as “Waste and scrap metal of iron or steel” ]
+
 
 		Types of Operations
 		-------------------
@@ -133,7 +168,7 @@ class NBERFeenstraWTFConstructor(object):
 	def set_fn_postfix(self, postfix):
 		self._fn_postfix = postfix
 
-	def __init__(self, source_dir, years=[], standardise=True, default_dataset=False, skip_setup=False, verbose=True):
+	def __init__(self, source_dir, years=[], standardise=True, default_dataset=False, skip_setup=False, force=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -153,6 +188,8 @@ class NBERFeenstraWTFConstructor(object):
 									[year, importer, exporter, sitc4, value, sitcr2]
 		skip_setup 		: 	[Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
 							This is mainly used for loading test data to check attributes and methods etc. 
+		force 			: 	If not working with the full dataset you may enter force=True to run standardisation routines etc.
+							[Warning: This will not return Intertemporally Consistent Concordances]
 		"""
 		#-Assign Source Directory-#
 		self._source_dir 	= check_directory(source_dir) 	# check_directory() performs basic tests on the specified directory
@@ -184,20 +221,20 @@ class NBERFeenstraWTFConstructor(object):
 			#-Reduction/Collapse-#
 			self.collapse_to_valuesonly(verbose=verbose)
 			#-Merge-#
-			self.china_hongkongdata(years=years, verbose=verbose)
+			self.china_hongkongdata(years=years, verbose=verbose) 				#If not forcing full dataset then this should be actioned year specific!
 			self.adjust_china_hongkongdata(verbose=verbose)
 			#-Adjust-#
-			#-Leave Standardisation to standardise option-#
+			#-Leave Standardisation to standardise option but ensure it is switched on-#
+			standardise = True
 
 		#-Simple Standardization-#
 		if standardise == True: 
 			if verbose: print "[INFO] Running Interface Standardisation ..."
-			self.standardise_data(verbose=False)
+			self.standardise_data(force=force, verbose=False)
 		
 		#-Return NBERFeenstraWTF Object-#
 		if default_dataset == True:
-			#return NBERFeenstraWTF(data=self._dataset, years=self.years, verbose=verbose)
-			pass
+			return NBERFeenstraWTF(data=self._dataset, years=self.years, verbose=verbose)
 
 	def __repr__(self):
 		""" Representation String Of Object """
@@ -348,6 +385,9 @@ class NBERFeenstraWTFConstructor(object):
 		#- Parse Year Filter - #
 		if years == []:
 			years = available_years
+		else:
+			years = list(set(years).intersection(set(available_years))) 	# Make sure years is supported by available data
+
 		# - Import Data - #
 		try: 
 			self._supp_data[key]
@@ -598,8 +638,9 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset = self._dataset.rename_axis({'iso3c' : 'eiso3c', 'iso3n' : 'eiso3n'}, axis=1)
 		
 		#-Build SITCR2 Marker-#
-
-		### --- Working Here --- ###
+		sitc = SITC(revision=2, source_institution='un')
+		codes = sitc.get_codes(level=4)
+		self._dataset['SITCR2'] = self._dataset['sitc4'].apply(lambda x: 1 if x in codes else 0)
 
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)

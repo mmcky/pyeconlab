@@ -31,7 +31,7 @@ class NBERFeenstraWTF(object):
 	raw_units_str 	= u'US$1000\'s'
 	interface 		= ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity']
 
-	def __init__(self, df, verbose=False):
+	def __init__(self, df, years, verbose=False):
 		''' 
 			Load RAW Data from Preserved Dataset or call NBERFeenstraConstructor() Object
 			
