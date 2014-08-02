@@ -202,7 +202,7 @@ def check_operations(df, op_string, verbose=False):
 	try:
 		if verbose: print "Searching for %s in %s" % (op_string, df.operations)
 		if re.search(op_string, df.operations):
-			print "[INFO] Operation %s has already been conducted on dataset" % (op_string)
+			if verbose: print "[INFO] Operation %s has already been conducted on dataset" % (op_string)
 			return True
 		else:
 			return False

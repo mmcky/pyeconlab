@@ -123,6 +123,17 @@ class NBERFeenstraWTFConstructor(object):
 
 		Order of Operations: 	Reduction/Collapse -> Merge -> Adjust
 
+		Organisation of Class:
+		----------------------
+		[1] Attributes
+		[2] Internal Methods (__init__())
+		[3] Properties
+		[4] Supplementary Data (Loading Data)
+		[5] Operations on Dataset (Adjusting self._dataset, cleaning tasks etc)
+		[6] Construct a Dataset (NBERFeenstraWTF)
+		[7] Supporting Functions
+		[8] Generate Meta Data Files For Inclusion into Project Package (data/, meta/)
+
 		Notes:
 		------
 		[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
@@ -133,6 +144,8 @@ class NBERFeenstraWTFConstructor(object):
 		Future Work:
 		-----------
 			[1] Update Pandas Stata to read older .dta files (then get wget directly from the website)
+			[2] When constructing meta/ data for inclusion in the package, it might be better to import from .dta files directly the required information
+				For example. CountryCodes only needs to bring in a global panel of countrynames and then that can be converted to countrycodes
 	'''
 
 	# - Attributes - #
@@ -168,7 +181,7 @@ class NBERFeenstraWTFConstructor(object):
 	def set_fn_postfix(self, postfix):
 		self._fn_postfix = postfix
 
-	def __init__(self, source_dir, years=[], standardise=True, default_dataset=False, skip_setup=False, force=False, verbose=True):
+	def __init__(self, source_dir, years=[], standardise=False, default_dataset=False, skip_setup=False, force=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -207,19 +220,19 @@ class NBERFeenstraWTFConstructor(object):
 		
 		# - Fetch Raw Data for Years - #
 		self.years 			= years
-		self.__raw_data 	= pd.DataFrame() 				#PRIVATE Attribute of the Class
+		self.__raw_data 	= pd.DataFrame() 									#PRIVATE Attribute of the Class
 		for year in self.years:
 			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
 			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
 			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
 
-		#-Copy raw_data to a flexible dataset attribute-#
+		#-Copy raw_data to a flexible dataset attribute-# 						# This isn't very memory efficient. 
 		self._dataset = copy.deepcopy(self.__raw_data)
 
 		#-Construct Default Dataset-#
 		if default_dataset == True:
 			#-Reduction/Collapse-#
-			self.collapse_to_valuesonly(verbose=verbose)
+			self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
 			#-Merge-#
 			self.china_hongkongdata(years=years, verbose=verbose) 				#If not forcing full dataset then this should be actioned year specific!
 			self.adjust_china_hongkongdata(verbose=verbose)
@@ -230,10 +243,11 @@ class NBERFeenstraWTFConstructor(object):
 		#-Simple Standardization-#
 		if standardise == True: 
 			if verbose: print "[INFO] Running Interface Standardisation ..."
-			self.standardise_data(force=force, verbose=False)
+			self.standardise_data(force=force, verbose=verbose)
 		
 		#-Return NBERFeenstraWTF Object-#
 		if default_dataset == True:
+			if verbose: print "[INFO] Returning an NBERFeenstraWTF Data Object"
 			return NBERFeenstraWTF(data=self._dataset, years=self.years, verbose=verbose)
 
 	def __repr__(self):
@@ -274,7 +288,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	@property
 	def exporters(self):
-		""" Returns List of Exporters """
+		""" Returns List of Exporters (from Raw Data) """
 		if self._exporters == None:
 			self._exporters = list(self.__raw_data['exporter'].unique())
 			self._exporters.sort()
@@ -285,8 +299,8 @@ class NBERFeenstraWTFConstructor(object):
 		Return Global Sorted Unique List of Exporters
 		Useful as Input to Concordances such as NBERFeenstraExporterToISO3C
 
-		To Do:
-		------
+		Future Work:
+		------------
 			[1] Should I write an Error Decorator? 
 		"""
 		if self.complete_dataset == True:
@@ -296,7 +310,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	@property
 	def importers(self):
-		""" Returns List of Importers """
+		""" Returns List of Importers (from Raw Data) """
 		if self._importers == None:
 			self._importers = list(self.__raw_data['importer'].unique())
 			self._importers.sort()
@@ -352,7 +366,9 @@ class NBERFeenstraWTFConstructor(object):
 				return None
 		self._dataset = df
 		
+	# ---------------------- #
 	# - Supplementary Data - #
+	# ---------------------- #
 
 	def china_hongkongdata(self, years=[], return_dataset=False, verbose=True):
 		"""
@@ -375,6 +391,7 @@ class NBERFeenstraWTFConstructor(object):
 		-----------
 			[1] Currently this method uses the source_dir that is defined when the object is initialised. 
 				Could add in the option to specify a different source_dir but this probably won't get used. Not Wasting Time Now
+			[2] Modify this so that only the intersection between available years and years. 
 		"""
 		# - Attributes of China Hong-Kong Adjustment - #
 		fn_prefix 	= u'china_hk'
@@ -384,7 +401,7 @@ class NBERFeenstraWTFConstructor(object):
 		
 		#- Parse Year Filter - #
 		if years == []:
-			years = available_years
+			years = list(set([int(x) for x in self.years]).intersection(set(available_years))) 		#This will load the intersection of self.years and years available for adjustment
 		else:
 			years = list(set(years).intersection(set(available_years))) 	# Make sure years is supported by available data
 
@@ -452,7 +469,9 @@ class NBERFeenstraWTFConstructor(object):
 			self._supp_data[key] = data
 			return self._supp_data[key]
 
+	# -------------------------- #
 	# - Operations on Dataset  - #
+	# -------------------------- #
 
 	def adjust_china_hongkongdata(self, return_dataset=False, verbose=False):
 		"""
@@ -474,9 +493,13 @@ class NBERFeenstraWTFConstructor(object):
 				return None
 
 		#-Merge Settings-#
-		on 			= list(self._dataset.columns[0:8])
+		if check_operations(self._dataset, u"collapse_to_valuesonly", verbose=False):
+			on 			= 	[u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'dot']
+		else:
+		 	on 			= 	[u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']
+		
 		#-Note: Current merge_columns utility merges one column set at a time-#
-		#-Merge over the first 8 Columns for Value and Quantity-#
+		
 		#-Values-#
 		raw_value = self._dataset[on+['value']].rename(columns={'value' : 'value_raw'})
 		try:
@@ -484,21 +507,29 @@ class NBERFeenstraWTFConstructor(object):
 		except:
 			raise ValueError("[ERROR] China/Hong Kong Data has not been loaded!")
 		value = merge_columns(raw_value, supp_value, on, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
-		#-Quantity-#
-		raw_quantity = self._dataset[on+['quantity']]
-		supp_quantity = self._supp_data[u'chn_hk_adjust'][on+['quantity']]
-		quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='rights', output='final', verbose=verbose)
-	
-		#-Join Values and Quantity-#
-		updated_raw_values = value.merge(quantity, how='outer', on=on)
-		
+
+		#'Quantity' May not be available if collapse_to_valuesonly has been done etc.
+		try:  															 
+			#-Quantity-#
+			raw_quantity = self._dataset[on+['quantity']]
+			supp_quantity = self._supp_data[u'chn_hk_adjust'][on+['quantity']]
+			quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='rights', output='final', verbose=verbose)
+			#-Join Values and Quantity-#
+			updated_raw_values = value.merge(quantity, how='outer', on=on)
+		except:
+			if verbose: print "[INFO] Quantity Information is not available in the current dataset\n"
+			updated_raw_values = value 	#-Quantity Not Available-#
+
 		report = 	u"# of Observations in Original Raw Dataset: \t%s\n" % (len(self._dataset)) +\
 					u"# of Observations in Updated Dataset: \t\t%s\n" % (len(updated_raw_values))
 		if verbose: print report
 
 		#-Cleanup of Temporary Objects-#
 		del raw_value, supp_value, value
-		del raw_quantity, supp_quantity, quantity
+		try:
+			del raw_quantity, supp_quantity, quantity
+		except:
+			pass 	#-Quantity Merge Hasn't Taken Place-#
 
 		#- Add Notes -#
 		update_operations(updated_raw_values, op_string)
@@ -510,122 +541,30 @@ class NBERFeenstraWTFConstructor(object):
 			return self._dataset
 		
 
-	# - Generate Supporting Files for a data/ folder - #
-
-	def generate_global_info(self, target_dir=DATA_PATH, out_type='py', verbose=False):
-		"""
-		Construct Global Information About the Dataset 
-		Automatically import ALL data and Construct Unique:
-			[1] Country List
-			[2] Exporter List
-			[3] Importer List
-
-		Parameters:
-		-----------
-		[1] target_dir 	: 	target directory where files are to be written
-							[Default: writes files to the NBERFeenstraWTF subpackage]
-		[2] out_type 	: 	file type for results files 'csv', 'py' 
-							[Default: 'py']
-
-		Usage:
-		-----
-		Useful if NBER Feenstra's Dataset get's updated etc.
-
-		Future Work:
-		------------
-		[1] Update so that the new files are saved in the package location, not a local folder
-			Currently this will produce the files, that will need to be relocated to package
-		"""
-		# - Check if Dataset is Complete for Global Info Property - #
-		if self.complete_dataset != True:
-			raise ValueError("Dataset must be complete. Try running the constructor without defining years=[]")
-		if out_type == 'csv':
-			# - Exporters - #
-			pd.DataFrame(self.exporters, columns=['exporter']).to_csv(target_dir + 'exporters_list.csv', index=False)
-			# - Importers - #
-			pd.DataFrame(self.importers, columns=['importer']).to_csv(target_dir + 'importers_list.csv', index=False)
-			# - Country List - #
-			pd.DataFrame(self.country_list, columns=['country_list']).to_csv(target_dir + 'countryname_list.csv', index=False)
-		elif out_type == 'py':
-			# - Exporters - #
-			s = pd.Series(self.exporters)
-			s.name = 'exporters'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='exporters.py', docstring=self._name+': exporters'+'\n\t'+self.source_web)
-			# - Importers - #
-			s = pd.Series(self.importers)
-			s.name = 'importers'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='importers.py', docstring=self._name+': importers'+'\n\t'+self.source_web)
-			# - Country List - #
-			s = pd.Series(self.country_list)
-			s.name = 'countries'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='country_list.py', docstring=self._name+': country list'+'\n\t'+self.source_web)
-		else:
-			raise TypeError("out_type: Must be of type 'csv' or 'py'")
-		# - Summary - #
-		if verbose: 
-			print "[INFO] Writing Exporter, Importer, and CountryLists to %s files in location:" % out_type
-			print target_dir
-
-	def cc_countryname_concordance(self, force=False, return_concord=False):
-		"""
-		Compute a Country Name Concordance
-		
-		pd.DataFrame( countryname, 	iso3c 	, 	iso3n )
-		 	
-		Dependancies:
-		-------------
-		[1] PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
-
-		Notes:
-		------
-		[1] pycountrycode has an issue with converting iso3n to iso3c so currently use country names
-
-		Future Work:
-		------------
-		[1] Build my own version of pycountrycode so that this work is internalised to this package and doesn't depend on PyCountryCode
-			I would like Time Varying Definitions of Country Codes, In addition to Time Varying Aggregates like LDC, MDC, etc.
-		[2] Add Option to Write Concordance to a py file or csv etc
-		"""
-		
-		#-Parse Complete Dataset Check-#
-		if self.complete_dataset != True:
-			if force == False:
-				raise ValueError("This is not a complete Dataset!\n If you want to build a concordance for a given year use force=True")
-		iso3c = cc.countrycode(codes=self.country_list, origin='country_name', target='iso3c')
-		#-Check Same Length-# 																		#This is probably redudant as zip will complain?
-		if len(iso3c) != len(self.country_list):
-			raise ValueError("Results != Length of Original Country List")
-		concord = pd.DataFrame(zip(self.country_list, iso3c), columns=['countryname', 'iso3c'])
-		concord['iso3c'] = concord['iso3c'].apply(lambda x: '' if len(x)!=3 else x)
-		concord['iso3n'] = cc.countrycode(codes=concord.iso3c, origin='iso3c', target='iso3n')
-		self.country_concordance = concord
-		if return_concord == True:
-			return self.country_concordance
-
-	## - Clean Data Tasks - ##
-
 	def standardise_data(self, force=False, verbose=False):
-		'''
+		"""
 		Run Appropriate Standardization over the Dataset
 		
 		Actions
 		-------
-			[1] Trade Values in $'s 
-			[2] Countries to ISO3C Codes
-			[3] Marker for Standard SITC Revision 2 Codes
+		[1] Trade Values in $'s 
+		[2] Countries to ISO3C Codes
+		[3] Marker for Standard SITC Revision 2 Codes
 
 		Notes
 		-----
-			[1] Raw Dataset has Non-Standard SITC rev2 Codes 
-		'''
+		[1] Raw Dataset has Non-Standard SITC rev2 Codes
+		"""
 		op_string = u"(standardise_data)"
 		#-Check if Operation has been conducted-#
 		if check_operations(self._dataset, op_string): return None
 
 		#-Change Units to $'s-#
+		if verbose: print "[INFO] Setting Values to be in $'s not 1000$'s"
 		self._dataset['value'] = self._dataset['value'] * 1000
 		
 		#-Build Country Name Concordance-#
+		if verbose: print "[INFO] Building Country Name Concordance and adding iso3c and iso3n names"
 		concord = self.cc_countryname_concordance(return_concord=True, force=force)
 		#-Add ISO3C and ISO3N Data-#
 		#-Importers-#
@@ -638,6 +577,7 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset = self._dataset.rename_axis({'iso3c' : 'eiso3c', 'iso3n' : 'eiso3n'}, axis=1)
 		
 		#-Build SITCR2 Marker-#
+		if verbose: print "[INFO] Adding SITC Revision 2 (Source='un') marker variable 'SITCR2'"
 		sitc = SITC(revision=2, source_institution='un')
 		codes = sitc.get_codes(level=4)
 		self._dataset['SITCR2'] = self._dataset['sitc4'].apply(lambda x: 1 if x in codes else 0)
@@ -709,7 +649,9 @@ class NBERFeenstraWTFConstructor(object):
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
 
+	# ----------------------- #
 	# - Construct a Dataset - #
+	# ----------------------- #
 
 	def to_nberfeenstrawtf(self, verbose=True):
 		"""
@@ -721,3 +663,119 @@ class NBERFeenstraWTFConstructor(object):
 
 		"""
 		raise NotImplementedError
+
+	# ----------------------------- #
+	# - Supporting Functions 	  - #
+	# ----------------------------- #
+
+	def cc_countryname_concordance(self, force=False, return_concord=False):
+		"""
+		Compute a Country Name Concordance
+		
+		Returns:
+		--------
+		pd.DataFrame(countryname,iso3c,iso3n)
+		 	
+		Dependancies:
+		-------------
+		[1] PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
+
+		Notes:
+		------
+		[1] pycountrycode has an issue with converting iso3n to iso3c so currently use country names
+
+		Future Work:
+		------------
+		[1] Build my own version of pycountrycode so that this work is internalised to this package and doesn't depend on PyCountryCode
+			I would like Time Varying Definitions of Country Codes, In addition to Time Varying Aggregates like LDC, MDC, etc.
+		[2] Add Option to Write Concordance to a py file or csv etc
+		[3] Write Some Error Checking tests
+		"""
+		
+		#-Parse Complete Dataset Check-#
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("This is not a complete Dataset!\n If you want to build a concordance for a given year use force=True")
+		iso3c = cc.countrycode(codes=self.country_list, origin='country_name', target='iso3c')
+		#-Reject Non-String Responses-#
+		for idx,code in enumerate(iso3c):
+			if type(code) != str:
+				iso3c[idx] = ''
+		#-Check Same Length-# 																		#This is probably redudant as zip will complain?
+		if len(iso3c) != len(self.country_list):
+			raise ValueError("Results != Length of Original Country List")
+		concord = pd.DataFrame(zip(self.country_list, iso3c), columns=['countryname', 'iso3c'])
+		concord['iso3c'] = concord['iso3c'].apply(lambda x: '' if len(x)!=3 else x)
+		concord['iso3n'] = cc.countrycode(codes=concord.iso3c, origin='iso3c', target='iso3n')
+		self.country_concordance = concord
+		if return_concord == True:
+			return self.country_concordance
+
+	# --------------------------------------------------------------- #
+	# - Generate Meta Data Files For Inclusion into Project Package - #
+	# --------------------------------------------------------------- #
+
+	def generate_global_info(self, target_dir=DATA_PATH, out_type='py', verbose=False):
+		"""
+		Construct Global Information About the Dataset 
+		Automatically import ALL data and Construct Unique:
+		[1] Country List
+		[2] Exporter List
+		[3] Importer List
+
+		Parameters:
+		-----------
+		[1] target_dir 	: 	target directory where files are to be written
+							[Default: writes files to the NBERFeenstraWTF subpackage]
+		[2] out_type 	: 	file type for results files 'csv', 'py' 
+							[Default: 'py']
+
+		Usage:
+		-----
+		Useful if NBER Feenstra's Dataset get's updated etc.
+
+		Future Work:
+		------------
+		[1] Update so that the new files are saved in the package location, not a local folder
+			Currently this will produce the files, that will need to be relocated to package
+		[2] Maybe this sort of information should be compiled by parsing the source files and importing only 
+			the required information to save on time and memory!
+		"""
+		# - Check if Dataset is Complete for Global Info Property - #
+		if self.complete_dataset != True:
+			raise ValueError("Dataset must be complete. Try running the constructor without defining years=[]")
+		if out_type == 'csv':
+			# - Exporters - #
+			pd.DataFrame(self.exporters, columns=['exporter']).to_csv(target_dir + 'exporters_list.csv', index=False)
+			# - Importers - #
+			pd.DataFrame(self.importers, columns=['importer']).to_csv(target_dir + 'importers_list.csv', index=False)
+			# - Country List - #
+			pd.DataFrame(self.country_list, columns=['country_list']).to_csv(target_dir + 'countryname_list.csv', index=False)
+		elif out_type == 'py':
+			# - Exporters - #
+			s = pd.Series(self.exporters)
+			s.name = 'exporters'
+			from_series_to_pyfile(s, target_dir=target_dir, fl='exporters.py', docstring=self._name+': exporters'+'\n\t'+self.source_web)
+			# - Importers - #
+			s = pd.Series(self.importers)
+			s.name = 'importers'
+			from_series_to_pyfile(s, target_dir=target_dir, fl='importers.py', docstring=self._name+': importers'+'\n\t'+self.source_web)
+			# - Country List - #
+			s = pd.Series(self.country_list)
+			s.name = 'countries'
+			from_series_to_pyfile(s, target_dir=target_dir, fl='country_list.py', docstring=self._name+': country list'+'\n\t'+self.source_web)
+		else:
+			raise TypeError("out_type: Must be of type 'csv' or 'py'")
+		# - Summary - #
+		if verbose: 
+			print "[INFO] Writing Exporter, Importer, and CountryLists to %s files in location:" % out_type
+			print target_dir
+
+	def countryname_concordance_file(self):
+		"""
+		Generate a Global CountryName Concordance File for NBERFeenstraWTF
+
+		[1] Load CountryName from dta files 
+		[2] Write Concordance to a data folder etc.
+		"""
+		pass
