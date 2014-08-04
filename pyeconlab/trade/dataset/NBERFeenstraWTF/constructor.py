@@ -27,7 +27,7 @@ import numpy as np
 import countrycode as cc
 
 from dataset import NBERFeenstraWTF 
-from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations 			#Reference requires installation!
+from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict 
 from pyeconlab.trade.classification import SITC
 
 # - Data in data/ - #
@@ -668,21 +668,23 @@ class NBERFeenstraWTFConstructor(object):
 	# - Supporting Functions 	  - #
 	# ----------------------------- #
 
-	def cc_countryname_concordance(self, force=False, return_concord=False):
+	def cc_countryname_concordance(self, force=False, return_concord=False, target_dir=None, fl=False, concord_vars=('countryname', 'iso3c'), verbose=False):
 		"""
-		Compute a Country Name Concordance
+		Compute a Country Name Concordance using package: pycountrycode
 		
 		Returns:
 		--------
 		pd.DataFrame(countryname,iso3c,iso3n)
 		 	
-		Dependancies:
+		Dependencies:
 		-------------
 		[1] PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
+			Note: pycountrycode has an issue with converting iso3n to iso3c so currently use country names
+			vincentarelbundock/pycountrycode Issue #24
 
 		Notes:
 		------
-		[1] pycountrycode has an issue with converting iso3n to iso3c so currently use country names
+		[1] Should I delete return_concord?
 
 		Future Work:
 		------------
@@ -700,19 +702,31 @@ class NBERFeenstraWTFConstructor(object):
 		#-Reject Non-String Responses-#
 		for idx,code in enumerate(iso3c):
 			if type(code) != str:
-				iso3c[idx] = ''
-		#-Check Same Length-# 																		#This is probably redudant as zip will complain?
+				iso3c[idx] = '.' 																	#encode as '.' missing
+		#-Check Same Length-# 																		#This is probably redundant as zip will complain?
 		if len(iso3c) != len(self.country_list):
 			raise ValueError("Results != Length of Original Country List")
 		concord = pd.DataFrame(zip(self.country_list, iso3c), columns=['countryname', 'iso3c'])
 		concord['iso3c'] = concord['iso3c'].apply(lambda x: '' if len(x)!=3 else x)
 		concord['iso3n'] = cc.countrycode(codes=concord.iso3c, origin='iso3c', target='iso3n')
+		concord.name = 'Concordance for %s : %s' % (self._name, concord.columns)
 		self.country_concordance = concord
+		#-Parse fl option-#
+		if fl == True:
+			if check_directory(target_dir):
+				fl = "%s_(%s)_%s.py" % (self._name, concord_vars[0], concord_vars[1]) 						#Convention nberfeesntrawtf(item) to item
+				concord_series = concord[list(concord_vars)].set_index(concord_vars[0])[concord_vars[1]] 	#Get Indexed Series Index : Value#
+				concord_series.name = u"%s to %s" % (concord_vars[0], concord_vars[1])
+				docstring 	= 	u"Concordance for %s to %s\n\n" % concord_vars 	+ \
+								u"%s" % self
+				from_idxseries_to_pydict(concord_series, target_dir=target_dir, fl=fl, docstring=docstring)
+		#-Parse Return Concordance-#
 		if return_concord == True:
 			return self.country_concordance
 
 	# --------------------------------------------------------------- #
 	# - Generate Meta Data Files For Inclusion into Project Package - #
+	# - Note: These are largely for internal package construction 	- #
 	# --------------------------------------------------------------- #
 
 	def generate_global_info(self, target_dir=DATA_PATH, out_type='py', verbose=False):
@@ -771,11 +785,65 @@ class NBERFeenstraWTFConstructor(object):
 			print "[INFO] Writing Exporter, Importer, and CountryLists to %s files in location:" % out_type
 			print target_dir
 
-	def countryname_concordance_file(self):
-		"""
-		Generate a Global CountryName Concordance File for NBERFeenstraWTF
 
-		[1] Load CountryName from dta files 
-		[2] Write Concordance to a data folder etc.
+	# - WORKING HERE -#
+
+	def load_data(years=[], keep_columns='all', verbose=None):
 		"""
-		pass
+		Load Data
+
+		years 			: specify years
+		keep_columns 	: specify columns in the dataset to keep
+
+		Notes:
+		------
+		[1] read_stata in pandas doesn't allow for importing columns
+		[2] May want to re-write the __init__ portion to fetch data using this method
+		[3] This still imports a LOT of necessary data!
+		"""
+		data = pd.DataFrame()
+		if years == []:
+			years = self._available_years
+		for year in years:
+			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
+			if verbose: print "Fetching 'countryname' Year: %s from file: %s" % (year, fn)
+			if keep_columns != 'all':
+				data = data.append(pd.read_stata(fn)[keep_columns])
+			else:
+				data = data.append(pd.read_stata(fn))
+		return data
+
+	def generate_countryname_concordance_files(self, verbose=False):
+		"""
+		Generate a Global CountryName Concordance File for NBERFeenstraWTF Dataset
+
+		Tasks
+		-----
+		[1] Load CountryName Only from dta files (Make a self.load_data(keep_columns=None) where keep_columns=['countryname'] in this method?)
+		[2] Have to read all the data in pandas.read_stata() but much more memory efficient to discard the rest of the results for updating package files etc.
+		[2] Write Concordance using pycountrycode to package data folder
+
+		Output (DATA_PATH)
+		------------------
+		nberfeenstrawtf(countryname)_to_iso3c.py, nberfeenstrawtf(countryname)_to_iso3n.py, 
+		iso3c_to_nberfeenstrawtf(countryname).py, iso3n_to_nberfeenstrawtf(countryname).py
+
+		Notes:
+		------
+		[1] Add to docstring "manually checked: False" as the results are determined by a regular expression
+			Early Versions should be checked
+		[2] The only advantage to this method is memory efficiency. It isn't any quicker. 
+		"""
+		countrynames = set()
+		for year in self._available_years:
+			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
+			if verbose: print "Fetching 'countryname' Year: %s from file: %s" % (year, fn)
+			data = pd.read_stata(fn)[['importer', 'exporter']] 									#Note: This still reads in ALL of the .dta file!
+			importers = set(data['importer'])
+			exporters = set(data['exporter'])
+			countrynames = countrynames.union(importers).union(exporters)
+			del data
+		
+		# - WORKING HERE - #	
+
+		return countrynames

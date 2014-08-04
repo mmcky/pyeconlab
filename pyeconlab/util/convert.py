@@ -74,12 +74,11 @@ def from_idxseries_to_pydict(series, target_dir='data/', fl=None, docstring=None
 	items = u'%s = {' % series.name.replace(' ', '_')		# Replace spaces with _
 	once = True
 	for idx, val in series.iteritems():
-		# - Spacing for Vertical List of Items - #
+		# - Newline and Tabbed Spacing for Vertical List of Items - #
+		tabs = 4
 		if once == True:
-			tabs = 1
+			items += "\n"
 			once = False
-		else:
-			tabs = 2
 		items += '\t'*tabs + '\'' + '%s'%idx + '\''  + ' : ' + '\'' + '%s'%val + '\'' + ',' + '\n'
 	doc = docstring + items + '}\n'
 	if type(fl) == str:
