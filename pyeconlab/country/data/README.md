@@ -16,17 +16,29 @@ Files
 	Downloaded: 		04-August-2014
 	Original Filename: 	countrycode_data.csv
 	md5hash: 			cda547fc181e412cf6b69a4287471fd4
+	Notes: 				[1] May want to use this as a base file for my own implementation
 
 [3] cepii_dist_cepii.dta
 	Source: 			http://www.cepii.fr/CEPII/en/bdd_modele/presentation.asp?id=6
 	Downloaded: 		04-August-2014
 	Original Filename: 	dist_cepii.dta
 	md5hash: 			9a2175e0666fa204ece41bc0bb1cd7d8
-	Note: 				Using .dta version as it is much more compact than .xls version 
+	Notes: 				Using .dta version as it is much more compact than .xls version 
 
 [4] cepii_geo_cepii.dta
 	Source: 			http://www.cepii.fr/CEPII/en/bdd_modele/presentation.asp?id=6
 	Downloaded: 		04-August-2014
 	Original Filename: 	geo_cepii.dta
 	md5hash: 		 	923fc171825880d1b1cdd487eb705d32
-	Note: 				Using .dta version as it is much more compact than .xls version 		
+	Notes: 				Using .dta version as it is much more compact than .xls version 		
+
+[5] linuxmint16_iso_3166.xml
+	Source: 			/usr/share/xml/iso_3166.xml
+	Copied: 			04-August-2014
+	Original Filename: 	iso_3166.xml
+	md5hash: 			ae467df20f32c089da909dd27191cf7d
+	Notes: 				[1] Copied from Linux Mint 16
+
+Other Sources
+-------------
+[1] GeoNames 		http://download.geonames.org/export/dump/
