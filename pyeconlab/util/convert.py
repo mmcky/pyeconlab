@@ -1,6 +1,7 @@
-'''
-	Construct Python Files from Pandas Objects
-'''
+"""
+Construct Python Files from Pandas Objects
+Should These be in files.py?
+"""
 
 import pandas as pd
 
@@ -28,8 +29,8 @@ def from_series_to_pyfile(series, target_dir='data/', fl=None, docstring=None):
 	"""
 	if type(series) != pd.Series:
 		raise TypeError("series: must be a pd.Series")
-	doc_string = u'\'\'\'\n\t%s\n\'\'\'\n\n' % docstring 	# DocString
-	items = u'%s = [' % series.name.replace(' ', '_')		# Replace spaces with _
+	doc_string = u'\"\"\"\n%s\nManual Check: <date>\n\"\"\"\n\n' % docstring 	# DocString
+	items = u'%s = [' % series.name.replace(' ', '_')							# Replace spaces with _
 	for idx, item in enumerate(series.values):
 		# - Spacing for Vertical List of Items - #
 		if idx == 0:
@@ -70,8 +71,8 @@ def from_idxseries_to_pydict(series, target_dir='data/', fl=None, docstring=None
 	"""
 	if type(series) != pd.Series:
 		raise TypeError("series: must be a pd.Series with an Index")
-	docstring = u'\"\"\"\n%s\n\"\"\"\n\n' % docstring 	# DocString
-	items = u'%s = {' % series.name.replace(' ', '_')		# Replace spaces with _
+	docstring = u'\"\"\"\n%s\nManual Check: <date>\n\"\"\"\n\n' % docstring 	# DocString
+	items = u'%s = {' % series.name.replace(' ', '_')							# Replace spaces with _
 	once = True
 	for idx, val in series.iteritems():
 		# - Newline and Tabbed Spacing for Vertical List of Items - #

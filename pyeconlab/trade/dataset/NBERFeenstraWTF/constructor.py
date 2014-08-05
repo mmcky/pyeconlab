@@ -27,7 +27,8 @@ import numpy as np
 import countrycode as cc
 
 from dataset import NBERFeenstraWTF 
-from pyeconlab.util import from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict 
+from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
+							countryname_concordance
 from pyeconlab.trade.classification import SITC
 
 # - Data in data/ - #
@@ -35,118 +36,119 @@ this_dir, this_filename = os.path.split(__file__)
 DATA_PATH = check_directory(os.path.join(this_dir, "data"))
 
 class NBERFeenstraWTFConstructor(object):
-	'''
-		Data Constructor / Compilation Object for Feenstra NBER World Trade Data
-		Years: 1962 to 2000
-		Classification: SITC R2 L4 (Not Entirely Standard)
-		Notes: Pre-1974 care is required for constructing intertemporally consistent data
+	"""
+	Data Constructor / Compilation Object for Feenstra NBER World Trade Data
+	Years: 1962 to 2000
+	Classification: SITC R2 L4 (Not Entirely Standard)
+	Notes: Pre-1974 care is required for constructing intertemporally consistent data
 
-		Interface:
-		---------
-		Source Directory: 	Specified by source_dir
-		Filename Format: 	wtf##.dta where ## is 62-00 	[03/07/2014]
-							Note: Files currently need to be updated to the latest Stata .dta format MANUALLY
+	Interface:
+	---------
+	Source Directory: 	Specified by source_dir
+	Filename Format: 	wtf##.dta where ## is 62-00 	[03/07/2014]
+						Note: Files currently need to be updated to the latest Stata .dta format MANUALLY
 
-		Variables
-		---------
-		DOT 		:	Direction of trade (1=Data from importer, 2=Data from exporter) [DOT=1 => CIF; DOT=2 => FOB]
-		SITC 		: 	Standard International Trade Classification Revision 2
-		ICode 		: 	Importer country code
-		ECode 		: 	Exporter country code
-		Importer 	: 	Importer country name
-		Exporter 	: 	Exporter country name
-		Unit 		: 	Units or measurement (see below)
-		Year 		: 	4-digit year
-		Quantity 	: 	Quantity (only for years 1984 – 2000)
- 		Value 		: 	Nominal Thousands of US dollars
+	Variables
+	---------
+	DOT 		:	Direction of trade (1=Data from importer, 2=Data from exporter) [DOT=1 => CIF; DOT=2 => FOB]
+	SITC 		: 	Standard International Trade Classification Revision 2
+	ICode 		: 	Importer country code
+	ECode 		: 	Exporter country code
+	Importer 	: 	Importer country name
+	Exporter 	: 	Exporter country name
+	Unit 		: 	Units or measurement (see below)
+	Year 		: 	4-digit year
+	Quantity 	: 	Quantity (only for years 1984 – 2000)
+		Value 		: 	Nominal Thousands of US dollars
 
 
-		Summary of Important Documentation:
-		-----------------------------------
-		Values:
-		------
-			years 	: 	1962-2000
-			units 	: 	Thousands of US dollars
+	Summary of Important Documentation:
+	-----------------------------------
+	Values:
+	------
+		years 	: 	1962-2000
+		units 	: 	Thousands of US dollars
 
-		Quantity:
-		---------
+	Quantity:
+	---------
+		years 	: 	1984-2000
+		units 	: 	A Area (1,000 square meters) 
+					H Energy (1,000 kilowatt hours)
+					K Weight (kilograms)
+					L Length (1,000 meters)
+					N Units (number of items)
+					P Pairs (number of pairs)
+					V Volume (cubic meters)
+					W Weight (metric tons)
+
+	ProductCodes:
+	-------------
+
+		SITC Rev 1
+		----------
+			years 	: 	1962-1983 [Converted to SITC R2 [Section 2 of Documentation PDF]]
+								  [Table #3: SITC Rev1 and SITC Rev2 Concordance]
+
+		SITC Rev 2
+		----------
 			years 	: 	1984-2000
-			units 	: 	A Area (1,000 square meters) 
-						H Energy (1,000 kilowatt hours)
-						K Weight (kilograms)
-						L Length (1,000 meters)
-						N Units (number of items)
-						P Pairs (number of pairs)
-						V Volume (cubic meters)
-						W Weight (metric tons)
-
-		ProductCodes:
-		-------------
-
-			SITC Rev 1
-			----------
-				years 	: 	1962-1983 [Converted to SITC R2 [Section 2 of Documentation PDF]]
-									  [Table #3: SITC Rev1 and SITC Rev2 Concordance]
-
-			SITC Rev 2
-			----------
-				years 	: 	1984-2000
-
-			Notes:
-			------
-			[1] A and X codes for 1984-2000
-
-			[2] Codes Ending in 0: "4-digit SITC codes ending in zero were introduced into the data because we substituted the U.S.
-					values of exports and imports in place of the UN values, whenever the U.S. was a partner. In the
-					U.S. values, an SITC Rev. 2 code ending in zero has the same meaning as a code ending in A or
-					X; that is, it represents trade within that 3-digit code that could not be accurately assigned to a 4-
-					digit code. For example, trade within SITC 0220 really means trade within one of the SITC
-					industries 0222, 0223, or 0224." [FAQ]
-
-			[3] I am not currently sure what these SITC codes are. I have requested further information from Robert Feenstra
-				0021 	[Associated only with Malta]
-				0023 	[Various Eastern European Countries and Austria]
-				0024
-				0025
-				0031
-				0035
-				0039
-				2829	[Assume: 282 NES. The MIT MediaLabs has this as “Waste and scrap metal of iron or steel” ]
-
-
-		Types of Operations
-		-------------------
-		[1] Reduction/Collapse 	: 	This collapses data and applies a function like ADD to lines with the same idx 
-									These need to happen BEFORE adjust methods
-		[2] Merge 				: 	Merge methods that add data (such as Hong Kong adjusted data etc.)
-		[3] Adjust 				: 	Adjust Methods alter the data but don't change it's length (spliting codes etc.)
-
-		Order of Operations: 	Reduction/Collapse -> Merge -> Adjust
-
-		Organisation of Class:
-		----------------------
-		[1] Attributes
-		[2] Internal Methods (__init__())
-		[3] Properties
-		[4] Supplementary Data (Loading Data)
-		[5] Operations on Dataset (Adjusting self._dataset, cleaning tasks etc)
-		[6] Construct a Dataset (NBERFeenstraWTF)
-		[7] Supporting Functions
-		[8] Generate Meta Data Files For Inclusion into Project Package (data/, meta/)
 
 		Notes:
 		------
-		[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
-		[2] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
-			Any modification prior to returning an NBERFeenstraWTF object should be carried out on ._dataset
-		[3] All Methods in this Class should operate on NON Indexed Data
+		[1] A and X codes for 1984-2000
 
-		Future Work:
-		-----------
-			[1] Update Pandas Stata to read older .dta files (then get wget directly from the website)
-			[2] When constructing meta/ data for inclusion in the package, it might be better to import from .dta files directly the required information
-				For example. CountryCodes only needs to bring in a global panel of countrynames and then that can be converted to countrycodes
-	'''
+		[2] Codes Ending in 0: "4-digit SITC codes ending in zero were introduced into the data because we substituted the U.S.
+				values of exports and imports in place of the UN values, whenever the U.S. was a partner. In the
+				U.S. values, an SITC Rev. 2 code ending in zero has the same meaning as a code ending in A or
+				X; that is, it represents trade within that 3-digit code that could not be accurately assigned to a 4-
+				digit code. For example, trade within SITC 0220 really means trade within one of the SITC
+				industries 0222, 0223, or 0224." [FAQ]
+
+		[3] I am not currently sure what these SITC codes are. I have requested further information from Robert Feenstra
+			0021 	[Associated only with Malta]
+			0023 	[Various Eastern European Countries and Austria]
+			0024
+			0025
+			0031
+			0035
+			0039
+			2829	[Assume: 282 NES. The MIT MediaLabs has this as “Waste and scrap metal of iron or steel” ]
+
+
+	Types of Operations
+	-------------------
+	[1] Reduction/Collapse 	: 	This collapses data and applies a function like ADD to lines with the same idx 
+								These need to happen BEFORE adjust methods
+	[2] Merge 				: 	Merge methods that add data (such as Hong Kong adjusted data etc.)
+	[3] Adjust 				: 	Adjust Methods alter the data but don't change it's length (spliting codes etc.)
+
+	Order of Operations: 	Reduction/Collapse -> Merge -> Adjust
+
+	Organisation of Class:
+	----------------------
+	[1] Attributes
+	[2] Internal Methods (__init__())
+	[3] Properties
+	[4] Supplementary Data (Loading Data)
+	[5] Operations on Dataset (Adjusting self._dataset, cleaning tasks etc)
+	[6] Construct a Dataset (NBERFeenstraWTF)
+	[7] Supporting Functions
+	[8] Generate Meta Data Files For Inclusion into Project Package (data/, meta/)
+
+	Notes:
+	------
+	[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+	[2] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
+		Any modification prior to returning an NBERFeenstraWTF object should be carried out on ._dataset
+	[3] All Methods in this Class should operate on NON Indexed Data
+	[4] This Dataset Requires ~25GB of RAM
+
+	Future Work:
+	-----------
+		[1] Update Pandas Stata to read older .dta files (then get wget directly from the website)
+		[2] When constructing meta/ data for inclusion in the package, it might be better to import from .dta files directly the required information
+			For example. CountryCodes only needs to bring in a global panel of countrynames and then that can be converted to countrycodes
+	"""
 
 	# - Attributes - #
 
@@ -692,6 +694,7 @@ class NBERFeenstraWTFConstructor(object):
 			I would like Time Varying Definitions of Country Codes, In addition to Time Varying Aggregates like LDC, MDC, etc.
 		[2] Add Option to Write Concordance to a py file or csv etc
 		[3] Write Some Error Checking tests
+		[4] Turn this Routine into a utility function and remove code duplication
 		"""
 		
 		#-Parse Complete Dataset Check-#
@@ -707,19 +710,19 @@ class NBERFeenstraWTFConstructor(object):
 		if len(iso3c) != len(self.country_list):
 			raise ValueError("Results != Length of Original Country List")
 		concord = pd.DataFrame(zip(self.country_list, iso3c), columns=['countryname', 'iso3c'])
-		concord['iso3c'] = concord['iso3c'].apply(lambda x: '' if len(x)!=3 else x)
+		concord['iso3c'] = concord['iso3c'].apply(lambda x: '.' if len(x)!=3 else x)
 		concord['iso3n'] = cc.countrycode(codes=concord.iso3c, origin='iso3c', target='iso3n')
 		concord.name = 'Concordance for %s : %s' % (self._name, concord.columns)
 		self.country_concordance = concord
 		#-Parse fl option-#
 		if fl == True:
-			if check_directory(target_dir):
-				fl = "%s_(%s)_%s.py" % (self._name, concord_vars[0], concord_vars[1]) 						#Convention nberfeesntrawtf(item) to item
-				concord_series = concord[list(concord_vars)].set_index(concord_vars[0])[concord_vars[1]] 	#Get Indexed Series Index : Value#
-				concord_series.name = u"%s to %s" % (concord_vars[0], concord_vars[1])
-				docstring 	= 	u"Concordance for %s to %s\n\n" % concord_vars 	+ \
-								u"%s" % self
-				from_idxseries_to_pydict(concord_series, target_dir=target_dir, fl=fl, docstring=docstring)
+			target_dir = check_directory(target_dir)
+			fl = "%s_(%s)_%s.py" % (self._name, concord_vars[0], concord_vars[1]) 						#Convention nberfeesntrawtf(item) to item
+			concord_series = concord[list(concord_vars)].set_index(concord_vars[0])[concord_vars[1]] 	#Get Indexed Series Index : Value#
+			concord_series.name = u"%s to %s" % (concord_vars[0], concord_vars[1])
+			docstring 	= 	u"Concordance for %s to %s\n\n" % concord_vars 	+ \
+							u"%s" % self
+			from_idxseries_to_pydict(concord_series, target_dir=target_dir, fl=fl, docstring=docstring)
 		#-Parse Return Concordance-#
 		if return_concord == True:
 			return self.country_concordance
@@ -750,10 +753,8 @@ class NBERFeenstraWTFConstructor(object):
 
 		Future Work:
 		------------
-		[1] Update so that the new files are saved in the package location, not a local folder
-			Currently this will produce the files, that will need to be relocated to package
-		[2] Maybe this sort of information should be compiled by parsing the source files and importing only 
-			the required information to save on time and memory!
+		[1] Maybe this sort of information should be compiled by parsing the source files and importing only 
+			the required information to save on time and memory! (Update: Current Implementation of read.stata() doesn't allow selective import)
 		"""
 		# - Check if Dataset is Complete for Global Info Property - #
 		if self.complete_dataset != True:
@@ -778,6 +779,9 @@ class NBERFeenstraWTFConstructor(object):
 			s = pd.Series(self.country_list)
 			s.name = 'countries'
 			from_series_to_pyfile(s, target_dir=target_dir, fl='country_list.py', docstring=self._name+': country list'+'\n\t'+self.source_web)
+			# - CountryName to ISO3C, ISO3N Concordance - #
+			a.cc_countryname_concordance(target_dir=target_dir, fl=True, concord_vars=('countryname', 'iso3c')) 	#-This Obfuscates file construction and should probably return a dict with a matching from_dict_to_pyfile etc
+			a.cc_countryname_concordance(target_dir=target_dir, fl=True, concord_vars=('countryname', 'iso3n'))
 		else:
 			raise TypeError("out_type: Must be of type 'csv' or 'py'")
 		# - Summary - #
@@ -817,6 +821,8 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		Generate a Global CountryName Concordance File for NBERFeenstraWTF Dataset
 
+		STATUS: ON HOLD (Given this saves no time (and memory isn't binding) this function is currently ON HOLD)
+
 		Tasks
 		-----
 		[1] Load CountryName Only from dta files (Make a self.load_data(keep_columns=None) where keep_columns=['countryname'] in this method?)
@@ -826,7 +832,6 @@ class NBERFeenstraWTFConstructor(object):
 		Output (DATA_PATH)
 		------------------
 		nberfeenstrawtf(countryname)_to_iso3c.py, nberfeenstrawtf(countryname)_to_iso3n.py, 
-		iso3c_to_nberfeenstrawtf(countryname).py, iso3n_to_nberfeenstrawtf(countryname).py
 
 		Notes:
 		------
@@ -834,16 +839,32 @@ class NBERFeenstraWTFConstructor(object):
 			Early Versions should be checked
 		[2] The only advantage to this method is memory efficiency. It isn't any quicker. 
 		"""
+
 		countrynames = set()
+		#-Load 'countrynames' from ALL Available Years-#
 		for year in self._available_years:
 			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
 			if verbose: print "Fetching 'countryname' Year: %s from file: %s" % (year, fn)
-			data = pd.read_stata(fn)[['importer', 'exporter']] 									#Note: This still reads in ALL of the .dta file!
+			data = pd.read_stata(fn)[['importer', 'exporter']] 									#Note: This still reads in ALL of the .dta file! Feature Request made to pydata/pandas #7935
 			importers = set(data['importer'])
 			exporters = set(data['exporter'])
 			countrynames = countrynames.union(importers).union(exporters)
 			del data
-		
-		# - WORKING HERE - #	
-
-		return countrynames
+		#- Concordance -#
+		if verbose: print "Writing CountryName to ISO3C and ISO3N Files to %s" % DATA_PATH
+		#-ISO3C-#
+		iso3c = countryname_concordance(list(countrynames), concord_vars=('countryname', 'iso3c'))
+		#-Write Py File-#
+		iso3c.name = u"%s to %s" % ('countryname', 'iso3c')
+		fl = "%s_(%s)_%s.py" % (self._name, 'countryname', 'iso3c')
+		docstring 	= 	u"Concordance for %s to %s\n\n" % ('countryname', 'iso3c') 	+ \
+						u"%s" % self
+		from_idxseries_to_pydict(iso3c, target_dir=DATA_PATH, fl=fl, docstring=docstring)
+		#-ISO3C-#
+		iso3n =  countryname_concordance(list(countrynames), concord_vars=('countryname', 'iso3n'))
+		#-Write Py File-#
+		iso3n.name = u"%s to %s" % ('countryname', 'iso3n')
+		fl = "%s_(%s)_%s.py" % (self._name, 'countryname', 'iso3n')
+		docstring 	= 	u"Concordance for %s to %s\n\n" % ('countryname', 'iso3n') 	+ \
+						u"%s" % self
+		from_idxseries_to_pydict(iso3n, target_dir=DATA_PATH, fl=fl, docstring=docstring)
