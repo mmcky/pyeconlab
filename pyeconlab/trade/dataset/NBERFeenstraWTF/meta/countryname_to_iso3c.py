@@ -20,7 +20,7 @@ Updates
 [9] 'New Calednia' : '.'  	=> 'New Calednia' : 'NCL'
 [10] 'St.Kt-Nev-An' : '.' 	=> 'St.Kt-Nev-An' : 'KNA'
 [11] 'St.Pierre Mq' : '.'	=> 'St.Pierre Mq' : 'SPM'
-[12] 'TFYR Macedna' : '.'	=> 'TFYR Macedna' : 'MKD'
+[12] 'TFYR Macedna' : '.'	=> 'TFYR Macedna' : 'MKD' 		#Check
 [13] 'Untd Arab Em' : '.'	=> 'Untd Arab Em' : 'ARE'
 [14] 'Yugoslavia'	: '.'	=> 'Yugoslavia'	  : 'YUG'
 
@@ -30,11 +30,15 @@ Check
 [2] 'China SC'
 [3] 'Czechoslovak'
 [4] 'Dominican Rp'
-[5] 'Fm Yemen Ar' 
-[6] 'Fm Yemen AR'
 [7] 'Occ.Pal.Terr' => PCE? 
 [8] 'Russian Fed'
 [9] 'Switz.Liecht'
+
+Resolved
+--------
+[1] 'Fm Yemen Dm'  => ISO3C: 'YMD' Source: http://en.wikipedia.org/wiki/South_Yemen (ISO3N: 720) http://en.wikipedia.org/wiki/ISO_3166-1_numeric
+[1] 'Fm Yemen Ar'  => ISO3C: 'YEM' Source: http://en.wikipedia.org/wiki/North_Yemen (ISO3N: 886) http://en.wikipedia.org/wiki/ISO_3166-1_numeric
+[2] 'Fm Yemen AR'  => ISO3C: 'YEM' Source: http://en.wikipedia.org/wiki/North_Yemen (ISO3N: 886) http://en.wikipedia.org/wiki/ISO_3166-1_numeric
 
 """
 
@@ -111,9 +115,9 @@ countryname_to_iso3c = {
 				'Fm German DR' 	: '.',
 				'Fm German FR' 	: '.',
 				'Fm USSR' 		: 'RUS',
-				'Fm Yemen AR' 	: 'YEM', 	#Check
-				'Fm Yemen Ar' 	: 'YEM',	#Check
-				'Fm Yemen Dm' 	: 'YMD',
+				'Fm Yemen AR' 	: 'YEM', 	
+				'Fm Yemen Ar' 	: 'YEM',	
+				'Fm Yemen Dm' 	: 'YDYE',
 				'Fm Yugoslav' 	: 'YUG',
 				'Fr Ind O' 		: '.',
 				'Fr.Guiana' 	: 'GUF',

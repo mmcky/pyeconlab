@@ -688,6 +688,12 @@ class NBERFeenstraWTFConstructor(object):
 			Note: pycountrycode has an issue with converting iso3n to iso3c so currently use country names
 			vincentarelbundock/pycountrycode Issue #24
 
+		Notes
+		-----
+		[1] It is better to use ISO3N Codes that are built into icode and ecode
+			Therefore STOP work on this approach.
+			Current Concordances can be found in "./meta"
+
 		Future Work:
 		------------
 		[1] Build my own version of pycountrycode so that this work is internalised to this package and doesn't depend on PyCountryCode
@@ -736,11 +742,11 @@ class NBERFeenstraWTFConstructor(object):
 		
 		Automatically import ALL data and Construct Unique:
 		
-		[1] Country List
-		[2] Exporter List
-		[3] Importer List
-		[4] CountryName to ISO3C (REGEX) {py file only}
-		[5] CountryName to ISO3N (REGEX) {py file only}
+		[1] Country List 	[Unique List of Countries in the Dataset]
+		[2] Exporter List 	[Unique List of Exporters in the Dataset]
+		[3] Importer List 	[Unique List of Exporters in the Dataset]
+		[4] CountryName to ISO3C (REGEX) {py file only} [Requires Manual Adjustment]
+		[5] CountryName to ISO3N (REGEX) {py file only}	[Requires Manual Adjustment]
 
 		Note: 	The CountryName Concordances are automatically generated (currently using pycountrycode)
 				These files should be checked for accuracy
@@ -759,7 +765,8 @@ class NBERFeenstraWTFConstructor(object):
 		Future Work:
 		------------
 		[1] Maybe this sort of information should be compiled by parsing the source files and importing only 
-			the required information to save on time and memory! (Update: Current Implementation of read.stata() doesn't allow selective import)
+			the required information to save on time and memory! 
+			(Update: Current Implementation of read.stata() doesn't allow selective import due to being a binary file)
 		"""
 		# - Check if Dataset is Complete for Global Info Property - #
 		if self.complete_dataset != True:
