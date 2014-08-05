@@ -33,7 +33,8 @@ from pyeconlab.trade.classification import SITC
 
 # - Data in data/ - #
 this_dir, this_filename = os.path.split(__file__)
-DATA_PATH = check_directory(os.path.join(this_dir, "data"))
+#DATA_PATH = check_directory(os.path.join(this_dir, "data"))
+META_PATH = check_directory(os.path.join(this_dir, "meta"))
 
 class NBERFeenstraWTFConstructor(object):
 	"""
@@ -133,7 +134,7 @@ class NBERFeenstraWTFConstructor(object):
 	[5] Operations on Dataset (Adjusting self._dataset, cleaning tasks etc)
 	[6] Construct a Dataset (NBERFeenstraWTF)
 	[7] Supporting Functions
-	[8] Generate Meta Data Files For Inclusion into Project Package (data/, meta/)
+	[8] Generate Meta Data Files For Inclusion into Project Package (meta/)
 
 	Notes:
 	------
@@ -228,19 +229,17 @@ class NBERFeenstraWTFConstructor(object):
 			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
 			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
 
-		#-Copy raw_data to a flexible dataset attribute-# 						# This isn't very memory efficient. 
-		self._dataset = copy.deepcopy(self.__raw_data)
-
 		#-Construct Default Dataset-#
 		if default_dataset == True:
+			#-Copy raw_data to a flexible dataset attribute-# 					# This isn't very memory efficient, but allows preserving original data. 
+			self._dataset = copy.deepcopy(self.__raw_data)
 			#-Reduction/Collapse-#
 			self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
 			#-Merge-#
-			self.china_hongkongdata(years=years, verbose=verbose) 				#If not forcing full dataset then this should be actioned year specific!
+			self.china_hongkongdata(years=years, verbose=verbose) 				
 			self.adjust_china_hongkongdata(verbose=verbose)
 			#-Adjust-#
-			#-Leave Standardisation to standardise option but ensure it is switched on-#
-			standardise = True
+			standardise = True 													#-Leave Standardisation to standardise option but ensure it is switched on
 
 		#-Simple Standardization-#
 		if standardise == True: 
@@ -353,7 +352,12 @@ class NBERFeenstraWTFConstructor(object):
 	@property 
 	def dataset(self):
 		""" Dataset contains the Exportable Result to NBERFeenstraWTF """
-		return self._dataset 
+		try:
+			return self._dataset 
+		except: 											#-Raw Data Not Yet Copied-#
+			self._dataset = copy.deepcopy(self.__raw_data)
+			return self._dataset
+
 
 	def set_dataset(self, df, force=False):
 		""" 
@@ -567,7 +571,7 @@ class NBERFeenstraWTFConstructor(object):
 		
 		#-Build Country Name Concordance-#
 		if verbose: print "[INFO] Building Country Name Concordance and adding iso3c and iso3n names"
-		concord = self.cc_countryname_concordance(return_concord=True, force=force)
+		concord = self.countryname_concordance_using_cc(return_concord=True, force=force)
 		#-Add ISO3C and ISO3N Data-#
 		#-Importers-#
 		self._dataset = self._dataset.merge(concord, left_on=['importer'], right_on=['countryname'])
@@ -670,23 +674,19 @@ class NBERFeenstraWTFConstructor(object):
 	# - Supporting Functions 	  - #
 	# ----------------------------- #
 
-	def cc_countryname_concordance(self, force=False, return_concord=False, target_dir=None, fl=False, concord_vars=('countryname', 'iso3c'), verbose=False):
+	def countryname_concordance_using_cc(self, concord_vars=('countryname', 'iso3c'), target_dir=None, force=False, verbose=False):
 		"""
 		Compute a Country Name Concordance using package: pycountrycode
 		
 		Returns:
 		--------
-		pd.DataFrame(countryname,iso3c,iso3n)
+		pd.DataFrame(countryname,iso3c,iso3n) and/or writes a file
 		 	
 		Dependencies:
 		-------------
 		[1] PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
 			Note: pycountrycode has an issue with converting iso3n to iso3c so currently use country names
 			vincentarelbundock/pycountrycode Issue #24
-
-		Notes:
-		------
-		[1] Should I delete return_concord?
 
 		Future Work:
 		------------
@@ -696,7 +696,6 @@ class NBERFeenstraWTFConstructor(object):
 		[3] Write Some Error Checking tests
 		[4] Turn this Routine into a utility function and remove code duplication
 		"""
-		
 		#-Parse Complete Dataset Check-#
 		if self.complete_dataset != True:
 			if force == False:
@@ -714,36 +713,42 @@ class NBERFeenstraWTFConstructor(object):
 		concord['iso3n'] = cc.countrycode(codes=concord.iso3c, origin='iso3c', target='iso3n')
 		concord.name = 'Concordance for %s : %s' % (self._name, concord.columns)
 		self.country_concordance = concord
-		#-Parse fl option-#
-		if fl == True:
+		#-Parse File Option-#
+		if type(target_dir) == str:
 			target_dir = check_directory(target_dir)
-			fl = "%s_(%s)_%s.py" % (self._name, concord_vars[0], concord_vars[1]) 						#Convention nberfeesntrawtf(item) to item
+			fl = "%s_to_%s.py" % (concord_vars[0], concord_vars[1]) 					#Convention from_to_to
+			if verbose: print "[INFO] Writing concordance to: %s" % (target_dir + fl)
 			concord_series = concord[list(concord_vars)].set_index(concord_vars[0])[concord_vars[1]] 	#Get Indexed Series Index : Value#
 			concord_series.name = u"%s to %s" % (concord_vars[0], concord_vars[1])
-			docstring 	= 	u"Concordance for %s to %s\n\n" % concord_vars 	+ \
+			docstring 	= 	u"Concordance for %s to %s\n" % (concord_vars) 			+ \
 							u"%s" % self
-			from_idxseries_to_pydict(concord_series, target_dir=target_dir, fl=fl, docstring=docstring)
-		#-Parse Return Concordance-#
-		if return_concord == True:
-			return self.country_concordance
+			from_idxseries_to_pydict(concord_series, target_dir=target_dir, fl=fl, docstring=docstring, verbose=False)
+		return self.country_concordance
 
 	# --------------------------------------------------------------- #
 	# - Generate Meta Data Files For Inclusion into Project Package - #
 	# - Note: These are largely for internal package construction 	- #
 	# --------------------------------------------------------------- #
 
-	def generate_global_info(self, target_dir=DATA_PATH, out_type='py', verbose=False):
+	def generate_global_info(self, target_dir, out_type='py', verbose=False):
 		"""
 		Construct Global Information About the Dataset 
+		
 		Automatically import ALL data and Construct Unique:
+		
 		[1] Country List
 		[2] Exporter List
 		[3] Importer List
+		[4] CountryName to ISO3C (REGEX) {py file only}
+		[5] CountryName to ISO3N (REGEX) {py file only}
+
+		Note: 	The CountryName Concordances are automatically generated (currently using pycountrycode)
+				These files should be checked for accuracy
 
 		Parameters:
 		-----------
 		[1] target_dir 	: 	target directory where files are to be written
-							[Default: writes files to the NBERFeenstraWTF subpackage]
+							[Should specify REPO Location if updating REPO Files OR DATA_PATH if replace in Installed Package]
 		[2] out_type 	: 	file type for results files 'csv', 'py' 
 							[Default: 'py']
 
@@ -759,6 +764,12 @@ class NBERFeenstraWTFConstructor(object):
 		# - Check if Dataset is Complete for Global Info Property - #
 		if self.complete_dataset != True:
 			raise ValueError("Dataset must be complete. Try running the constructor without defining years=[]")
+		
+		# - Summary - #
+		if verbose: 
+			print "[INFO] Writing Exporter, Importer, and CountryLists to %s files in location: %s" % (out_type, target_dir)
+
+		#-CSV-#
 		if out_type == 'csv':
 			# - Exporters - #
 			pd.DataFrame(self.exporters, columns=['exporter']).to_csv(target_dir + 'exporters_list.csv', index=False)
@@ -766,31 +777,32 @@ class NBERFeenstraWTFConstructor(object):
 			pd.DataFrame(self.importers, columns=['importer']).to_csv(target_dir + 'importers_list.csv', index=False)
 			# - Country List - #
 			pd.DataFrame(self.country_list, columns=['country_list']).to_csv(target_dir + 'countryname_list.csv', index=False)
+		#-PY-#
 		elif out_type == 'py':
 			# - Exporters - #
 			s = pd.Series(self.exporters)
 			s.name = 'exporters'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='exporters.py', docstring=self._name+': exporters'+'\n\t'+self.source_web)
+			from_series_to_pyfile(s, target_dir=target_dir, fl='exporters.py', docstring=self._name+': exporters'+'\n'+self.source_web)
 			# - Importers - #
 			s = pd.Series(self.importers)
 			s.name = 'importers'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='importers.py', docstring=self._name+': importers'+'\n\t'+self.source_web)
+			from_series_to_pyfile(s, target_dir=target_dir, fl='importers.py', docstring=self._name+': importers'+'\n'+self.source_web)
 			# - Country List - #
 			s = pd.Series(self.country_list)
 			s.name = 'countries'
-			from_series_to_pyfile(s, target_dir=target_dir, fl='country_list.py', docstring=self._name+': country list'+'\n\t'+self.source_web)
+			from_series_to_pyfile(s, target_dir=target_dir, fl='countrynames.py', docstring=self._name+': country list'+'\n'+self.source_web)
 			# - CountryName to ISO3C, ISO3N Concordance - #
-			a.cc_countryname_concordance(target_dir=target_dir, fl=True, concord_vars=('countryname', 'iso3c')) 	#-This Obfuscates file construction and should probably return a dict with a matching from_dict_to_pyfile etc
-			a.cc_countryname_concordance(target_dir=target_dir, fl=True, concord_vars=('countryname', 'iso3n'))
+			self.countryname_concordance_using_cc(target_dir=target_dir, concord_vars=('countryname', 'iso3c'), verbose=verbose) 	#-This Obfuscates file construction and should probably return a dict with a matching from_dict_to_pyfile etc
+			self.countryname_concordance_using_cc(target_dir=target_dir, concord_vars=('countryname', 'iso3n'), verbose=verbose)
 		else:
 			raise TypeError("out_type: Must be of type 'csv' or 'py'")
-		# - Summary - #
-		if verbose: 
-			print "[INFO] Writing Exporter, Importer, and CountryLists to %s files in location:" % out_type
-			print target_dir
+		
 
 
-	# - WORKING HERE -#
+	# --------------------------------------- #
+	# - Below is Temporary Work (Ideas etc) - #
+	# --------------------------------------- #
+
 
 	def load_data(years=[], keep_columns='all', verbose=None):
 		"""
@@ -821,7 +833,9 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		Generate a Global CountryName Concordance File for NBERFeenstraWTF Dataset
 
-		STATUS: ON HOLD (Given this saves no time (and memory isn't binding) this function is currently ON HOLD)
+		STATUS: **ON HOLD** 
+				(Given this saves no time (and memory isn't binding) this function is currently ON HOLD)
+				Feature Request made to pydata/pandas #7935
 
 		Tasks
 		-----
@@ -841,6 +855,7 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 
 		countrynames = set()
+		
 		#-Load 'countrynames' from ALL Available Years-#
 		for year in self._available_years:
 			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
@@ -850,16 +865,19 @@ class NBERFeenstraWTFConstructor(object):
 			exporters = set(data['exporter'])
 			countrynames = countrynames.union(importers).union(exporters)
 			del data
+		
 		#- Concordance -#
 		if verbose: print "Writing CountryName to ISO3C and ISO3N Files to %s" % DATA_PATH
+		
 		#-ISO3C-#
 		iso3c = countryname_concordance(list(countrynames), concord_vars=('countryname', 'iso3c'))
 		#-Write Py File-#
 		iso3c.name = u"%s to %s" % ('countryname', 'iso3c')
-		fl = "%s_(%s)_%s.py" % (self._name, 'countryname', 'iso3c')
+		fl = "%s_%s_%s.py" % (self._name, 'countryname', 'iso3c')
 		docstring 	= 	u"Concordance for %s to %s\n\n" % ('countryname', 'iso3c') 	+ \
 						u"%s" % self
 		from_idxseries_to_pydict(iso3c, target_dir=DATA_PATH, fl=fl, docstring=docstring)
+		
 		#-ISO3C-#
 		iso3n =  countryname_concordance(list(countrynames), concord_vars=('countryname', 'iso3n'))
 		#-Write Py File-#

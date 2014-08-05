@@ -31,15 +31,16 @@ def from_series_to_pyfile(series, target_dir='data/', fl=None, docstring=None):
 		raise TypeError("series: must be a pd.Series")
 	doc_string = u'\"\"\"\n%s\nManual Check: <date>\n\"\"\"\n\n' % docstring 	# DocString
 	items = u'%s = [' % series.name.replace(' ', '_')							# Replace spaces with _
+	once = True
 	for idx, item in enumerate(series.values):
-		# - Spacing for Vertical List of Items - #
-		if idx == 0:
-			tabs = 1
-		else:
-			tabs = 4
+		# - Newline and Tabbed Spacing for Vertical List of Items - #
+		tabs = 4
+		if once == True:
+			items += "\n"
+			once = False
 		items += '\t'*tabs + '\'' + '%s'%item + '\''  + ',' + '\n'
-	doc = doc_string + items[:-1] + ']\n'
-	if type(fl) == str:
+	doc = doc_string + items + ']\n'
+	if type(fl) in [str, unicode]:
 		# Write to Disk #
 		f = open(target_dir+fl, 'w')
 		f.write(doc)
@@ -49,7 +50,7 @@ def from_series_to_pyfile(series, target_dir='data/', fl=None, docstring=None):
 
 
 
-def from_idxseries_to_pydict(series, target_dir='data/', fl=None, docstring=None):
+def from_idxseries_to_pydict(series, target_dir='data/', fl=None, docstring=None, verbose=False):
 	"""
 	Construct a .py file containing a Dictionary from an Indexed Pandas Series Object
 	[Warning: Ensure `series` is named what you would like the variable to be]
@@ -60,7 +61,7 @@ def from_idxseries_to_pydict(series, target_dir='data/', fl=None, docstring=None
 	target_dir 	: 	target directory to save file
 	fl 			: 	filname
 	docstring 	:	specify a docstring at the top of the file	 
-	fl 	:  filename
+	fl 			:  filename
 
 	Example
 	-------
@@ -82,8 +83,9 @@ def from_idxseries_to_pydict(series, target_dir='data/', fl=None, docstring=None
 			once = False
 		items += '\t'*tabs + '\'' + '%s'%idx + '\''  + ' : ' + '\'' + '%s'%val + '\'' + ',' + '\n'
 	doc = docstring + items + '}\n'
-	if type(fl) == str:
+	if type(fl) in [str, unicode]:
 		# Write to Disk #
+		if verbose: print "[INFO] Writing file: %s" % (target_dir+fl)
 		f = open(target_dir+fl, 'w')
 		f.write(doc)
 		f.close()

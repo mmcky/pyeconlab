@@ -1,9 +1,11 @@
-'''
-	NBERFeenstraWTF: country list
-	http://cid.econ.ucdavis.edu/nberus.html
-'''
+"""
+NBERFeenstraWTF: exporters
+http://cid.econ.ucdavis.edu/nberus.html
+Manual Check: <date>
+"""
 
-countries = [	'Afghanistan',
+exporters = [
+				'Afghanistan',
 				'Afr.Other NS',
 				'Africa N.NES',
 				'Albania',
@@ -67,7 +69,6 @@ countries = [	'Afghanistan',
 				'Eq.Guinea',
 				'Estonia',
 				'Ethiopia',
-				'Eur. EFTA NS',
 				'Eur.Other NE',
 				'Falkland Is',
 				'Fiji',
@@ -76,7 +77,6 @@ countries = [	'Afghanistan',
 				'Fm German FR',
 				'Fm USSR',
 				'Fm Yemen AR',
-				'Fm Yemen Ar',
 				'Fm Yemen Dm',
 				'Fm Yugoslav',
 				'Fr Ind O',
@@ -101,7 +101,6 @@ countries = [	'Afghanistan',
 				'Iceland',
 				'India',
 				'Indonesia',
-				'Int Org',
 				'Iran',
 				'Iraq',
 				'Ireland',
@@ -206,4 +205,5 @@ countries = [	'Afghanistan',
 				'Yemen',
 				'Yugoslavia',
 				'Zambia',
-				'Zimbabwe',]
+				'Zimbabwe',
+]

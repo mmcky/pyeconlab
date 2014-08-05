@@ -1,9 +1,11 @@
-'''
-	NBERFeenstraWTF: importers
-	http://cid.econ.ucdavis.edu/nberus.html
-'''
+"""
+NBERFeenstraWTF: importers
+http://cid.econ.ucdavis.edu/nberus.html
+Manual Check: <date>
+"""
 
-importers = [	'Afghanistan',
+importers = [
+				'Afghanistan',
 				'Afr.Other NS',
 				'Africa N.NES',
 				'Albania',
@@ -205,4 +207,5 @@ importers = [	'Afghanistan',
 				'Yemen',
 				'Yugoslavia',
 				'Zambia',
-				'Zimbabwe',]
+				'Zimbabwe',
+]
