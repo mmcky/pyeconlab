@@ -3,6 +3,10 @@ Country SubPackage
 
 Packages Routines for Country Specific Data (Naming Conventions, Geographic Aggregations etc)
 
+Data in this package is arranged by source_institution. ('un' contains UN Generated DATA)
+
+Base Objects are contained in base_files.py
+
 External Packages:
 -----------------
 

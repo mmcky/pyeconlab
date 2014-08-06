@@ -1,83 +1,16 @@
 """
-UN Country Codes Information
+United Nations Country Information
 
-Organisation
-------------
-[1] SuperClass
-	CountryCodes 	: 	SuperClass for Common Methods
-
-[2] ChildClasses 
-	UNCountryCodes 	: 	Wrapper for UN Country Codes Data
+Contains
+--------
+UNCountryCodes 	: 	Wrapper for UN Country Codes Data (ISO3C, ISO3N, Names)
 
 """
 
 import pandas as _pd
 import pyeconlab.util as _util
 
-class CountryCodes(object):
-	"""
-	SuperClass for CountryCode Datasets
-	Contains Common Properties and Methods to CountryCode Objects
-
-	Interface
-	---------
-	data attribute must contain => ['iso3c', 'iso3n', 'countryname']
-
-	Notes:
-	-----
-	[1] For Data that isn't standard (like UN countrycodes) then individual methods will need to be implemented
-
-	Future Work
-	-----------
-	[1] Improve Error Handling
-	"""
-	
-	data = _pd.DataFrame
-
-	# - Properties - #
-	@property 
-	def num_iso3c(self):
-		return len(self.data['iso3c'].dropna())
-
-	# - Series Properties - #
-
-	@property 
-	def iso3c(self):
-		return list(self.data['iso3c'].dropna()) 			#Some Countries don't have official iso3c codes
-
-	# - Generate Concordance Dictionaries - #
-
-	@property 
-	def name_to_iso3c(self):
-		concord = self.data[['iso3c', 'countryname']].dropna().set_index('countryname') 	#Drop Codes with No Pair
-		return concord['iso3c'].to_dict()
-
-	@property 
-	def iso3c_to_name(self):
-		concord = self.data[['iso3c', 'countryname']].dropna().set_index('iso3c') 			#Drop Codes with No Pair
-		return concord['countryname'].to_dict()
-
-	@property 
-	def iso3n_to_iso3c(self):
-		concord = self.data[['iso3c', 'iso3n']].dropna().set_index('iso3n') 				#Drop Codes with No Pair
-		return concord['iso3c'].to_dict()
-
-	@property 
-	def iso3c_to_iso3n(self):
-		concord = self.data[['iso3c', 'iso3n']].dropna().set_index('iso3c') 				#Drop Codes with No Pair
-		return concord['iso3n'].to_dict()
-
-	@property 
-	def name_to_iso3n(self):
-		concord = self.data[['iso3n', 'countryname']].dropna().set_index('countryname') 	#Drop Codes with No Pair
-		return concord['iso3n'].to_dict()
-
-	@property 
-	def iso3n_to_name(self):
-		concord = self.data[['iso3n', 'countryname']].dropna().set_index('iso3n') 			#Drop Codes with No Pair
-		return concord['iso3n'].to_dict()
-
-
+from .base_countrycodes import CountryCodes
 
 class UNCountryCodes(CountryCodes):
 	"""
@@ -110,9 +43,9 @@ class UNCountryCodes(CountryCodes):
 	--------
 	Country Abbrevation, Cty Comments
 
-	Notes
-	-----
-	[1] Should Numeric Country Codes be String's with Leading Zero's?
+	Future Work
+	-----------
+	[1] Meta Data Constructor for ./meta/
 
 	"""
 
@@ -140,9 +73,9 @@ class UNCountryCodes(CountryCodes):
 		[1] Allow specification of User File
 		"""
 		# - Attributes - #
-		self._fn 	= u"unstats_CountryCodeAndNameToISO2ISO3.xls"
-		self._md5hash = u"332efad5c0c03064658fbd35c40646b0"
-		self._fl 	= _util.package_folder(__file__, "data") + self._fn
+		self._fn 		= u"unstats_CountryCodeAndNameToISO2ISO3.xls"
+		self._md5hash 	= u"332efad5c0c03064658fbd35c40646b0"
+		self._fl 		= _util.package_folder(__file__, "data") + self._fn
 		
 		# - Acquire Data From Package - #
 		if _util.verify_md5hash(self._fl, self._md5hash):
