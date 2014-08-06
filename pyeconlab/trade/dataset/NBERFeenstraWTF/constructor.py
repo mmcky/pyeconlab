@@ -144,6 +144,7 @@ class NBERFeenstraWTFConstructor(object):
 	[6] Construct a Dataset (NBERFeenstraWTF)
 	[7] Supporting Functions
 	[8] Generate Meta Data Files For Inclusion into Project Package (meta/)
+	[9] Converters (hd5 Files etc.)
 
 	Notes:
 	------
@@ -194,7 +195,7 @@ class NBERFeenstraWTFConstructor(object):
 	def set_fn_postfix(self, postfix):
 		self._fn_postfix = postfix
 
-	def __init__(self, source_dir, years=[], standardise=False, default_dataset=False, skip_setup=False, force=False, verbose=True):
+	def __init__(self, source_dir, years=[], ftype='dta', standardise=False, default_dataset=False, skip_setup=False, force=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -202,6 +203,7 @@ class NBERFeenstraWTFConstructor(object):
 		---------
 		source_dir 		: 	Must contain the raw stata files (*.dta)
 		years 			: 	Apply a Year Filter [Default: ALL]
+		ftype 			: 	File Type ['dta', 'h5p']
 		standardise 	: 	Include Standardised Codes (Countries: ISO3C etc.)
 		default_dataset : 	[True/False] Return a Default NBERFeenstraWTF Dataset 
 								a. Collapse to Values ONLY
@@ -230,14 +232,22 @@ class NBERFeenstraWTFConstructor(object):
 		if years == []:
 			self.complete_dataset = True	# This forces object to be imported based on the whole dataset
 			years = self._available_years 	# Default Years
-		
+		#-Assign to Attribute-#
+		self.years 	= years
+
 		# - Fetch Raw Data for Years - #
-		self.years 			= years
-		self.__raw_data 	= pd.DataFrame() 									#PRIVATE Attribute of the Class
-		for year in self.years:
-			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
-			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
-			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
+		if ftype == 'dta':
+			self.load_raw_from_dta(verbose=verbose)
+		elif ftype == 'hd5':
+			self.load_raw_from_hd5(verbose=verbose)
+		else:
+			raise ValueError("ftype : must be dta. If you have converted sources to hd5 you can use 'hd5'")
+			
+			# self.__raw_data 	= pd.DataFrame() 									
+			# for year in self.years:
+			# 	fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
+			# 	if verbose: print "Loading Year: %s from file: %s" % (year, fn)
+			# 	self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
 
 		#-Construct Default Dataset-#
 		if default_dataset == True:
@@ -277,18 +287,25 @@ class NBERFeenstraWTFConstructor(object):
 	
 	# - IO - #
 
-	def from_csv(self, fl, test_data=True, verbose=True):
-		""" Load Data from CSV into self.__raw_data """
-		fl = self._source_dir + fl
-		if verbose: print "[WARNING] Loading data from %s into __raw_data" % fl
-		self.__raw_data = pd.read_csv(fl)
-		self.test_data = test_data
+	def load_raw_from_dta(self, verbose=True):
+		"""
+		Load RAW *.dta files from a source_directory
+		"""
+		if verbose: print "[INFO]: Loading RAW [.dta] Files from: %s" % (self._source_dir)
+		self.__raw_data 	= pd.DataFrame() 									
+		for year in self.years:
+			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
+			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
+			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
 
-	def from_df(self, df, test_data=True, verbose=True):
-		""" Load Data from Pandas DataFrame into self.__raw_data """
-		if verbose: print "[WARNING] Loading data from dataframe into __raw_data"
-		self.__raw_data = df
-		self.test_data = test_data
+	def load_raw_from_hd5(self, years=[], verbose=True):
+		"""
+		Load HD5 Version of RAW Dataset from a source_directory
+		Note: 	To construct your own hd5 version requires to initially load from NBER supplied RAW dta files
+				Then use Constructor method ``convert_source_dta_to_hd5()``
+		"""
+		##--WORKING HERE--##
+		pass
 
 	# - Raw Data Properties - #
 
@@ -674,12 +691,12 @@ class NBERFeenstraWTFConstructor(object):
 		#-OpString-#
 		update_operations(self._dataset, op_string)
 
-	def split_countrycodes(self, verbose=True):
+	def split_countrycodes(self, on='dataset', verbose=True):
 		"""
 		Split CountryCodes into components ('icode', 'ecode')
 		XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
 
-		Notes:
+		Notes
 		-----
 		[1] Should this be done more efficiently? (i.e. over a single pass of the data) 
 			Current timeit result: 975ms per loop for 1 year
@@ -887,36 +904,101 @@ class NBERFeenstraWTFConstructor(object):
 			raise TypeError("out_type: Must be of type 'csv' or 'py'")
 		
 
-	def intertemporal_countrycodes(self, verbose=False):
+	def intertemporal_countrycodes(self, force=False, verbose=False):
 		"""
 		Construct a table of importer and exporter country codes by year
+		Note: Works on self.raw_data
 		"""
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("[ERROR] Not a Complete Dataset!")
 		#-Split Codes-#
 		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
 		#-Core-#
-		table = self.raw_data[['year', 'importer', 'icode', 'iiso3n']].drop_duplicates().set_index(['importer', 'icode', 'year'])
-		table = table.unstack()
-		return table
+		#-Importers-#
+		table_iiso3n = self.raw_data[['year', 'importer', 'icode', 'iiso3n']].drop_duplicates().set_index(['importer', 'icode', 'year'])
+		table_iiso3n = table_iiso3n.unstack(level='year')
+		table_iiso3n.columns = table_iiso3n.columns.droplevel() 	#Removes Unnecessary 'iiso3n' label
+		#-Exporters-#
+		table_eiso3n = self.raw_data[['year', 'exporter', 'ecode', 'eiso3n']].drop_duplicates().set_index(['exporter', 'ecode', 'year'])
+		table_eiso3n = table_eiso3n.unstack(level='year')
+		table_eiso3n.columns = table_eiso3n.columns.droplevel() 	#Removes Unnecessary 'eiso3n' label
+		return table_iiso3n, table_eiso3n
 
 
+	def intertemporal_productcodes(self, force=False, verbose=False):
+		"""
+		Construct a table of productcodes by year
+		Note: Works on self.raw_data
+		"""
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("[ERROR] Not a Complete Dataset!")
+		#-Split Codes-#
+		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			self.split_countrycodes(verbose=verbose)
+		#-Core-#
+		table_sitc4 = self.raw_data[['year', 'sitc4']].drop_duplicates()
+		table_sitc4['code'] = 1
+		table_sitc4 = table_sitc4.set_index(['sitc4', 'year']).unstack(level='year')
+		#-Drop TopLevel Name in Columns MultiIndex-#
+		table_sitc4.columns = table_sitc4.columns.droplevel() 	#Removes Unnecessary 'code' label
+		return table_sitc4
+
+	def write_metadata(self, target_dir='./meta', verbose=True):
+		"""
+		Write Files for ./meta in Excel Format
+
+		Files
+		-----
+		[1] intertemporal_iiso3n.xlsx
+		[2] intertemporal_eiso3n.xlsx
+		[3] intertemporal_sitc4.xlsx
+
+		Notes
+		-----
+		[1] Excel is currently used as an easy way to inspect the data
+		[2] Not using local package location as mostly want to check output prior to entry through repo.
+		"""
+		#-Parse Directory-#
+		target_dir = check_directory(target_dir)
+		if verbose: print "Writing Meta Data Files to: %s" % target_dir
+		#-Compute Intertemporal Tables of iiso3n and eiso3n-#
+		table_iiso3n, table_eiso3n = self.intertemporal_countrycodes(verbose=verbose)
+		table_iiso3n.to_excel(target_dir + 'intertemporal_iiso3n.xlsx')
+		table_eiso3n.to_excel(target_dir + 'intertemporal_eiso3n.xlsx')
+		#-Compute Intertemporal ProductCodes-#
+		table_sitc4 = self.intertemporal_productcodes(verbose=verbose)
+		table_sitc4.to_excel(target_dir + 'intertemporal_sitc4.xlsx')
 
 
+	# -------------- #
+	# - Converters - #
+	# -------------- #
 
+	def convert_stata_to_hdf(self, verbose=True):
+		"""
+		Convert the Raw Stata Source Files to a HDF File (Version 5)
 
+		Future Work
+		-----------
+		[1] Integrity Checking against original dta file hash?
+		[2] Move this to a Utility?
+		"""
+		#Note: This might write into a dataset!
+		years = self._available_years
+		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '.h5' 	
 
+		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
 
-
-
-
-
-
-
-
-
-
-
-
+		#-Convert Files -#					
+		for year in self._available_years:
+			dta_fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
+			if verbose: print "Converting file: %s to file: %s" % (dta_fn, hdf_fn)
+			hdf['Y'+str(year)] = pd.read_stata(dta_fn)
+			
+		print hdf
 
 
 
