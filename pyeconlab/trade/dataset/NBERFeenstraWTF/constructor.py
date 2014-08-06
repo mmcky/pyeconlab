@@ -887,6 +887,53 @@ class NBERFeenstraWTFConstructor(object):
 			raise TypeError("out_type: Must be of type 'csv' or 'py'")
 		
 
+	def intertemporal_countrycodes(self, verbose=False):
+		"""
+		Construct a table of importer and exporter country codes by year
+		"""
+		#-Split Codes-#
+		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			self.split_countrycodes(verbose=verbose)
+		#-Core-#
+		table = self.raw_data[['year', 'importer', 'icode', 'iiso3n']].drop_duplicates().set_index(['importer', 'icode', 'year'])
+		table = table.unstack()
+		return table
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	# --------------------------------------- #
 	# - Below is Temporary Work (Ideas etc) - #
