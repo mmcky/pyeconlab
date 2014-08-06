@@ -24,7 +24,7 @@ Current Work:
 import unittest
 import copy
 import pandas as pd
-from pandas.util.testing import assert_series_equal
+from pandas.util.testing import assert_series_equal, assert_frame_equal
 import numpy as np
 
 from pyeconlab.util import package_folder, expand_homepath, check_directory
@@ -352,3 +352,32 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 		pass
 
 
+class TestConstructorRAWvsHDF5(unittest.TestCase):
+	"""
+		Test the Constructor Conversion to HD5 DataFormat
+		File:	STATA 	.dta files: wt??.dta 
+				HDF 	.h5 file: wtf00-62_yearindex.h5, wtf00-62_raw.h5
+	"""
+
+	#-SetUp-#
+
+	@classmethod
+	def setUpClass(self):
+		""" Setup NBERFeenstraWTFConstructor using: source_dir """
+		#-Constructor-#
+		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, skip_setup=True)
+		self.obj.convert_stata_to_hdf()
+		self.obj.test_convert_raw_data_to_hdf()
+
+	def test_convert_stata_to_hdf_yearindex(self):
+		df1 =  self.obj.raw_data
+		hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
+		for year in self.obj.years:
+			obj_year = df1[df1['year'] == year]
+			hd5_year = hdf['Y'+str(year)]
+			assert_frame_equal(obj_year, hd5_year)
+
+	def test_convert_raw_data_to_hdf(self):
+		df1 = self.obj.raw_data
+		df2 = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')['raw_data']
+		assert_frame_equal(df1, df2)

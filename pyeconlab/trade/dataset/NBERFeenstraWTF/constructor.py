@@ -37,7 +37,7 @@ this_dir, this_filename = os.path.split(__file__)
 META_PATH = check_directory(os.path.join(this_dir, "meta"))
 
 #-Concordances-#
-from pyeconlab.country import iso3n_to_iso3c, iso3n_to_name
+from pyeconlab.country import iso3n_to_iso3c, iso3n_to_name 			#Why does this import prevent nosetests from running?
 un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un') 				
 un_iso3n_to_unname = iso3n_to_name(source_institution='un') 				
 
@@ -160,6 +160,7 @@ class NBERFeenstraWTFConstructor(object):
 		For example. CountryCodes only needs to bring in a global panel of countrynames and then that can be converted to countrycodes
 		[Update: This is currently not possible due to *.dta files being binary]
 	[3] Move op_string work and turn it into a decorator function
+	[4] To be more memory efficient we could enforce raw_data to be an HDFStore
 	"""
 
 	# - Attributes - #
@@ -242,12 +243,6 @@ class NBERFeenstraWTFConstructor(object):
 			self.load_raw_from_hd5(verbose=verbose)
 		else:
 			raise ValueError("ftype : must be dta. If you have converted sources to hd5 you can use 'hd5'")
-			
-			# self.__raw_data 	= pd.DataFrame() 									
-			# for year in self.years:
-			# 	fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
-			# 	if verbose: print "Loading Year: %s from file: %s" % (year, fn)
-			# 	self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
 
 		#-Construct Default Dataset-#
 		if default_dataset == True:
@@ -977,9 +972,9 @@ class NBERFeenstraWTFConstructor(object):
 	# - Converters - #
 	# -------------- #
 
-	def convert_stata_to_hdf(self, verbose=True):
+	def convert_stata_to_hdf_yearindex(self, verbose=True):
 		"""
-		Convert the Raw Stata Source Files to a HDF File (Version 5)
+		Convert the Raw Stata Source Files to a HDF File Container indexed by Y#### (where #### = year)
 
 		Future Work
 		-----------
@@ -988,20 +983,41 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#Note: This might write into a dataset!
 		years = self._available_years
-		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '.h5' 	
+		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] + '_yearindex' + '.h5' 	
 
+		pd.set_option('io.hdf.default_format', 'table')
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
 
 		#-Convert Files -#					
 		for year in self._available_years:
 			dta_fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
 			if verbose: print "Converting file: %s to file: %s" % (dta_fn, hdf_fn)
-			hdf['Y'+str(year)] = pd.read_stata(dta_fn)
+			#pd.read_stata(dta_fn).to_hdf(hdf_fn, 'Y'+str(year))
+			hdf.put('Y'+str(year), pd.read_stata(dta_fn), format='table')
 			
 		print hdf
+		hdf.close()
 
 
+	def convert_raw_data_to_hdf(self, verbose=True):
+		"""
+		Convert the Entire RAW Data Compilation to a HDF File with index 'raw_data'
 
+		Future Work
+		-----------
+		[1] Integrity Checking against original dta file hash?
+		[2] Move this to a Utility?
+		"""
+		years = self._available_years
+		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '_raw' + '.h5'
+		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
+
+		pd.set_option('io.hdf.default_format', 'table')
+		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
+		hdf.put('raw_data', self.raw_data, format='table')
+
+		print hdf
+		hdf.close()
 
 
 

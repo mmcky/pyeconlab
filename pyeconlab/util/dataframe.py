@@ -1,5 +1,22 @@
 """
 DataFrame Utilities
+
+Organisation
+------------
+[1] Index Functions
+[2] Merge Functions 
+[3] Row Finding Functions
+[4] Sampling Functions
+[5] Attribute Functions
+[6] Assert Functions
+[7] Intertemporal/Dynamic Functions
+---
+[Z] Staging Area
+
+Future Work
+-----------
+[1] Split this file into different function types: dataframe_index.py, dataframe_merge.py etc.
+
 """
 
 import copy
@@ -7,6 +24,9 @@ import re
 import pandas as pd
 import numpy as np
 
+# ------------------- #
+# - Index Functions - #
+# ------------------- #
 
 def recode_index(df, recode, axis='columns', inplace=True, verbose=True):
 	"""
@@ -70,6 +90,10 @@ def recode_index(df, recode, axis='columns', inplace=True, verbose=True):
 	else:
 		raise ValueError("Axis must be 'rows' or 'columns'")
 	return df
+
+# ----------------- #
+# - Merge Functions - #
+# ----------------- #
 
 
 def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value'), dominant='right', output='final', verbose=True):
@@ -179,6 +203,29 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 	return outer
 
 
+
+
+
+# ------------------------- #
+# - Row Finding Functions - #
+# ------------------------- #
+
+def find_row(df, row):
+	"""
+	Find and Return a Row in a DataFrame 
+	"""
+	for col in df:
+	        df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
+	return df
+
+
+
+
+
+# ---------------------- #
+# - Sampling Functions - #
+# ---------------------- #
+
 def random_sample(df, sample_size = 1000):
 	"""
 	Return a Random Sample of a Dataframe
@@ -186,6 +233,16 @@ def random_sample(df, sample_size = 1000):
 	rows = np.random.choice(df.index.values, sample_size)
 	return df.ix[rows]
 
+
+
+
+
+
+# ----------------------- #
+# - Attribute Functions - #
+# ----------------------- #
+
+# pd.DataFrame.operations = placeholder for attaching op_strings
 
 def update_operations(df, add_op_string):
 	""" Update a Special operations attribute on a DataFrame """
@@ -209,16 +266,13 @@ def check_operations(df, op_string, verbose=False):
 	except:
 		return False
 
-# Methods for Find Rows in DataFrames #
-# ----------------------------------- #
 
-def find_row(df, row):
-	"""
-	Find and Return a Row in a DataFrame 
-	"""
-	for col in df:
-	        df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
-	return df
+
+
+
+# ------------------ #
+# - Assert Functions - #
+# ------------------ #
 
 def assert_unique_row_in_df(df, row):
 	"""
@@ -334,9 +388,31 @@ def check_rows_from_random_sample_bybroadcasting_columniteration(df, rs):
 	for rsidx, rsrow in rs.iterrows():
 		assert len(finder(df, rsrow)) == 1
 
+
+# ----------------------------------- #
+# - Intertemporal/Dynamic Functions - #
+# ----------------------------------- #
+
+
+
+
+
 # ----------- #
 # - IN WORK - #
 # ----------- #
+
+def compute_spell_lengths(wide_df):
+	"""
+	Compute Spell Lengths for Wide DataFrames
+	
+	Asumption: Adjacent Columns can be compared
+
+	Usage
+	-----
+	[1] Useful for computing dynamic or intertemporal data in computing length of spells across years in a wide dataframe
+	"""
+	raise NotImplementedError
+
 
 def change_message(old_idx, recode):
 	"""
