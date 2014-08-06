@@ -68,4 +68,4 @@ class CountryCodes(object):
 	@property 
 	def iso3n_to_name(self):
 		concord = self.data[['iso3n', 'countryname']].dropna().set_index('iso3n') 			#Drop Codes with No Pair
-		return concord['iso3n'].to_dict()
+		return concord['countryname'].to_dict()

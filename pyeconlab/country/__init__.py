@@ -10,4 +10,6 @@ from countrycode import countryyear 		#This Requires Latest Build (Github)
 from .un import UNCountryCodes
 
 #-Concordances-#
-from .concordances import iso3c_to_iso3n, iso3n_to_iso3c 	#These are currently generators rather than static objects (from meta/)
+#These are currently generators rather than static objects (from meta/)
+from .concordances import 	iso3c_to_iso3n, iso3n_to_iso3c, 					\
+							iso3c_to_name, iso3n_to_name

@@ -28,13 +28,18 @@ import countrycode as cc
 
 from dataset import NBERFeenstraWTF 
 from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
-							countryname_concordance
+							countryname_concordance, concord_data
 from pyeconlab.trade.classification import SITC
 
 # - Data in data/ - #
 this_dir, this_filename = os.path.split(__file__)
 #DATA_PATH = check_directory(os.path.join(this_dir, "data"))
 META_PATH = check_directory(os.path.join(this_dir, "meta"))
+
+#-Concordances-#
+from pyeconlab.country import iso3n_to_iso3c, iso3n_to_name
+un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un') 				
+un_iso3n_to_unname = iso3n_to_name(source_institution='un') 				
 
 class NBERFeenstraWTFConstructor(object):
 	"""
@@ -115,6 +120,10 @@ class NBERFeenstraWTFConstructor(object):
 			0039
 			2829	[Assume: 282 NES. The MIT MediaLabs has this as “Waste and scrap metal of iron or steel” ]
 
+	CountryCodes
+	------------
+	[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+	[2] Default Dataset should Match on ISO3N and merge in ISO3C from pyeconlab.country.concordance (iso3n_to_iso3c)
 
 	Types of Operations
 	-------------------
@@ -138,17 +147,18 @@ class NBERFeenstraWTFConstructor(object):
 
 	Notes:
 	------
-	[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
-	[2] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
-		Any modification prior to returning an NBERFeenstraWTF object should be carried out on ._dataset
-	[3] All Methods in this Class should operate on NON Indexed Data
-	[4] This Dataset Requires ~25GB of RAM
+	[1] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
+		Any modification prior to returning an NBERFeenstraWTF object should be carried out on "._dataset"
+	[2] All Methods in this Class should operate on **NON** Indexed Data
+	[3] This Dataset Requires ~25GB of RAM
 
 	Future Work:
 	-----------
-		[1] Update Pandas Stata to read older .dta files (then get wget directly from the website)
-		[2] When constructing meta/ data for inclusion in the package, it might be better to import from .dta files directly the required information
-			For example. CountryCodes only needs to bring in a global panel of countrynames and then that can be converted to countrycodes
+	[1] Update Pandas Stata to read older .dta files (then get wget directly from the website)
+	[2] When constructing meta/ data for inclusion in the package, it might be better to import from .dta files directly the required information
+		For example. CountryCodes only needs to bring in a global panel of countrynames and then that can be converted to countrycodes
+		[Update: This is currently not possible due to *.dta files being binary]
+	[3] Move op_string work and turn it into a decorator function
 	"""
 
 	# - Attributes - #
@@ -198,7 +208,7 @@ class NBERFeenstraWTFConstructor(object):
 								b. Merge HongKong-China Adjustments
 								c. Standardise
 									-> Values in US$
-									-> Add CountryCodes in ISO3C
+									-> Add ISO3C Codes and Well Formatted CountryNames
 									-> Include Indicator for Standard SITCR2 Codes ('sitcr2')
 								c. Return NBERFeenstraWTF
 									[year, importer, exporter, sitc4, value, sitcr2]
@@ -549,48 +559,120 @@ class NBERFeenstraWTFConstructor(object):
 
 	def standardise_data(self, force=False, verbose=False):
 		"""
-		Run Appropriate Standardization over the Dataset
+		Run Appropriate Set of Standardisation over the Dataset
 		
 		Actions
 		-------
 		[1] Trade Values in $'s 
-		[2] Countries to ISO3C Codes
+		[2] Add ISO3C Codes and Well Formatted CountryNames ('exportername', 'importername')
 		[3] Marker for Standard SITC Revision 2 Codes
 
 		Notes
 		-----
-		[1] Raw Dataset has Non-Standard SITC rev2 Codes
+		[1] Raw Dataset has Non-Standard SITC rev2 Codes so adding a marker to identify 'official' codes
+
+		Future Work
+		-----------
+		[1] Migrate set of standardisation methods to methods!
+			change_units()
+			add_iso3c()
+			add_isocountrynames() 	#iso 
+			add_sitcr2_official_marker()
+		[2] Remove this and use subfunctions in __init__ to be more explicit
 		"""
 		op_string = u"(standardise_data)"
 		#-Check if Operation has been conducted-#
 		if check_operations(self._dataset, op_string): return None
 
-		#-Change Units to $'s-#
-		if verbose: print "[INFO] Setting Values to be in $'s not 1000$'s"
-		self._dataset['value'] = self._dataset['value'] * 1000
-		
-		#-Build Country Name Concordance-#
-		if verbose: print "[INFO] Building Country Name Concordance and adding iso3c and iso3n names"
-		concord = self.countryname_concordance_using_cc(return_concord=True, force=force)
-		#-Add ISO3C and ISO3N Data-#
-		#-Importers-#
-		self._dataset = self._dataset.merge(concord, left_on=['importer'], right_on=['countryname'])
-		del self._dataset['countryname']
-		self._dataset = self._dataset.rename_axis({'iso3c' : 'iiso3c', 'iso3n' : 'iiso3n'}, axis=1)
-		#-Exporters-#
-		self._dataset = self._dataset.merge(concord, left_on=['exporter'], right_on=['countryname'])
-		del self._dataset['countryname']
-		self._dataset = self._dataset.rename_axis({'iso3c' : 'eiso3c', 'iso3n' : 'eiso3n'}, axis=1)
-		
-		#-Build SITCR2 Marker-#
-		if verbose: print "[INFO] Adding SITC Revision 2 (Source='un') marker variable 'SITCR2'"
-		sitc = SITC(revision=2, source_institution='un')
-		codes = sitc.get_codes(level=4)
-		self._dataset['SITCR2'] = self._dataset['sitc4'].apply(lambda x: 1 if x in codes else 0)
+		self.change_value_units(verbose=verbose) 			#Change Units to $'s
+		self.add_iso3c(verbose=verbose)
+		self.add_isocountrynames(verbose=verbose)
+		self.add_sitcr2_official_marker(verbose=verbose) 	#Build SITCR2 Marker
 
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
 
+	def add_iso3c(self, verbose=False):
+		""" 
+		Add ISO3C codes to dataset
+
+		This method uses the iso3n codes embedded in icode and ecode to add in iso3c codes
+		This is the most reliable matching method. However there are other ways by matching on countrynames etc.
+		These concordances can be found in './meta'
+
+		Alternatives
+		------------
+		[1] build_countrynameconcord_add_iso3ciso3n()
+
+		Requires: split_countrycodes(), iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
+		"""
+		#-OpString-#
+		op_string = u"(add_iso3c)"
+		if check_operations(self._dataset, op_string): return None
+		#-Core-#
+		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			self.split_countrycodes(verbose=verbose)
+
+		#-Concord and Add a Column-#
+		self._dataset['iiso3c'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
+		self._dataset['eiso3c'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
+
+		#-WORKING HERE-#
+
+		#-OpString-#
+		update_operations(self._dataset, op_string)
+
+	def add_isocountrynames(self, verbose=False):
+		"""
+		Add Standard Country Names
+
+		Requires: split_countrycodes(), iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
+		"""
+		#-OpString-#
+		op_string = u"(add_isocountrynames)"
+		if check_operations(self._dataset, op_string): return None
+
+		#-Core-#
+		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			self.split_countrycodes(verbose=verbose)
+
+		#-Concord and Add a Column-#
+		self._dataset['icountryname'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_unname, x, issue_error='.'))
+		self._dataset['ecountryname'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_unname, x, issue_error='.'))
+
+		#-WORKING HERE-#
+
+		#-OpString-#
+		update_operations(self._dataset, op_string)
+
+	def change_value_units(self, verbose=False):
+		""" 
+		Updates Values to $'s instead of 1000's of $'s' in Dataset
+		"""
+		#-OpString-#
+		op_string = u"(change_value_units)"
+		if check_operations(self._dataset, op_string): return None
+		#-Core-#
+		if verbose: print "[INFO] Setting Values to be in $'s not %s$'s" % (self._raw_units)
+		self._dataset['value'] = self._dataset['value'] * self._raw_units
+		#-OpString-#
+		update_operations(self._dataset, op_string)
+
+	def add_sitcr2_official_marker(self, source_institution='un', verbose=False):
+		""" 
+		Add an Official SITCR2 Marker to Dataset
+		source_institution 	: 	allows to specify where SITC() retrieves data [Default: 'un']
+		"""
+		#-OpString-#
+		op_string = u"(add_sitcr2_official_marker)"
+		if check_operations(self._dataset, op_string): return None
+		#-Core-#
+		if verbose: print "[INFO] Adding SITC Revision 2 (Source='un') marker variable 'SITCR2'"
+		sitc = SITC(revision=2, source_institution=source_institution)
+		codes = sitc.get_codes(level=4)
+		self._dataset['SITCR2'] = self._dataset['sitc4'].apply(lambda x: 1 if x in codes else 0)
+		#-OpString-#
+		update_operations(self._dataset, op_string)
 
 	def split_countrycodes(self, verbose=True):
 		"""
@@ -608,14 +690,14 @@ class NBERFeenstraWTFConstructor(object):
 
 		# - Importers - #
 		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
-		self._dataset['iregion'] = self._dataset['icode'].apply(lambda x: x[:2])
-		self._dataset['iiso3n']  = self._dataset['icode'].apply(lambda x: x[2:5])
-		self._dataset['imod'] 	 = self._dataset['icode'].apply(lambda x: x[-1])
+		self._dataset['iregion'] = self._dataset['icode'].apply(lambda x: int(x[:2]))
+		self._dataset['iiso3n']  = self._dataset['icode'].apply(lambda x: int(x[2:5]))
+		self._dataset['imod'] 	 = self._dataset['icode'].apply(lambda x: int(x[-1]))
 		# - Exporters - #
 		if verbose: print "Spliting ecode into (eregion, eiso3n, emod)"
-		self._dataset['eregion'] = self._dataset['ecode'].apply(lambda x: x[:2])
-		self._dataset['eiso3n']  = self._dataset['ecode'].apply(lambda x: x[2:5])
-		self._dataset['emod'] 	 = self._dataset['ecode'].apply(lambda x: x[-1])
+		self._dataset['eregion'] = self._dataset['ecode'].apply(lambda x: int(x[:2]))
+		self._dataset['eiso3n']  = self._dataset['ecode'].apply(lambda x: int(x[2:5]))
+		self._dataset['emod'] 	 = self._dataset['ecode'].apply(lambda x: int(x[-1]))
 
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
@@ -810,6 +892,28 @@ class NBERFeenstraWTFConstructor(object):
 	# - Below is Temporary Work (Ideas etc) - #
 	# --------------------------------------- #
 
+	def build_countrynameconcord_add_iso3ciso3n(self, force=False, verbose=False):
+		""" 
+		Builds a CountryName Concordance and adds in iso3c and iso3n codes to dataset
+		
+		STATUS: DEPRECATED
+		
+		Notes
+		-----
+		[1] Better to Match on ISO3N through countrycodes component
+		"""
+		#-Build Country Name Concordance-#
+		if verbose: print "[INFO] Building Country Name Concordance and adding iso3c and iso3n names"
+		concord = self.countryname_concordance_using_cc(return_concord=True, force=force)
+		#-Add ISO3C and ISO3N Data-#
+		#-Importers-#
+		self._dataset = self._dataset.merge(concord, left_on=['importer'], right_on=['countryname'])
+		del self._dataset['countryname']
+		self._dataset = self._dataset.rename_axis({'iso3c' : 'iiso3c', 'iso3n' : 'iiso3n'}, axis=1)
+		#-Exporters-#
+		self._dataset = self._dataset.merge(concord, left_on=['exporter'], right_on=['countryname'])
+		del self._dataset['countryname']
+		self._dataset = self._dataset.rename_axis({'iso3c' : 'eiso3c', 'iso3n' : 'eiso3n'}, axis=1)
 
 	def load_data(years=[], keep_columns='all', verbose=None):
 		"""
