@@ -380,8 +380,9 @@ class TestConstructorRAWvsHDF5(unittest.TestCase):
 	#-SetUp-#
 
 	@classmethod
-	def setUpClass(TestConstructorRAWvsHDF5):
+	# def setUpClass(TestConstructorRAWvsHDF5):
 	# def setUp(self):
+	def setUpClass(cls):
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
 		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') 		#Load Raw Data from dta files into Object
 		#-YearIndexed HDF File-#
@@ -476,7 +477,8 @@ class TestConstructorRAWvsHDF5(unittest.TestCase):
 	test_convert_raw_data_to_hdf_quantity.slow = True
 
 	@classmethod
-	def tearDownClass(TestConstructorRAWvsHDF5):
+	# def tearDownClass(TestConstructorRAWvsHDF5):
 	# def tearDown(self):
+	def tearDownClass(cls):
 		self.hdf_raw.close()
 		self.hdf_year.close()
