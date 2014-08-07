@@ -26,6 +26,7 @@ import copy
 import pandas as pd
 from pandas.util.testing import assert_series_equal, assert_frame_equal
 import numpy as np
+from numpy.testing import assert_allclose
 
 from pyeconlab.util import package_folder, expand_homepath, check_directory
 from pyeconlab.util import find_row, assert_rows_in_df, assert_unique_rows_in_df
@@ -354,9 +355,25 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 
 class TestConstructorRAWvsHDF5(unittest.TestCase):
 	"""
-		Test the Constructor Conversion to HD5 DataFormat
-		File:	STATA 	.dta files: wt??.dta 
-				HDF 	.h5 file: wtf00-62_yearindex.h5, wtf00-62_raw.h5
+	Test the Constructor Conversion to HD5 DataFormat
+	
+	Files
+	-----	
+		STATA 	.dta files: wt??.dta 
+		HDF 	.h5 file: wtf00-62_yearindex.h5, wtf00-62_raw.h5
+	
+	Notes
+	----- 
+	[1] This Test Suite Takes a LONG time to complete. 
+		You can filter out these tests out using ``nosetests -a "!slow"``
+	[2] These Tests use ~25Gb RAM
+
+	To Inspect in IPYthon:
+	---------------------
+	from pyeconlab import NBERFeenstraWTFConstructor
+	SOURCE_DATA_DIR = check_directory("E:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\") #win7
+	a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
+	b = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
 	"""
 
 	#-SetUp-#
@@ -364,20 +381,92 @@ class TestConstructorRAWvsHDF5(unittest.TestCase):
 	@classmethod
 	def setUpClass(self):
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
-		#-Constructor-#
-		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, skip_setup=True)
-		self.obj.convert_stata_to_hdf()
-		self.obj.test_convert_raw_data_to_hdf()
+		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR) 		#Load Raw Data into Object
+		#-YearIndexed HDF File-#
+		try: 																	#No Need to Recompute if File is found
+			self.hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
+		except:
+			self.obj.convert_stata_to_hdf_yearindex()  							#This works on the RAW Files
+			self.hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
+		#-RAWData HDF File -#
+		try: 																	#No Need to Recompute if File is found
+			self.hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
+		except:
+			self.obj.convert_raw_data_to_hdf() 									#This works on self.raw_data attribute
+			self.hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
+
+	# - Year Indexed HDF File - #
 
 	def test_convert_stata_to_hdf_yearindex(self):
-		df1 =  self.obj.raw_data
-		hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
+		df1 =  	self.obj.raw_data
+		hdf = 	self.hdf
 		for year in self.obj.years:
 			obj_year = df1[df1['year'] == year]
-			hd5_year = hdf['Y'+str(year)]
-			assert_frame_equal(obj_year, hd5_year)
+			hdf_year = hdf['Y'+str(year)]
+			assert_frame_equal(obj_year, hdf_year)
+
+	test_convert_stata_to_hdf_yearindex.slow = True 							#Slow Attribute Can be skipped nosetests -a '!slow'
+
+	def test_convert_stata_to_hdf_yearindex_values(self):
+		""" 
+		Compares the Numeric Export/Import Values
+
+		Notes
+		-----
+		[1] This test uses assert_allclose() becuase assert_frame_equal asserts equal types in addition to values
+			format='table' in HDF saves many years 'value' column as int32 rather than float64
+		"""
+		df1 =  	self.obj.raw_data
+		hdf = 	self.hdf
+		# - Values - #
+		for year in self.obj.years:
+			obj_year = df1[df1['year'] == year] #Filter
+			s1 = obj_year['value'] 				#Value Series
+			hdf_year = hdf['Y'+str(year)]
+			s2 = hdf_year['value']
+			assert_allclose(s1, s2) 											#Compare Numeric Values and Not Type.
+ 	
+	test_convert_stata_to_hdf_yearindex_values.slow = True
+
+	def test_convert_stata_to_hdf_yearindex_quantity(self):
+		""" Compares the Numeric Export/Import Quantities """
+		df1 =  	self.obj.raw_data
+		hdf = 	self.hdf
+		# - Quantity - #
+		for year in self.obj.years:
+			obj_year = df1[df1['year'] == year] #Filter
+			s1 = obj_year['quantity'] 				#Value Series
+			hdf_year = hdf['Y'+str(year)]
+			s2 = hdf_year['quantity']
+			assert_allclose(s1, s2) 
+
+	test_convert_stata_to_hdf_yearindex_quantity.slow = True
+
+	# - Raw Data HDF File - #
 
 	def test_convert_raw_data_to_hdf(self):
 		df1 = self.obj.raw_data
-		df2 = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')['raw_data']
+		df2 = self.hdf['raw_data']
 		assert_frame_equal(df1, df2)
+		
+	test_convert_raw_data_to_hdf.slow = True 										#Slow Attribute Can be skipped nosetests -a '!slow'
+
+	def test_convert_raw_data_to_hdf_values(self):
+		""" Compares the Numeric Export/Import Values """
+		s1 =  self.obj.raw_data['value']
+		s2 =  self.hdf['raw_data']['value']
+		assert_series_equal(s1, s2)
+		
+	test_convert_stata_to_hdf_yearindex_values.slow = True
+
+	def test_convert_raw_data_to_hdf_quantity(self):
+		""" Compares the Numeric Export/Import Quantities """
+		s1 =  self.obj.raw_data['quantity']
+		s2 =  self.hdf['raw_data']['quantity']
+		assert_series_equal(s1, s2)
+
+	test_convert_stata_to_hdf_yearindex_quantity.slow = True
+
+	@classmethod
+	def tearDown(self):
+		hdf.close()

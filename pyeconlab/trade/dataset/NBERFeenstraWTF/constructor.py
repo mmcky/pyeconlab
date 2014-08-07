@@ -37,9 +37,7 @@ this_dir, this_filename = os.path.split(__file__)
 META_PATH = check_directory(os.path.join(this_dir, "meta"))
 
 #-Concordances-#
-from pyeconlab.country import iso3n_to_iso3c, iso3n_to_name 			#Why does this import prevent nosetests from running?
-un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un') 				
-un_iso3n_to_unname = iso3n_to_name(source_institution='un') 				
+from pyeconlab.country import iso3n_to_iso3c, iso3n_to_name 			#Why does this import prevent nosetests from running?				
 
 class NBERFeenstraWTFConstructor(object):
 	"""
@@ -625,6 +623,7 @@ class NBERFeenstraWTFConstructor(object):
 		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
 
+		un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un')
 		#-Concord and Add a Column-#
 		self._dataset['iiso3c'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
 		self._dataset['eiso3c'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
@@ -648,9 +647,10 @@ class NBERFeenstraWTFConstructor(object):
 		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
 
+		un_iso3n_to_un_name = iso3n_to_name(source_institution='un') 
 		#-Concord and Add a Column-#
-		self._dataset['icountryname'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_unname, x, issue_error='.'))
-		self._dataset['ecountryname'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_unname, x, issue_error='.'))
+		self._dataset['icountryname'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
+		self._dataset['ecountryname'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
 
 		#-WORKING HERE-#
 
@@ -980,6 +980,8 @@ class NBERFeenstraWTFConstructor(object):
 		-----------
 		[1] Integrity Checking against original dta file hash?
 		[2] Move this to a Utility?
+		[3] Is there a way to make this work across 4 cores writing separate container names? 
+			May require separate h5 files
 		"""
 		#Note: This might write into a dataset!
 		years = self._available_years
@@ -1018,6 +1020,16 @@ class NBERFeenstraWTFConstructor(object):
 
 		print hdf
 		hdf.close()
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -76,7 +76,7 @@ class UNCountryCodes(CountryCodes):
 		self._fn 		= u"unstats_CountryCodeAndNameToISO2ISO3.xls"
 		self._md5hash 	= u"332efad5c0c03064658fbd35c40646b0"
 		self._fl 		= _util.package_folder(__file__, "data") + self._fn
-		
+
 		# - Acquire Data From Package - #
 		if _util.verify_md5hash(self._fl, self._md5hash):
 			self.data 	= _pd.read_excel(self._fl, )
