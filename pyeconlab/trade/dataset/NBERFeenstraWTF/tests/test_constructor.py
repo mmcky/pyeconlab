@@ -353,7 +353,7 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 		pass
 
 
-class TestConstructorRAWvsHDF5():
+class TestConstructorRAWvsHDF5(unittest.TestCase):
 	"""
 	Test the Constructor Conversion to HD5 DataFormat
 	
@@ -364,7 +364,7 @@ class TestConstructorRAWvsHDF5():
 	
 	Notes
 	----- 
-	[1] This does not inherit unittest.testcase as using setUpClass methods supported by nosetests
+	[1] This Class doesn't seem to destroy objects after tests!? Trying setUp for EVERY test
 	[2] This Test Suite Takes a LONG time to complete. 
 		You can filter out these tests out using ``nosetests -a "!slow"`` or you can select them ``nosetests -a "slow"
 	[3] These Tests use ~25Gb RAM
@@ -380,7 +380,8 @@ class TestConstructorRAWvsHDF5():
 	#-SetUp-#
 
 	@classmethod
-	def setUpClass(self):
+	def setUpClass(TestConstructorRAWvsHDF5):
+	# def setUp(self):
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
 		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') 		#Load Raw Data from dta files into Object
 		#-YearIndexed HDF File-#
@@ -475,6 +476,7 @@ class TestConstructorRAWvsHDF5():
 	test_convert_raw_data_to_hdf_quantity.slow = True
 
 	@classmethod
-	def tearDownClass(self):
+	def tearDownClass(TestConstructorRAWvsHDF5):
+	# def tearDown(self):
 		self.hdf_raw.close()
 		self.hdf_year.close()
