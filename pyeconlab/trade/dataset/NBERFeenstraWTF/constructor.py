@@ -4,20 +4,23 @@ NBERFeenstraWTF Constructer
 
 Compile NBERFeenstra RAW data Files and Perform Basic Data Preparation Tasks
 
-Tasks:
------
-	Basic Cleaning of Data 
-	  [a] Add ISO3C country codes
-	  [b] Add SITCR2 Markers
-
 Conventions
 -----------
-	__raw_data 	: Should be an exact copy of the imported files and protected. 
-	dataset 	: Contains the Modified Dataset
+__raw_data 	: Should be an exact copy of the imported files and protected. 
+dataset 	: Contains the Modified Dataset
 
-Returns
--------
-Return Standardised Data in the Form of NBERFeenstraWTF
+Notes
+-----
+A) Load Times
+[1] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~41s] 		From a complevel=9 file (Filesize: 148Mb)
+[2] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~34.5s]   	From a complevel=0 file (FileSize: 2.9Gb)
+[3] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') [~14min 23s]
+
+B) Convert Times (from a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta'))
+[1] a.convert_raw_data_to_hdf(complevel=0) [1min 21seconds]
+[2] a.convert_raw_data_to_hdf(complevel=9) [2min 54seconds]
+
+Outcome: Default complevel=9 (Doubles the conversion time but load time isn't significantly deteriorated)
 """
 
 import os
@@ -159,6 +162,7 @@ class NBERFeenstraWTFConstructor(object):
 		[Update: This is currently not possible due to *.dta files being binary]
 	[3] Move op_string work and turn it into a decorator function
 	[4] To be more memory efficient we could enforce raw_data to be an HDFStore
+	[5] Construct a BASE Constructor Class that contains generic methods (like IO)
 	"""
 
 	# - Attributes - #
@@ -186,7 +190,9 @@ class NBERFeenstraWTFConstructor(object):
 	_supp_data 			= dict
 	
 	# - Dataset Reference - #
-	_mydataset_md5 		= u'36a376e5a01385782112519bddfac85e' 
+	_mydataset_md5 		= u'36a376e5a01385782112519bddfac85e'
+	__raw_data_hdf_fn 	= u'wtf62-00_raw.h5'
+	__raw_data_hdf_yearindex_fn = u'wtf62-00_yearindex.h5'
 
 	def set_fn_prefix(self, prefix):
 		self._fn_prefix = prefix
@@ -194,7 +200,7 @@ class NBERFeenstraWTFConstructor(object):
 	def set_fn_postfix(self, postfix):
 		self._fn_postfix = postfix
 
-	def __init__(self, source_dir, years=[], ftype='dta', standardise=False, default_dataset=False, skip_setup=False, force=False, verbose=True):
+	def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, default_dataset=False, skip_setup=False, force=False, reduce_memory=True, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -202,7 +208,7 @@ class NBERFeenstraWTFConstructor(object):
 		---------
 		source_dir 		: 	Must contain the raw stata files (*.dta)
 		years 			: 	Apply a Year Filter [Default: ALL]
-		ftype 			: 	File Type ['dta', 'h5p']
+		ftype 			: 	File Type ['dta', 'hdf'] [Default 'hdf' -> however it will generate on if not found from 'dta']
 		standardise 	: 	Include Standardised Codes (Countries: ISO3C etc.)
 		default_dataset : 	[True/False] Return a Default NBERFeenstraWTF Dataset 
 								a. Collapse to Values ONLY
@@ -237,10 +243,16 @@ class NBERFeenstraWTFConstructor(object):
 		# - Fetch Raw Data for Years - #
 		if ftype == 'dta':
 			self.load_raw_from_dta(verbose=verbose)
-		elif ftype == 'hd5':
-			self.load_raw_from_hd5(verbose=verbose)
+		elif ftype == 'hdf':
+			try:
+				self.load_raw_from_hdf(years=years, verbose=verbose)
+			except:
+				print "[INFO] Your source_directory: %s does not contain h5 version.\n Starting to compile one now ...."
+				self.load_raw_from_dta(verbose=verbose)
+				self.convert_raw_data_to_hdf(verbose=verbose) #Compute hdf file for next load
 		else:
-			raise ValueError("ftype : must be dta. If you have converted sources to hd5 you can use 'hd5'")
+			raise ValueError("ftype must be dta or hdf")
+
 
 		#-Construct Default Dataset-#
 		if default_dataset == True:
@@ -283,6 +295,11 @@ class NBERFeenstraWTFConstructor(object):
 	def load_raw_from_dta(self, verbose=True):
 		"""
 		Load RAW *.dta files from a source_directory
+		
+		Notes
+		-----
+		[1] Move to Generic Class of DatasetConstructors?
+		[2] This should try and load from a raw_data file first rather than raw_data_year
 		"""
 		if verbose: print "[INFO]: Loading RAW [.dta] Files from: %s" % (self._source_dir)
 		self.__raw_data 	= pd.DataFrame() 									
@@ -291,21 +308,38 @@ class NBERFeenstraWTFConstructor(object):
 			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
 			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
 
-	def load_raw_from_hd5(self, years=[], verbose=True):
+	def load_raw_from_hdf(self, years=[], verbose=True):
 		"""
-		Load HD5 Version of RAW Dataset from a source_directory
-		Note: 	To construct your own hd5 version requires to initially load from NBER supplied RAW dta files
-				Then use Constructor method ``convert_source_dta_to_hd5()``
+		Load HDF Version of RAW Dataset from a source_directory
+		Note: 	To construct your own hdf version requires to initially load from NBER supplied RAW dta files
+				Then use Constructor method ``convert_source_dta_to_hdf()``
+
+		Notes
+		-----
+		[1] Move to Generic Class of DatasetConstructors?
 		"""
-		##--WORKING HERE--##
-		pass
+		self.__raw_data 	= pd.DataFrame() 
+		if years == [] or years == self._available_years: 						#years assigned prior to loading data
+			fn = self._source_dir + self.__raw_data_hdf_fn
+			if verbose: print "[INFO] Loading RAW DATA from %s" % fn
+			self.__raw_data = pd.read_hdf(fn, key='raw_data')
+		else:
+			fn = self._source_dir + self.__raw_data_hdf_yearindex_fn 
+			for year in years:
+				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
+				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
+		
 
 	# - Raw Data Properties - #
 
 	@property
 	def raw_data(self):
 		""" Raw Data Property to Return Private Attribute """ 
-		return self.__raw_data
+		try:
+			return self.__raw_data 
+		except: 																#Load from h5 file
+			self.load_raw_from_hdf(years=self.years, verbose=False)
+			return self.__raw_data
 
 	@property
 	def exporters(self):
@@ -986,9 +1020,9 @@ class NBERFeenstraWTFConstructor(object):
 		#Note: This might write into a dataset!
 		years = self._available_years
 		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] + '_yearindex' + '.h5' 	
-
 		pd.set_option('io.hdf.default_format', 'table')
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
+		self.__raw_data_hdf_yearindex = hdf
 
 		#-Convert Files -#					
 		for year in self._available_years:
@@ -1005,6 +1039,8 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		Convert the Entire RAW Data Compilation to a HDF File with index 'raw_data'
 
+		complevel : compression level
+
 		Future Work
 		-----------
 		[1] Integrity Checking against original dta file hash?
@@ -1013,7 +1049,7 @@ class NBERFeenstraWTFConstructor(object):
 		years = self._available_years
 		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '_raw' + '.h5'
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
-
+		self.__raw_data_hdf = hdf
 		pd.set_option('io.hdf.default_format', 'table')
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
 		hdf.put('raw_data', self.raw_data, format='table')
@@ -1154,3 +1190,25 @@ class NBERFeenstraWTFConstructor(object):
 		docstring 	= 	u"Concordance for %s to %s\n\n" % ('countryname', 'iso3n') 	+ \
 						u"%s" % self
 		from_idxseries_to_pydict(iso3n, target_dir=DATA_PATH, fl=fl, docstring=docstring)
+
+
+	def file_raw_data_to_hdf(self, verbose=True):
+		"""
+		Move self.raw_data attribute to reference a h5 file on disk (to free up memory)
+		
+		Notes
+		-----
+		[1] Move to Generic Class of DatasetConstructors?
+		[2] This isn't particularly Useful in this context, as attributes are derived from raw_data and it will 
+			be automatically reloaded to memory. 
+		"""
+		try:
+			fn = self._source_dir + self.__raw_data_hdf_fn
+			if verbose: print "[INFO] Attaching HDFStore to: %s" % fn
+			self.__raw_data_hdf = pd.HDFStore(fn) 							#Check if file already exists
+		except:
+			if verbose: print "[INFO] raw data h5 file not found! Constructing one ..."
+			self.convert_raw_data_to_hdf(verbose=verbose)  				#self.__raw_data_hdf = hdf	
+		if verbose: print 	"[INFO] Deleting in-memory raw_data\n" 									 + \
+							"You can still access raw_data but it will need to be loaded into memory"
+		del self.__raw_data

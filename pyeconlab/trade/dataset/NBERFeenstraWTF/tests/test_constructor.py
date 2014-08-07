@@ -353,7 +353,7 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 		pass
 
 
-class TestConstructorRAWvsHDF5(unittest.TestCase):
+class TestConstructorRAWvsHDF5():
 	"""
 	Test the Constructor Conversion to HD5 DataFormat
 	
@@ -364,9 +364,10 @@ class TestConstructorRAWvsHDF5(unittest.TestCase):
 	
 	Notes
 	----- 
-	[1] This Test Suite Takes a LONG time to complete. 
-		You can filter out these tests out using ``nosetests -a "!slow"``
-	[2] These Tests use ~25Gb RAM
+	[1] This does not inherit unittest.testcase as using setUpClass methods supported by nosetests
+	[2] This Test Suite Takes a LONG time to complete. 
+		You can filter out these tests out using ``nosetests -a "!slow"`` or you can select them ``nosetests -a "slow"
+	[3] These Tests use ~25Gb RAM
 
 	To Inspect in IPYthon:
 	---------------------
@@ -381,29 +382,30 @@ class TestConstructorRAWvsHDF5(unittest.TestCase):
 	@classmethod
 	def setUpClass(self):
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
-		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR) 		#Load Raw Data into Object
+		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') 		#Load Raw Data from dta files into Object
 		#-YearIndexed HDF File-#
 		try: 																	#No Need to Recompute if File is found
-			self.hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
+			self.hdf_year = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
 		except:
 			self.obj.convert_stata_to_hdf_yearindex()  							#This works on the RAW Files
-			self.hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
+			self.hdf_year = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
 		#-RAWData HDF File -#
 		try: 																	#No Need to Recompute if File is found
-			self.hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
+			self.hdf_raw = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
 		except:
 			self.obj.convert_raw_data_to_hdf() 									#This works on self.raw_data attribute
-			self.hdf = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
+			self.hdf_raw = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
 
 	# - Year Indexed HDF File - #
 
 	def test_convert_stata_to_hdf_yearindex(self):
 		df1 =  	self.obj.raw_data
-		hdf = 	self.hdf
+		hdf = 	self.hdf_year
 		for year in self.obj.years:
 			obj_year = df1[df1['year'] == year]
 			hdf_year = hdf['Y'+str(year)]
 			assert_frame_equal(obj_year, hdf_year)
+		del df1, hdf, obj_year, hdf_year
 
 	test_convert_stata_to_hdf_yearindex.slow = True 							#Slow Attribute Can be skipped nosetests -a '!slow'
 
@@ -417,7 +419,7 @@ class TestConstructorRAWvsHDF5(unittest.TestCase):
 			format='table' in HDF saves many years 'value' column as int32 rather than float64
 		"""
 		df1 =  	self.obj.raw_data
-		hdf = 	self.hdf
+		hdf = 	self.hdf_year
 		# - Values - #
 		for year in self.obj.years:
 			obj_year = df1[df1['year'] == year] #Filter
@@ -425,20 +427,22 @@ class TestConstructorRAWvsHDF5(unittest.TestCase):
 			hdf_year = hdf['Y'+str(year)]
 			s2 = hdf_year['value']
 			assert_allclose(s1, s2) 											#Compare Numeric Values and Not Type.
- 	
+ 		del df1, hdf, s1, s2, obj_year, hdf_year
+
 	test_convert_stata_to_hdf_yearindex_values.slow = True
 
 	def test_convert_stata_to_hdf_yearindex_quantity(self):
 		""" Compares the Numeric Export/Import Quantities """
 		df1 =  	self.obj.raw_data
-		hdf = 	self.hdf
+		hdf = 	self.hdf_year
 		# - Quantity - #
 		for year in self.obj.years:
-			obj_year = df1[df1['year'] == year] #Filter
+			obj_year = df1[df1['year'] == year] 	#Filter
 			s1 = obj_year['quantity'] 				#Value Series
 			hdf_year = hdf['Y'+str(year)]
 			s2 = hdf_year['quantity']
 			assert_allclose(s1, s2) 
+		del df1, hdf, obj_year, s1, hdf_year, s2
 
 	test_convert_stata_to_hdf_yearindex_quantity.slow = True
 
@@ -446,27 +450,31 @@ class TestConstructorRAWvsHDF5(unittest.TestCase):
 
 	def test_convert_raw_data_to_hdf(self):
 		df1 = self.obj.raw_data
-		df2 = self.hdf['raw_data']
+		df2 = self.hdf_raw['raw_data']
 		assert_frame_equal(df1, df2)
-		
-	test_convert_raw_data_to_hdf.slow = True 										#Slow Attribute Can be skipped nosetests -a '!slow'
+		del df1, df2
+
+	test_convert_raw_data_to_hdf.slow = True 										
 
 	def test_convert_raw_data_to_hdf_values(self):
 		""" Compares the Numeric Export/Import Values """
 		s1 =  self.obj.raw_data['value']
-		s2 =  self.hdf['raw_data']['value']
+		s2 =  self.hdf_raw['raw_data']['value']
 		assert_series_equal(s1, s2)
-		
-	test_convert_stata_to_hdf_yearindex_values.slow = True
+		del s1, s2
+
+	test_convert_raw_data_to_hdf_values.slow = True
 
 	def test_convert_raw_data_to_hdf_quantity(self):
 		""" Compares the Numeric Export/Import Quantities """
 		s1 =  self.obj.raw_data['quantity']
-		s2 =  self.hdf['raw_data']['quantity']
+		s2 =  self.hdf_raw['raw_data']['quantity']
 		assert_series_equal(s1, s2)
+		del s1, s2
 
-	test_convert_stata_to_hdf_yearindex_quantity.slow = True
+	test_convert_raw_data_to_hdf_quantity.slow = True
 
 	@classmethod
-	def tearDown(self):
-		hdf.close()
+	def tearDownClass(self):
+		self.hdf_raw.close()
+		self.hdf_year.close()
