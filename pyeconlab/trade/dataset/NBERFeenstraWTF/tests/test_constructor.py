@@ -58,6 +58,54 @@ def import_csv_as_statatypes(fl):
 	return pd.read_csv(fl, dtype=import_types)
 
 
+def import_excel_as_statatypes(fl):
+	
+	# NOTE: THIS DOESN"T WORK (https://github.com/pydata/pandas/issues/5891)
+	# Currently Avoid Excel when constructing test datasets and stick with csv. 
+
+	import_types = {
+						'year' 		: int,
+						'icode'		: object,
+						'importer' 	: object,
+						'ecode'     : object,
+						'exporter'  : object,
+						'sitc4'     : object,
+						'unit'      : object,
+						'dot'       : float,
+						'value'     : int,
+						'quantity'  : float,
+					}
+	return pd.read_excel(fl, dtype=import_types)
+
+def convert_import_excel_to_statatypes(fl):
+	""" Convert Excel Imports to Stata Types """
+	import_types = {
+						'year' 		: int,
+						'icode'		: str,
+						'importer' 	: str,
+						'ecode'     : str,
+						'exporter'  : str,
+						'sitc4'     : str,
+						'unit'      : str,
+						'dot'       : float,
+						'value'     : int,
+						'quantity'  : float,
+					}
+
+	data = pd.read_excel(fl)
+	for item in import_types.keys():
+		try:
+			if import_types[item] == str:
+				data[item] = data[item].apply(lambda x: str(x))
+			elif import_types[item] == int:
+				data[item] = data[item].apply(lambda x: int(x))
+			elif import_types[item] == float:
+				data[item] = data[item].apply(lambda x: float(x))
+		except:
+			pass 																#This may except if trying to import items not in the file like ('unit' or 'quantity' etc.)
+	return data
+
+
 # - Test Suites - #
 
 class TestSmallSampleDataset(unittest.TestCase):
@@ -131,7 +179,7 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 	#-SetUp-#
 
 	@classmethod
-	def setUpClass(self):
+	def setUpClass(self): #should this be cls
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
 		years = [1962, 1985, 1990, 2000]
 		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, years=years, standardise=False, skip_setup=False, verbose=False)
@@ -341,9 +389,14 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 		pass
 		self.obj.adjust_china_hongkongdata()
 
-	def collapse_to_values_only(self):
-		""" Test the Collapse to Export Values Only Against Some Random Test Cases """
-		pass
+	def test_collapse_to_valuesonly(self):
+		""" Test the Collapse to Export Values Only (collapse_to_valuesonly()) Against Some Random Test Cases """
+		obj = self.obj
+		obj.set_dataset(obj.raw_data)
+		obj.collapse_to_valuesonly()
+		rs = convert_import_excel_to_statatypes(TEST_DATA_DIR+'testdata_collapse_to_valuesonly_1_result.xlsx')
+		assert_rows_in_df(df=obj.dataset, rows=rs)
+		assert_unique_rows_in_df(df=obj.dataset, rows=rs)
 
 	def test_bilateral_flows(self):
 		""" Test Import of Bilateral Flows to Supp Data """

@@ -212,7 +212,9 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 
 def find_row(df, row):
 	"""
-	Find and Return a Row in a DataFrame 
+	Find and Return a Row in a DataFrame
+
+	[1] This needs testing 
 	"""
 	for col in df:
 	        df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]

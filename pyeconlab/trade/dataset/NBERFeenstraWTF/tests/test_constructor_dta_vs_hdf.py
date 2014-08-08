@@ -1,5 +1,7 @@
 """
 Testing DTA and HDF Data Structures using NBERFeenstraWTFConstructor
+
+Running Time: 2303.473s [38 minutes]
 """
 
 from nose import with_setup

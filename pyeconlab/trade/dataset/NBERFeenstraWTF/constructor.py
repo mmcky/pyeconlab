@@ -25,13 +25,14 @@ Outcome: Default complevel=9 (Doubles the conversion time but load time isn't si
 
 import os
 import copy
+import re
 import pandas as pd
 import numpy as np
 import countrycode as cc
 
 from dataset import NBERFeenstraWTF 
 from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
-							countryname_concordance, concord_data
+							countryname_concordance, concord_data, random_sample, find_row
 from pyeconlab.trade.classification import SITC
 
 # - Data in data/ - #
@@ -102,7 +103,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		Notes:
 		------
-		[1] A and X codes for 1984-2000
+		[1] A and X codes for 1984-2000 (Not all Countries)
 
 		[2] Codes Ending in 0: "4-digit SITC codes ending in zero were introduced into the data because we substituted the U.S.
 				values of exports and imports in place of the UN values, whenever the U.S. was a partner. In the
@@ -120,6 +121,8 @@ class NBERFeenstraWTFConstructor(object):
 			0035
 			0039
 			2829	[Assume: 282 NES. The MIT MediaLabs has this as “Waste and scrap metal of iron or steel” ]
+
+		[4] There are currently 28 observations with no SITC4 codes. See issues_with_raw_data()
 
 	CountryCodes
 	------------
@@ -249,10 +252,10 @@ class NBERFeenstraWTFConstructor(object):
 			except:
 				print "[INFO] Your source_directory: %s does not contain h5 version.\n Starting to compile one now ...."
 				self.load_raw_from_dta(verbose=verbose)
-				self.convert_raw_data_to_hdf(verbose=verbose) #Compute hdf file for next load
+				self.convert_raw_data_to_hdf(verbose=verbose) 			#Compute hdf file for next load
+				self.convert_stata_to_hdf_yearindex(verbose=verbose)	#Compute Year Index Version Also
 		else:
 			raise ValueError("ftype must be dta or hdf")
-
 
 		#-Construct Default Dataset-#
 		if default_dataset == True:
@@ -636,6 +639,9 @@ class NBERFeenstraWTFConstructor(object):
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
 
+	# - Operations on Country Codes - #
+	# ------------------------------- #
+
 	def add_iso3c(self, verbose=False):
 		""" 
 		Add ISO3C codes to dataset
@@ -691,6 +697,68 @@ class NBERFeenstraWTFConstructor(object):
 		#-OpString-#
 		update_operations(self._dataset, op_string)
 
+	def split_countrycodes(self, on='dataset', verbose=True):
+		"""
+		Split CountryCodes into components ('icode', 'ecode')
+		XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+
+		Notes
+		-----
+		[1] Should this be done more efficiently? (i.e. over a single pass of the data) 
+			Current timeit result: 975ms per loop for 1 year
+		"""
+		#-Check if Operation has been conducted-#
+		op_string = u"(split_countrycodes)"
+		if check_operations(self._dataset, op_string): return None
+
+		# - Importers - #
+		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
+		self._dataset['iregion'] = self._dataset['icode'].apply(lambda x: int(x[:2]))
+		self._dataset['iiso3n']  = self._dataset['icode'].apply(lambda x: int(x[2:5]))
+		self._dataset['imod'] 	 = self._dataset['icode'].apply(lambda x: int(x[-1]))
+		# - Exporters - #
+		if verbose: print "Spliting ecode into (eregion, eiso3n, emod)"
+		self._dataset['eregion'] = self._dataset['ecode'].apply(lambda x: int(x[:2]))
+		self._dataset['eiso3n']  = self._dataset['ecode'].apply(lambda x: int(x[2:5]))
+		self._dataset['emod'] 	 = self._dataset['ecode'].apply(lambda x: int(x[-1]))
+
+		#- Add Operation to df attribute -#
+		update_operations(self._dataset, op_string)
+
+
+	# - Operations on Product Codes - #
+ 	# ------------------------------- #	
+
+	def collapse_to_valuesonly(self, verbose=False):
+		"""
+		Adjust Dataset For Export Values that are defined multiple times due to Quantity Unit Codes ('unit')
+		Note: This will remove 'quantity', 'unit' ('dot'?)
+
+		Questions
+		---------
+		1. Does this need to be performed before adjust_china_hongkongdata (as this might match multiple times!)?
+		2. Write Tests
+		"""
+		#-Check if Operation has been conducted-#
+		op_string = u"(collapse_to_valuesonly)"
+		if check_operations(self._dataset, op_string): return None
+		idx = ['year', 'icode',	'importer',	'ecode', 'exporter', 'sitc4']	
+		# - Conduct Duplicate Analysis - #
+		dup = self._dataset.duplicated(subset=idx)  
+		if verbose:
+			print "[INFO] Current Dataset Length: %s" % self._dataset.shape[0]
+			print "[INFO] Current Number of Duplicate Entry's: %s" % len(dup[dup==True])
+			print "[INFO] Deleting 'quantity', 'unit' as cannot aggregate quantity data in different units"
+		del self._dataset['quantity']
+		del self._dataset['unit']
+		#-Collapse/Sum Duplicates-#
+		self._dataset = self._dataset.groupby(by=idx).sum()
+		self._dataset = self._dataset.reset_index() 			#Remove IDX For Later Data Operations
+		if verbose:
+			print "[INFO] New Dataset Length: %s" % self._dataset.shape[0]
+		#- Add Operation to df attribute -#
+		update_operations(self._dataset, op_string)
+
 	def change_value_units(self, verbose=False):
 		""" 
 		Updates Values to $'s instead of 1000's of $'s' in Dataset
@@ -720,68 +788,85 @@ class NBERFeenstraWTFConstructor(object):
 		#-OpString-#
 		update_operations(self._dataset, op_string)
 
-	def split_countrycodes(self, on='dataset', verbose=True):
+
+	def add_productcode_levels(self, verbose=False):
 		"""
-		Split CountryCodes into components ('icode', 'ecode')
-		XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
-
-		Notes
-		-----
-		[1] Should this be done more efficiently? (i.e. over a single pass of the data) 
-			Current timeit result: 975ms per loop for 1 year
+		Split 'sitc4' into SITCL1, L2, and L3 Codes
 		"""
-		#-Check if Operation has been conducted-#
-		op_string = u"(split_countrycodes)"
-		if check_operations(self._dataset, op_string): return None
+		for level in [1,2,3]:
+			self.add_productcode_level(level, verbose)
 
-		# - Importers - #
-		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
-		self._dataset['iregion'] = self._dataset['icode'].apply(lambda x: int(x[:2]))
-		self._dataset['iiso3n']  = self._dataset['icode'].apply(lambda x: int(x[2:5]))
-		self._dataset['imod'] 	 = self._dataset['icode'].apply(lambda x: int(x[-1]))
-		# - Exporters - #
-		if verbose: print "Spliting ecode into (eregion, eiso3n, emod)"
-		self._dataset['eregion'] = self._dataset['ecode'].apply(lambda x: int(x[:2]))
-		self._dataset['eiso3n']  = self._dataset['ecode'].apply(lambda x: int(x[2:5]))
-		self._dataset['emod'] 	 = self._dataset['ecode'].apply(lambda x: int(x[-1]))
-
-		#- Add Operation to df attribute -#
+	def add_productcode_level(self, level, verbose=False):
+		"""
+		Add a Product Code for a specified level between 1 and 3 for 'sitc4'
+		"""
+		if level == 1:
+			op_string = u"(add_productcode_level1)"
+			if check_operations(self._dataset, op_string): return None
+		elif level == 2:
+			op_string = u"(add_productcode_level2)"
+			if check_operations(self._dataset, op_string): return None
+		elif level == 3:
+			op_string = u"(add_productcode_level3)"
+			if check_operations(self._dataset, op_string): return None
+		else:
+			raise ValueError("SITC4 Can Only Be Split into Levels 1,2, or 3")
+		#-Core-#
+		if verbose: print "[INFO] Adding Product Code Level: SITC L%s" % level
+		if level == 1:
+			self._dataset['SITCL1'] = self._dataset['sitc4'].apply(lambda x: x[0:1])
+		if level == 2:
+			self._dataset['SITCL2'] = self._dataset['sitc4'].apply(lambda x: x[0:2])
+		if level == 3:
+			self._dataset['SITCL3'] = self._dataset['sitc4'].apply(lambda x: x[0:3])
+		#-OpString-#
 		update_operations(self._dataset, op_string)
 
-	def collapse_to_valuesonly(self, verbose=False):
+ 	def identify_alpha_productcodes(self, verbose=False):
 		"""
-		Adjust Dataset For Export Values that are defined multiple times due to Quantity Unit Codes ('unit')
-		Note: This will remove 'quantity', 'unit' ('dot'?)
+		Identify Productcodes that contain an alpha code 'A', 'X'
 
-		Questions
-		---------
-		1. Does this need to be performed before adjust_china_hongkongdata (as this might match multiple times!)?
+		'X' : 	Adjustments for aggregation mismatch between Levels 
+				4441 + 4442 = $150
+				444 		= $200
+				444X		= $50
+
+		'A' : 	No disaggregated details reported, but there are values at higher levels of aggregation 
+				444 	= $200 but no 4441 or 4442 defined then 
+				444A 	= $200 
+
+		Note
+		----
+		[1] The A and X codes are not used for the adjusted SITC codes of the 35 countries for
+		which specific corrections and adjustments were made, as described in Section 5.
+
+		[1] To obtain comparable inter-temporal codes requires adjustments to the data. A concordance is required
+		to bring the specially constructed product codes to data in future years.
+
 		"""
-		#-Check if Operation has been conducted-#
-		op_string = u"(collapse_to_valuesonly)"
+		op_string = u"(add_productcode_alpha_indicator)"
 		if check_operations(self._dataset, op_string): return None
-
-		idx = ['year', 'icode',	'importer',	'ecode', 'exporter', 'sitc4']	
-
-		# - Conduct Duplicate Analysis - #
-		dup = self._dataset.duplicated(subset=idx)  
-		if verbose:
-			print "[INFO] Current Dataset Length: %s" % self._dataset.shape[0]
-			print "[INFO] Current Number of Duplicate Entry's: %s" % len(dup[dup==True])
-			print "[INFO] Deleting 'quantity', 'unit' as cannot aggregate quantity data in different units"
-		
-		del self._dataset['quantity']
-		del self._dataset['unit']
-
-		#-Collapse/Sum Duplicates-#
-		self._dataset = self._dataset.groupby(by=idx).sum()
-		self._dataset = self._dataset.reset_index() 			#Remove IDX For Later Data Operations
-
-		if verbose:
-			print "[INFO] New Dataset Length: %s" % self._dataset.shape[0]
-
-		#- Add Operation to df attribute -#
+		#-Core-#
+		if verbose: print "[INFO] Identifying SITC Codes with A and X"
+		self._dataset['SITCA'] = self._dataset['sitc4'].apply(lambda x: 1 if re.search("[aA]",x) else 0)
+ 		self._dataset['SITCX'] = self._dataset['sitc4'].apply(lambda x: 1 if re.search("[xX]",x) else 0)
+		#-OpString-#
 		update_operations(self._dataset, op_string)
+
+	def intertemporal_consistent_productcodes(self, verbose=False):
+		""" 
+		Construct a set of ProductCodes that are Inter-temporally Consistent based around SITC Revision 2
+		"""
+		### -- Working Here --- ###
+		raise NotImplementedError
+
+	def intertemporal_consistent_productcodes_concord(self, verbose=False):
+		"""
+		Produce a concordance for inter-temporal consistent product codes for converting data post year 2000
+		"""
+		### -- Working Here --- ###
+		raise NotImplementedError
+
 
 	# ----------------------- #
 	# - Construct a Dataset - #
@@ -1022,7 +1107,7 @@ class NBERFeenstraWTFConstructor(object):
 		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] + '_yearindex' + '.h5' 	
 		pd.set_option('io.hdf.default_format', 'table')
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
-		self.__raw_data_hdf_yearindex = hdf
+		self.__raw_data_hdf_yearindex = hdf 									#SHould this be a filename rather than a Container?
 
 		#-Convert Files -#					
 		for year in self._available_years:
@@ -1058,10 +1143,61 @@ class NBERFeenstraWTFConstructor(object):
 		hdf.close()
 
 
+	# - Issues with Raw Data - #
+	# ------------------------ #
+
+	def issues_with_raw_data(self):
+		"""
+		Documents observed issues with the RAW DATA
+		Note: This products files from where it is called
+
+		[1] Missing SITC4 Codes (28 observations) -> './missing_sitc4.xlsx'
+		"""
+		codelength = self.raw_data['sitc4'].apply(lambda x: len(x))
+		self.raw_data[codelength != 4].to_excel('missing_sitc4.xlsx')
 
 
+	# - Construct Test Data - #
+	# ----------------------- #
 
+	def testdata_collapse_to_valuesonly(self, size=10):
+		"""
+		Produce Test Data to check method: collapse_to_valuesonly
 
+		size 	: sample size of 10 different duplicate scenarios
+		
+		Returns 
+		-------
+		Tuple(data, result)
+			data 	: 	which contains all instances of the random sample 
+			result 	:	which contains the collapse_to_valuesonly result	
+
+		Notes
+		-----
+		[1] Sample Data can be saved to csv or xlsx and aggregated to check against result
+		"""	
+		idx = ['year', 'icode',	'importer',	'ecode', 'exporter', 'sitc4']
+		#-Find Duplicate Lines by IDX-#
+		dup = self.dataset.duplicated(subset=idx)
+		#-Generate a Random Sample-#
+		sample = random_sample(self.dataset[dup], size)
+		sample = sample.reset_index()
+		
+		#-Find All Rows Contained in the Sample from the Dataset to check Collapse-#
+		data = pd.DataFrame()
+		for i, row in sample[idx].iterrows():
+			data = data.append(find_row(self.dataset[idx], row))
+		#-Full Table of Results-#
+		data = self.dataset.ix[data.index]
+		
+		#-Compute Result-#
+		self.collapse_to_valuesonly() 										#Note: This actually runs the collapse on the dataset!
+		result = pd.DataFrame()
+		for i, row in sample[idx].iterrows():
+			result = result.append(find_row(self.dataset[idx], row))
+		result = self.dataset.ix[result.index]
+
+		return data, result
 
 
 
