@@ -3,8 +3,8 @@ Tests NBERFeenstra World Trade Flows (Constructor Object)
 
 Test Suites:
 -----------
-[1] TestSmallSampleDataset 	: Test the Constructor for Logical Flaws (test attributes etc. on a small scale)
-[2] TestConstructorAgainstKnownRawData : Test the Constructor with Real Raw Data 
+[1] TestSmallSampleDataset 				> Test the Constructor for Logical Flaws (test attributes etc. on a small scale)
+[2] TestConstructorAgainstKnownRawData 	> Test the Constructor with Real Raw Data 
 
 Notes
 -----
@@ -111,11 +111,21 @@ class TestSmallSampleDataset(unittest.TestCase):
 		assert_series_equal(df2['eiso3n'], pd.Series(['616', '196', '388', '000', '826', '124', '826', '724', '896', '826'], name='eiso3n'))
 
 
-class TestConstructorAgainstKnownRawData(unittest.TestCase):
+class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 	"""
 		Test the Constructor against random known data points.
-		File:	'data/nberfeenstra_wtf62_random_sample.csv' (md5hash: da092cc4b8053083d53c5dc5b72df79d)
-		Years: 	Conducting tests on 4-Year CrossSections [1962, 1985, 1990, 2000] 
+		Note: These Tests are based on importing from RAW DTA files
+
+		File
+		----
+		'data/nberfeenstra_wtf62_random_sample.csv' (md5hash: da092cc4b8053083d53c5dc5b72df79d)
+		'data/nberfeenstra_wtf85_random_sample.csv' (mdfhash: e1a7d3b651d5df837e0ece12c288c8a5)
+		'data/nberfeenstra_wtf90_random_sample.csv' (md5hash: 639c9be4e67126d64bd23a3285cf2484)
+		'data/nberfeenstra_wtf00_random_sample.csv' (md5hash: 84305bef20043a78bd01badfeea10162)
+
+		Years
+		-----
+		Conducting tests on 4-Year CrossSections [1962, 1985, 1990, 2000] 
 	"""
 
 	#-SetUp-#
@@ -353,132 +363,3 @@ class TestConstructorAgainstKnownRawData(unittest.TestCase):
 		pass
 
 
-class TestConstructorRAWvsHDF5(unittest.TestCase):
-	"""
-	Test the Constructor Conversion to HD5 DataFormat
-	
-	Files
-	-----	
-		STATA 	.dta files: wt??.dta 
-		HDF 	.h5 file: wtf00-62_yearindex.h5, wtf00-62_raw.h5
-	
-	Notes
-	----- 
-	[1] This Class doesn't seem to destroy objects after tests!? Trying setUp for EVERY test
-	[2] This Test Suite Takes a LONG time to complete. 
-		You can filter out these tests out using ``nosetests -a "!slow"`` or you can select them ``nosetests -a "slow"
-	[3] These Tests use ~25Gb RAM
-
-	To Inspect in IPYthon:
-	---------------------
-	from pyeconlab import NBERFeenstraWTFConstructor
-	SOURCE_DATA_DIR = check_directory("E:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\") #win7
-	a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
-	b = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
-	"""
-
-	#-SetUp-#
-
-	@classmethod
-	# def setUpClass(TestConstructorRAWvsHDF5):
-	# def setUp(self):
-	def setUpClass(cls):
-		""" Setup NBERFeenstraWTFConstructor using: source_dir """
-		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') 		#Load Raw Data from dta files into Object
-		#-YearIndexed HDF File-#
-		try: 																	#No Need to Recompute if File is found
-			self.hdf_year = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
-		except:
-			self.obj.convert_stata_to_hdf_yearindex()  							#This works on the RAW Files
-			self.hdf_year = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_yearindex.h5')
-		#-RAWData HDF File -#
-		try: 																	#No Need to Recompute if File is found
-			self.hdf_raw = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
-		except:
-			self.obj.convert_raw_data_to_hdf() 									#This works on self.raw_data attribute
-			self.hdf_raw = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
-
-	# - Year Indexed HDF File - #
-
-	def test_convert_stata_to_hdf_yearindex(self):
-		df1 =  	self.obj.raw_data
-		hdf = 	self.hdf_year
-		for year in self.obj.years:
-			obj_year = df1[df1['year'] == year]
-			hdf_year = hdf['Y'+str(year)]
-			assert_frame_equal(obj_year, hdf_year)
-		del df1, hdf, obj_year, hdf_year
-
-	test_convert_stata_to_hdf_yearindex.slow = True 							#Slow Attribute Can be skipped nosetests -a '!slow'
-
-	def test_convert_stata_to_hdf_yearindex_values(self):
-		""" 
-		Compares the Numeric Export/Import Values
-
-		Notes
-		-----
-		[1] This test uses assert_allclose() becuase assert_frame_equal asserts equal types in addition to values
-			format='table' in HDF saves many years 'value' column as int32 rather than float64
-		"""
-		df1 =  	self.obj.raw_data
-		hdf = 	self.hdf_year
-		# - Values - #
-		for year in self.obj.years:
-			obj_year = df1[df1['year'] == year] #Filter
-			s1 = obj_year['value'] 				#Value Series
-			hdf_year = hdf['Y'+str(year)]
-			s2 = hdf_year['value']
-			assert_allclose(s1, s2) 											#Compare Numeric Values and Not Type.
- 		del df1, hdf, s1, s2, obj_year, hdf_year
-
-	test_convert_stata_to_hdf_yearindex_values.slow = True
-
-	def test_convert_stata_to_hdf_yearindex_quantity(self):
-		""" Compares the Numeric Export/Import Quantities """
-		df1 =  	self.obj.raw_data
-		hdf = 	self.hdf_year
-		# - Quantity - #
-		for year in self.obj.years:
-			obj_year = df1[df1['year'] == year] 	#Filter
-			s1 = obj_year['quantity'] 				#Value Series
-			hdf_year = hdf['Y'+str(year)]
-			s2 = hdf_year['quantity']
-			assert_allclose(s1, s2) 
-		del df1, hdf, obj_year, s1, hdf_year, s2
-
-	test_convert_stata_to_hdf_yearindex_quantity.slow = True
-
-	# - Raw Data HDF File - #
-
-	def test_convert_raw_data_to_hdf(self):
-		df1 = self.obj.raw_data
-		df2 = self.hdf_raw['raw_data']
-		assert_frame_equal(df1, df2)
-		del df1, df2
-
-	test_convert_raw_data_to_hdf.slow = True 										
-
-	def test_convert_raw_data_to_hdf_values(self):
-		""" Compares the Numeric Export/Import Values """
-		s1 =  self.obj.raw_data['value']
-		s2 =  self.hdf_raw['raw_data']['value']
-		assert_series_equal(s1, s2)
-		del s1, s2
-
-	test_convert_raw_data_to_hdf_values.slow = True
-
-	def test_convert_raw_data_to_hdf_quantity(self):
-		""" Compares the Numeric Export/Import Quantities """
-		s1 =  self.obj.raw_data['quantity']
-		s2 =  self.hdf_raw['raw_data']['quantity']
-		assert_series_equal(s1, s2)
-		del s1, s2
-
-	test_convert_raw_data_to_hdf_quantity.slow = True
-
-	@classmethod
-	# def tearDownClass(TestConstructorRAWvsHDF5):
-	# def tearDown(self):
-	def tearDownClass(cls):
-		self.hdf_raw.close()
-		self.hdf_year.close()
