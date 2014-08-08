@@ -27,7 +27,7 @@ class TestConstructorDTAvsHDFYearIndex():
 
 	Notes
 	-----
-	[1] This Test Suite Takes a LONG time to complete. 
+	[1] This Test Suite Takes a LONG time to complete. [RAM:~12GB]
 		You can filter out these tests out using ``nosetests -a "!slow"`` or you can select them ``nosetests -a "slow"
 
 	To Inspect in IPYthon:
@@ -56,15 +56,28 @@ class TestConstructorDTAvsHDFYearIndex():
 
 	# - Tests for Year Indexed HDF File - #
 
+	def test_dta_hdfyearindex_obs(self):
+		""" Test Number of Observations Match in Every Year """
+		df1 =  	self.obj.raw_data
+		hdf = 	self.hdf_year
+		for year in self.obj.years:
+			obj_year = df1[df1['year'] == year]
+			obj_year_obs = len(obj_year)
+			hdf_year = hdf['Y'+str(year)] 				#Extract Year from File
+			hdf_year_obs = len(hdf_year)
+			assert obj_year_obs == hdf_year_obs, "DTA Observations: %s != HDF Observations: %s" % (obj_year_obs, hdf_year_obs)
+
 	def test_convert_stata_to_hdf_yearindex(self):
+		""" 
+		Check if Pandas Frames are Equal for every year between obj.raw_data and the hdf file
+		Notes: This MAY fail as HDF converts float64 to int32 when appropriate in a given year. 
+		"""
 		df1 =  	self.obj.raw_data
 		hdf = 	self.hdf_year
 		for year in self.obj.years:
 			obj_year = df1[df1['year'] == year]
 			hdf_year = hdf['Y'+str(year)] 				#Extract Year from File
 			assert_frame_equal(obj_year, hdf_year)
-
-	test_convert_stata_to_hdf_yearindex.slow = True 	#Slow Attribute Can be skipped nosetests -a '!slow'
 
 	def test_convert_stata_to_hdf_yearindex_values(self):
 		""" 
@@ -85,10 +98,14 @@ class TestConstructorDTAvsHDFYearIndex():
 			s2 = hdf_year['value']
 			assert_allclose(s1, s2) 				#Compare Numeric Values and Not Type.
 
-	test_convert_stata_to_hdf_yearindex_values.slow = True
-
 	def test_convert_stata_to_hdf_yearindex_quantity(self):
-		""" Compares the Numeric Export/Import Quantities """
+		""" Compares the Numeric Export/Import Quantities
+		
+		Notes
+		-----
+		[1] This test uses assert_allclose() becuase assert_frame_equal asserts equal types in addition to values
+			format='table' in HDF saves many years 'value' column as int32 rather than float64
+		"""
 		df1 =  	self.obj.raw_data
 		hdf = 	self.hdf_year
 		# - Quantity - #
@@ -99,9 +116,7 @@ class TestConstructorDTAvsHDFYearIndex():
 			s2 = hdf_year['quantity']
 			assert_allclose(s1, s2) 
 
-	test_convert_stata_to_hdf_yearindex_quantity.slow = True
-
-# TestConstructorDTAvsHDFYearIndex.slow = True
+TestConstructorDTAvsHDFYearIndex.slow = True 		#Class Attribute To Indicate Slow Test 
 
 
 class TestConstructorDTAvsHDFRawData():
@@ -116,14 +131,14 @@ class TestConstructorDTAvsHDFRawData():
 
 	Notes
 	-----
-	[1] This Test Suite Takes a LONG time to complete. [RAM: ~20GB]
+	[1] This Test Suite Takes a LONG time to complete. [RAM: ~25.4GB]
 		You can filter out these tests out using ``nosetests -a "!slow"`` or you can select them ``nosetests -a "slow"
 	[2] Import raw_data from HDF to prevent multiple imports
 
 	To Inspect in IPYthon:
 	---------------------
 	from pyeconlab import NBERFeenstraWTFConstructor
-	SOURCE_DATA_DIR = check_directory("E:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\") #win7
+	SOURCE_DATA_DIR = check_directory("E:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\") 	#win7
 	a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
 	b = pd.HDFStore(SOURCE_DATA_DIR + 'wtf62-00_raw.h5')
 	"""
@@ -145,12 +160,17 @@ class TestConstructorDTAvsHDFRawData():
 
 	# - Raw Data HDF File Tests - #
 
+	def test_dta_hdfraw_obs(self):
+		""" Test Number of Observations Match """
+		obj_obs = len(self.obj.raw_data)
+		hdf_obs = len(self.hdf_raw_df)
+		assert obj_obs == hdf_obs, "DTA Observations: %s != HDF Observations: %s" % (obj_obs, hdf_obs)
+
 	def test_convert_raw_data_to_hdf(self):
+		""" Test if DataFrames are Equivalent """
 		df1 = self.obj.raw_data
 		df2 = self.hdf_raw_df
 		assert_frame_equal(df1, df2)
-
-	test_convert_raw_data_to_hdf.slow = True 										
 
 	def test_convert_raw_data_to_hdf_values(self):
 		""" Compares the Numeric Export/Import Values """
@@ -158,17 +178,13 @@ class TestConstructorDTAvsHDFRawData():
 		s2 =  self.hdf_raw_df['value']
 		assert_series_equal(s1, s2)
 
-	test_convert_raw_data_to_hdf_values.slow = True
-
 	def test_convert_raw_data_to_hdf_quantity(self):
 		""" Compares the Numeric Export/Import Quantities """
 		s1 =  self.obj.raw_data['quantity']
 		s2 =  self.hdf_raw_df['quantity']
 		assert_series_equal(s1, s2)
 
-	test_convert_raw_data_to_hdf_quantity.slow = True
-
-# TestConstructorDTAvsHDFRawData.slow = True
+TestConstructorDTAvsHDFRawData.slow = True 			#Class Attribute To Indicate Slow Test
 
 
 
