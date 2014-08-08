@@ -170,6 +170,7 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 		'data/nberfeenstra_wtf85_random_sample.csv' (mdfhash: e1a7d3b651d5df837e0ece12c288c8a5)
 		'data/nberfeenstra_wtf90_random_sample.csv' (md5hash: 639c9be4e67126d64bd23a3285cf2484)
 		'data/nberfeenstra_wtf00_random_sample.csv' (md5hash: 84305bef20043a78bd01badfeea10162)
+		'data/nberfeenstra_wtf00_random_sample2.csv' (md5hash: 47bcd5a3de86cdd9c6f2ef47d9243fbd)
 
 		Years
 		-----
