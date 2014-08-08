@@ -191,6 +191,7 @@ TestConstructorDTAvsHDFRawData.slow = True 			#Class Attribute To Indicate Slow 
 
 ### -------------------------------------------------------------------- ###
 ### ---> Combined Version of Above to Reduce DTA Import Duplication <--- ###
+### ---> If choose to reinstate it will require updating 			<--- ###
 ### -------------------------------------------------------------------- ###
 
 	# class TestConstructorRAWvsHDF5():
