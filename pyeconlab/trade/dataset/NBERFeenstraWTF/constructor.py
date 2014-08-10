@@ -344,6 +344,11 @@ class NBERFeenstraWTFConstructor(object):
 			self.load_raw_from_hdf(years=self.years, verbose=False)
 			return self.__raw_data
 
+	def del_raw_data(self, force):
+		""" Delete Raw Data """
+		if force == True:
+			self.__raw_data = None
+
 	@property
 	def exporters(self):
 		""" Returns List of Exporters (from Raw Data) """
@@ -427,7 +432,7 @@ class NBERFeenstraWTFConstructor(object):
 			else:
 				print "[WARNING] The dataset attribute has previously been set. To force the replacement use 'force'=True"
 				return None
-		self._dataset = df
+		self._dataset =  df 	#Should this make a copy?
 		
 	# ---------------------- #
 	# - Supplementary Data - #
@@ -1178,27 +1183,26 @@ class NBERFeenstraWTFConstructor(object):
 		"""	
 		idx = ['year', 'icode',	'importer',	'ecode', 'exporter', 'sitc4']
 		#-Find Duplicate Lines by IDX-#
-		dup = self.dataset.duplicated(subset=idx)
+		dup = self.raw_data.duplicated(subset=idx) 										
 		#-Generate a Random Sample-#
-		sample = random_sample(self.dataset[dup], size)
+		sample = random_sample(self.raw_data[dup], size)
 		sample = sample.reset_index()
 		
 		#-Find All Rows Contained in the Sample from the Dataset to check Collapse-#
 		data = pd.DataFrame()
 		for i, row in sample[idx].iterrows():
-			data = data.append(find_row(self.dataset[idx], row))
+			data = data.append(find_row(self.raw_data[idx], row))
 		#-Full Table of Results-#
-		data = self.dataset.ix[data.index]
+		data = self.raw_data.ix[data.index]
 		
 		#-Compute Result-#
-		self.collapse_to_valuesonly() 										#Note: This actually runs the collapse on the dataset!
+		self.collapse_to_valuesonly() 										#Note: This actually runs the collapse and produces self.dataset
 		result = pd.DataFrame()
 		for i, row in sample[idx].iterrows():
 			result = result.append(find_row(self.dataset[idx], row))
 		result = self.dataset.ix[result.index]
 
 		return data, result
-
 
 
 
