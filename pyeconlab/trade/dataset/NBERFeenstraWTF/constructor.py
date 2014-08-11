@@ -656,11 +656,21 @@ class NBERFeenstraWTFConstructor(object):
 	fix_countryname_to_iso3n = 	{
 									'Asia NES' 	: 896
 									'Taiwan' 	: 158
+									'Italy'		: 381
+									'Norway' 	: 579
+									'Switz.Liecht' : 757
+									'Samoa'		: 882
+									'Taiwan'	: 158
 								}
 
 	fix_countryname_to_iso3c = 	{
 									'Asia NES' 	: '.'
 									'Taiwan' 	: 'TWN'
+									'Italy' 	: 'ITL'
+									'Norway'	: 'NOR'
+									'Switz.Liecht' : 'CHE'
+									'Samoa'		: 'WSM'
+									'Taiwan'	: 'TWN' 		#Note this is also 480 (Other Asia, NES)
 								}
 
 	def split_countrycodes(self, on='dataset', verbose=True):
