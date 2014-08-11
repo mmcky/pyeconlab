@@ -653,24 +653,47 @@ class NBERFeenstraWTFConstructor(object):
 	# - Operations on Country Codes - #
 	# ------------------------------- #
 
-	fix_countryname_to_iso3n = 	{
-									'Asia NES' 	: 896
-									'Taiwan' 	: 158
-									'Italy'		: 381
-									'Norway' 	: 579
-									'Switz.Liecht' : 757
-									'Samoa'		: 882
-									'Taiwan'	: 158
+	fix_exporter_to_iso3n = 	{
+									'Asia NES' 	: 896,
+									'Italy'		: 381,
+									'Norway' 	: 579,
+									'Switz.Liecht' : 757,
+									'Samoa'		: 882,
+									'Taiwan'	: 158,
+									'USA' 		: 842,
 								}
 
-	fix_countryname_to_iso3c = 	{
-									'Asia NES' 	: '.'
-									'Taiwan' 	: 'TWN'
-									'Italy' 	: 'ITL'
-									'Norway'	: 'NOR'
-									'Switz.Liecht' : 'CHE'
-									'Samoa'		: 'WSM'
-									'Taiwan'	: 'TWN' 		#Note this is also 480 (Other Asia, NES)
+	fix_exporter_to_iso3c = 	{
+									'Asia NES' 	: '.',
+									'Italy' 	: 'ITL',
+									'Norway'	: 'NOR',
+									'Switz.Liecht' : 'CHE',
+									'Samoa'		: 'WSM',
+									'Taiwan'	: 'TWN',		#Note this is also 480 (Other Asia, NES)
+									'USA' 		: 'USA',
+								}
+
+	# Note: These are technically duplicates, but does it help to keep the logic separable?
+
+	fix_importer_to_iso3n = 	{ 
+									'Asia NES' : 896,
+									'Italy'		: 381,
+									'Norway' 	: 579,
+									'Samoa'		: 882,
+									'Switz.Liecht' : 757,
+									'Taiwan'	: 158,
+									'USA' 		: 842,
+								}
+
+	fix_importer_to_iso3c = 	{
+									'Asia NES' 	: '.',
+									'Italy' 	: 'ITL',
+									'Norway'	: 'NOR',
+									'Samoa'		: 'WSM',
+									'Switz.Liecht' : 'CHE',
+									'Taiwan'	: 'TWN',
+									'USA' 		: 'USA',
+
 								}
 
 	def split_countrycodes(self, on='dataset', verbose=True):
