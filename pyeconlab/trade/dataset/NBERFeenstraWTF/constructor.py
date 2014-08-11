@@ -311,6 +311,7 @@ class NBERFeenstraWTFConstructor(object):
 			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
 			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
 		self.__raw_data = self.__raw_data.reset_index() 									#Otherwise Each year has repeated obs numbers
+		del self.__raw_data['index'] 														#Remove Old Index
 
 	def load_raw_from_hdf(self, years=[], verbose=True):
 		"""

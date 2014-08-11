@@ -183,7 +183,7 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 	def setUpClass(self): #should this be cls
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
 		years = [1962, 1985, 1990, 2000]
-		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, years=years, standardise=False, skip_setup=False, verbose=False)
+		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, years=years, ftype='dta', standardise=False, skip_setup=False, verbose=False)
 		#-Adjust Units as Stata Imports '' as '' whereas csv imports '' as np.nan-#
 		self.obj.raw_data['unit'] = self.obj.raw_data['unit'].apply(lambda x: np.nan if x == '' else x)
 
@@ -390,14 +390,15 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 		pass
 		self.obj.adjust_china_hongkongdata()
 
-	def test_collapse_to_valuesonly(self):
-		""" Test the Collapse to Export Values Only (collapse_to_valuesonly()) Against Some Random Test Cases """
+	def test_collapse_to_valuesonly_1990(self):
+		""" Test the Collapse to Export Values Only (collapse_to_valuesonly()) Against Some Random Test Cases in Year 1990 """
 		obj = self.obj
 		obj.set_dataset(obj.raw_data)
 		obj.collapse_to_valuesonly()
 		rs = convert_import_excel_to_statatypes(TEST_DATA_DIR+'testdata_collapse_to_valuesonly_1_result.xlsx')
 		assert_rows_in_df(df=obj.dataset, rows=rs)
 		assert_unique_rows_in_df(df=obj.dataset, rows=rs)
+
 
 	def test_bilateral_flows(self):
 		""" Test Import of Bilateral Flows to Supp Data """
@@ -417,3 +418,28 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 		pass
 
 
+### --- Full Dataset Tests --- ###
+
+class TestConstructorAgainstKnownSolutionsAllYears():
+	"""
+		Test the Constructor against random known data points.
+		Note: These tests are based on importing from the 'hdf'
+	"""
+
+	#-SetUp-#
+
+	@classmethod
+	def setUpClass(cls): #should this be cls
+		""" Setup NBERFeenstraWTFConstructor using: source_dir """
+		cls.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, standardise=False, skip_setup=False, verbose=False)
+
+	def test_collapse_to_valuesonly(self):
+			""" Test the Collapse to Export Values Only (collapse_to_valuesonly()) Against Some Random Test Cases Across ALL Years """
+			obj = self.obj
+			obj.set_dataset(obj.raw_data)
+			obj.collapse_to_valuesonly()
+			rs = convert_import_excel_to_statatypes(TEST_DATA_DIR+'testdata_collapse_to_valuesonly_2_result.xlsx')
+			assert_rows_in_df(df=obj.dataset, rows=rs)
+			assert_unique_rows_in_df(df=obj.dataset, rows=rs)
+
+TestConstructorAgainstKnownSolutionsAllYears.slow = True

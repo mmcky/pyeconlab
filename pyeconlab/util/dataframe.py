@@ -217,7 +217,7 @@ def find_row(df, row):
 	[1] This needs testing 
 	"""
 	for col in df:
-	        df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
+		df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
 	return df
 
 
