@@ -232,7 +232,6 @@ def random_sample(df, sample_size = 1000):
 	"""
 	Return a Random Sample of a Dataframe
 	"""
-	df = df.reset_index() 												#This assigns an continous label (in the case of subsets being passed)
 	rows = np.random.choice(df.index.values, sample_size)
 	return df.ix[rows]
 
