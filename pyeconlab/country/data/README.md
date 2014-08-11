@@ -39,6 +39,14 @@ Files
 	md5hash: 			ae467df20f32c089da909dd27191cf7d
 	Notes: 				[1] Copied from Linux Mint 16
 
+[6] stata_kountry.dta
+	Source: 			Stata - Country User Utility
+	Downloaded: 		11/08/2014
+	Original Filename: 	kountry.dta (from ado/plus/k stata)
+	md5hash:			89ad85bb0ae6eef53720a8a0d492fae1
+	Notes: 				http://www.stata-journal.com/article.html?article=dm0038
+
+
 Other Sources
 -------------
 [1] GeoNames 		http://download.geonames.org/export/dump/
