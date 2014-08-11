@@ -23,6 +23,8 @@ B) Convert Times (from a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR
 Outcome: Default complevel=9 (Doubles the conversion time but load time isn't significantly deteriorated)
 """
 
+from __future__ import division
+
 import os
 import copy
 import re
@@ -646,63 +648,20 @@ class NBERFeenstraWTFConstructor(object):
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
 
+
+
 	# - Operations on Country Codes - #
 	# ------------------------------- #
 
-	def add_iso3c(self, verbose=False):
-		""" 
-		Add ISO3C codes to dataset
+	fix_countryname_to_iso3n = 	{
+									'Asia NES' 	: 896
+									'Taiwan' 	: 158
+								}
 
-		This method uses the iso3n codes embedded in icode and ecode to add in iso3c codes
-		This is the most reliable matching method. However there are other ways by matching on countrynames etc.
-		These concordances can be found in './meta'
-
-		Alternatives
-		------------
-		[1] build_countrynameconcord_add_iso3ciso3n()
-
-		Requires: split_countrycodes(), iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
-		"""
-		#-OpString-#
-		op_string = u"(add_iso3c)"
-		if check_operations(self._dataset, op_string): return None
-		#-Core-#
-		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
-			self.split_countrycodes(verbose=verbose)
-
-		un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un')
-		#-Concord and Add a Column-#
-		self._dataset['iiso3c'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
-		self._dataset['eiso3c'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
-
-		#-WORKING HERE-#
-
-		#-OpString-#
-		update_operations(self._dataset, op_string)
-
-	def add_isocountrynames(self, verbose=False):
-		"""
-		Add Standard Country Names
-
-		Requires: split_countrycodes(), iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
-		"""
-		#-OpString-#
-		op_string = u"(add_isocountrynames)"
-		if check_operations(self._dataset, op_string): return None
-
-		#-Core-#
-		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
-			self.split_countrycodes(verbose=verbose)
-
-		un_iso3n_to_un_name = iso3n_to_name(source_institution='un') 
-		#-Concord and Add a Column-#
-		self._dataset['icountryname'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
-		self._dataset['ecountryname'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
-
-		#-WORKING HERE-#
-
-		#-OpString-#
-		update_operations(self._dataset, op_string)
+	fix_countryname_to_iso3c = 	{
+									'Asia NES' 	: '.'
+									'Taiwan' 	: 'TWN'
+								}
 
 	def split_countrycodes(self, on='dataset', verbose=True):
 		"""
@@ -731,6 +690,79 @@ class NBERFeenstraWTFConstructor(object):
 
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
+
+
+	def add_iso3c(self, verbose=False):
+		""" 
+		Add ISO3C codes to dataset
+
+		This method uses the iso3n codes embedded in icode and ecode to add in iso3c codes
+		This is the most reliable matching method. 
+		However there are other ways by matching on countrynames etc.
+		These concordances can be found in './meta'
+
+		Alternatives
+		------------
+		[1] build_countrynameconcord_add_iso3ciso3n()
+
+		Requires
+		--------
+		[1] split_countrycodes()
+		[2] iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
+
+		Notes
+		-----
+		[1] This matches all UN iso3n codes which aren't all countries. 
+			These include items such as 'WLD' for World
+		"""
+		#-OpString-#
+		op_string = u"(add_iso3c)"
+		if check_operations(self._dataset, op_string): return None
+		#-Core-#
+		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			self.split_countrycodes(verbose=verbose)
+
+		un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un')
+		#-Concord and Add a Column-#
+		self._dataset['iiso3c'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
+		self._dataset['eiso3c'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
+
+		#-OpString-#
+		update_operations(self._dataset, op_string)
+
+	def add_isocountrynames(self, verbose=False):
+		"""
+		Add Standard Country Names
+
+		Requires
+		--------
+		[1] split_countrycodes()
+		[2] iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
+
+		Notes
+		-----
+		[1] This matches all UN iso3n codes which aren't all countries. 
+			These include items such as 'WLD' for World
+		"""
+		#-OpString-#
+		op_string = u"(add_isocountrynames)"
+		if check_operations(self._dataset, op_string): return None
+
+		#-Core-#
+		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			self.split_countrycodes(verbose=verbose)
+
+		un_iso3n_to_un_name = iso3n_to_name(source_institution='un') 
+		#-Concord and Add a Column-#
+		self._dataset['icountryname'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
+		self._dataset['ecountryname'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
+
+		#-WORKING HERE-#
+
+		#-OpString-#
+		update_operations(self._dataset, op_string)
+
+	
 
 
 	# - Operations on Product Codes - #
@@ -1226,6 +1258,40 @@ class NBERFeenstraWTFConstructor(object):
 	# --------------------------------------- #
 	# - Below is Temporary Work (Ideas etc) - #
 	# --------------------------------------- #
+
+	def compute_importer_value_percentofdataset(self):
+		""" 
+		Simple Compute of Importer Share in RAW DATA Dataset
+		
+		Note
+		----
+		[1] These are not trade shares
+		"""
+		total = self.raw_data['value'].sum() 			#Note this includes WLD etc
+		perc = self.raw_data.groupby(['importer'])['value'].sum() / total * 100
+		return perc
+
+	def compute_exporter_value_percentofdataset(self):
+		""" 
+		Simple Compute of Importer Share in RAW DATA Dataset
+		
+		Note
+		----
+		[1] These are not trade shares
+		"""
+		total = self.raw_data['value'].sum() 			#Note this includes WLD etc
+		perc = self.raw_data.groupby(['exporter'])['value'].sum() / total * 100
+		return perc
+
+	def return_nes_items(self, column):
+		""" 
+		Returns Note Elsewhere Specified (NES) Items through matching on a Regular Expression
+
+		column 	: 	'importer' or 'exporter'
+
+		"""
+		return self.raw_data[self.raw_data[column].isin(set([x for x in a.raw_data[column] if re.search(r'\bnes', x.lower())]))]
+
 
 	def build_countrynameconcord_add_iso3ciso3n(self, force=False, verbose=False):
 		""" 
