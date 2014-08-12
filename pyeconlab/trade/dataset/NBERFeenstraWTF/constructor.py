@@ -205,7 +205,7 @@ class NBERFeenstraWTFConstructor(object):
 	def set_fn_postfix(self, postfix):
 		self._fn_postfix = postfix
 
-	def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, default_dataset=False, skip_setup=False, force=False, reduce_memory=True, verbose=True):
+	def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, default_dataset=False, skip_setup=False, force=False, reduce_memory=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -228,6 +228,11 @@ class NBERFeenstraWTFConstructor(object):
 							This is mainly used for loading test data to check attributes and methods etc. 
 		force 			: 	If not working with the full dataset you may enter force=True to run standardisation routines etc.
 							[Warning: This will not return Intertemporally Consistent Concordances]
+		reduce_memory	: 	This will delete self.__raw_data after initializing self._dataset with the raw_data
+							[Warning: This will render properties that depend on self.__raw_data inoperable]
+							Usage: Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
+							[Default: False] Only Saves ~2GB of RAM
+		
 		"""
 		#-Assign Source Directory-#
 		self._source_dir 	= check_directory(source_dir) 	# check_directory() performs basic tests on the specified directory
@@ -259,10 +264,15 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			raise ValueError("ftype must be dta or hdf")
 
+		#-Reduce Memory-#
+		if reduce_memory:
+			self._dataset = self.__raw_data 									#Saves ~2Gb of RAM (but cannot access raw_data)
+			self.__raw_data = None
+		else:
+			self._dataset = self.__raw_data.copy(deep=True) 					#[Default] pandas.DataFrame.copy(deep=True) is much more efficient than copy.deepcopy()
+
 		#-Construct Default Dataset-#
 		if default_dataset == True:
-			#-Copy raw_data to a flexible dataset attribute-# 					# This isn't very memory efficient, but allows preserving original data. 
-			self._dataset = copy.deepcopy(self.__raw_data)
 			#-Reduction/Collapse-#
 			self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
 			#-Merge-#
@@ -421,7 +431,7 @@ class NBERFeenstraWTFConstructor(object):
 		try:
 			return self._dataset 
 		except: 											#-Raw Data Not Yet Copied-#
-			self._dataset = copy.deepcopy(self.__raw_data)
+			self._dataset = self.__raw_data.copy(deep=True)
 			return self._dataset
 
 
@@ -696,7 +706,34 @@ class NBERFeenstraWTFConstructor(object):
 
 								}
 
-	def split_countrycodes(self, on='dataset', verbose=True):
+	@property 
+	def fix_countryname_to_iso3n(self):
+		""" 
+		Compute a joint dictionary of exporter and importer adjustments
+		Usage: A joint dictionary can reduce errors by ensuring both exporters and importers are encoded the same way
+		"""
+		try:
+			return self.__fix_countryname_to_iso3n
+		except:
+			#-Load Data-#
+			fix_exporter_to_iso3n = self.fix_exporter_to_iso3n
+			fix_importer_to_iso3n = self.fix_importer_to_iso3n
+			#-Core-#
+			countryname_to_iso3n = dict()
+			for key in fix_exporter_to_iso3n.keys():
+				countryname_to_iso3n[key] = fix_exporter_to_iso3n[key]
+			for key in fix_importer_to_iso3n.keys():
+				try:
+					if countryname_to_iso3n[key] == fix_importer_to_iso3n[key]:
+						pass
+					else:
+						raise ValueError("The index: %s conflicts between exporter and importer fix dictionaries\nExporter: %s != Importer: %s") % (key, fix_exporter_to_iso3n[key], fix_importer_to_iso3n[key])
+				except:
+					countryname_to_iso3n[key] = fix_importer_to_iso3n[key]
+			self.__fix_countryname_to_iso3n = countryname_to_iso3n
+			return countryname_to_iso3n
+
+	def split_countrycodes(self, on='dataset', apply_fixes=True, verbose=True):
 		"""
 		Split CountryCodes into components ('icode', 'ecode')
 		XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
@@ -721,9 +758,27 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset['eiso3n']  = self._dataset['ecode'].apply(lambda x: int(x[2:5]))
 		self._dataset['emod'] 	 = self._dataset['ecode'].apply(lambda x: int(x[-1]))
 
+		#-Apply Custom Fixes-#
+		if apply_fixes:
+			self.apply_iso3n_custom_fixes(verbose=verbose)
+
 		#- Add Operation to df attribute -#
 		update_operations(self._dataset, op_string)
 
+	def apply_iso3n_custom_fixes(self, verbose=True):
+		""" Apply Custom Fixes for ISO3N Numbers """
+		op_string = u"(apply_iso3n_custom_fixes)"
+		if check_operations(self._dataset, op_string): return None
+
+		fix_countryname_to_iso3n = self.fix_countryname_to_iso3n
+		for key in sorted(fix_countryname_to_iso3n.keys()):
+			if verbose: print "For countryname %s updating iiso3n and eiso3n codes to %s" % (key, fix_countryname_to_iso3n[key])
+			df = self._dataset
+			df.loc[df.importer == key, 'iiso3n'] = fix_countryname_to_iso3n[key]
+			df.loc[df.exporter == key, 'eiso3n'] = fix_countryname_to_iso3n[key]
+
+		#- Add Operation to df attribute -#
+		update_operations(self._dataset, op_string)
 
 	def add_iso3c(self, verbose=False):
 		""" 
@@ -747,12 +802,13 @@ class NBERFeenstraWTFConstructor(object):
 		-----
 		[1] This matches all UN iso3n codes which aren't all countries. 
 			These include items such as 'WLD' for World
+		[2] Custom Fixes to ISO3N codes are applied in split_countrycodes()
 		"""
 		#-OpString-#
 		op_string = u"(add_iso3c)"
 		if check_operations(self._dataset, op_string): return None
 		#-Core-#
-		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+		if not check_operations(self._dataset, u"(split_countrycodes)"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
 
 		un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un')
@@ -776,6 +832,7 @@ class NBERFeenstraWTFConstructor(object):
 		-----
 		[1] This matches all UN iso3n codes which aren't all countries. 
 			These include items such as 'WLD' for World
+		[2] Custom Fixes to ISO3N codes are applied in split_countrycodes()
 		"""
 		#-OpString-#
 		op_string = u"(add_isocountrynames)"
@@ -790,13 +847,55 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset['icountryname'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
 		self._dataset['ecountryname'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
 
-		#-WORKING HERE-#
-
 		#-OpString-#
 		update_operations(self._dataset, op_string)
 
-	
+	def countries_only(self, error_code='.', verbose=True):
+		"""
+		Filter Dataset for Countries Only
 
+		Requires
+		--------
+		[1] add_iso3c()
+
+		Note
+		----
+		[1] This uses the iso3c codes to filter on countries only
+		[2] Write Tests to check the sum of a countries exports and compare to Corresponding World Export Line
+		[3] Build a Report for Dropped countrycodes
+		"""
+		if not check_operations(self._dataset, u"(add_iso3c)"): 		#Requires iiso3n, eiso3n
+			self.add_iso3c(verbose=verbose)
+		#-Drop NES and Unmatched Countries-#
+		self._dataset = self.dataset[self.dataset.iiso3c != error_code] 	#Keep iiso3n Countries
+		self._dataset = self.dataset[self.dataset.eiso3c != error_code]		#Keep eiso3n Countries
+		#-Drop WLD-#
+		self._dataset = self.dataset[self.dataset.iiso3c != 'WLD']
+		self._dataset = self.dataset[self.dataset.eiso3c != 'WLD']
+
+	def world_only(self, error_code='.', verbose=True):
+		"""
+		Filter Dataset for World Exports Only
+
+		Requires
+		--------
+		[1] add_iso3c()
+
+		Notes
+		-----
+		[1] Build a Report
+		"""
+		if not check_operations(self._dataset, u"(add_iso3c)"): 		#Requires iiso3n, eiso3n
+			self.add_iso3c(verbose=verbose)
+
+		self._dataset = self.dataset[self.dataset.iiso3c == 'WLD']
+		self._dataset = self.dataset[self.dataset.eiso3c == 'WLD']
+
+	def intertemporal_country_adjustments(self, verbose=True):
+		"""
+		Adjust Country Codes to be Inter-temporally Consistent
+		"""
+		raise NotImplementedError
 
 	# - Operations on Product Codes - #
  	# ------------------------------- #	

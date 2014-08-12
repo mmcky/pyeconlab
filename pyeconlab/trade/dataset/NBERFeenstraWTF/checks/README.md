@@ -20,6 +20,6 @@ Construction Recipe
 {1} 	a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
 		a.set_dataset(a.raw_data)
 		a.add_iso3c()
-		a.add_countrynames()
+		a.add_isocountrynames()
 		importers = a.dataset[['importer', 'iiso3c', 'iiso3n', 'icountryname']].drop_duplicates()
 		exporters = a.dataset[['exporter', 'eiso3c', 'eiso3n', 'ecountryname']].drop_duplicates()
