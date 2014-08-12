@@ -4,7 +4,7 @@ Country Subpackage
 
 # - External Packages - #
 from countrycode import countrycode 
-from countrycode import countryyear 		#This Requires Latest Build (Github)
+#from countrycode import countryyear 		#This Requires Latest Build (Github)
 
 #-CountryCode Objects-#
 from .un import UNCountryCodes

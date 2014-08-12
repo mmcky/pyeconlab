@@ -168,6 +168,7 @@ class NBERFeenstraWTFConstructor(object):
 	[3] Move op_string work and turn it into a decorator function
 	[4] To be more memory efficient we could enforce raw_data to be an HDFStore
 	[5] Construct a BASE Constructor Class that contains generic methods (like IO)
+	[6] Construct more formalised structure to ensure raw_data isn't operated on except split_countrycodes (OR should this always work on dataset?)
 	"""
 
 	# - Attributes - #
@@ -362,6 +363,13 @@ class NBERFeenstraWTFConstructor(object):
 		""" Delete Raw Data """
 		if force == True:
 			self.__raw_data = None
+
+	@property
+	def raw_data_operations(self):	 
+		try: 
+			return self.__raw_data.operations
+		except: 
+			return None 	#No Operations Applied
 
 	@property
 	def exporters(self):
@@ -733,30 +741,44 @@ class NBERFeenstraWTFConstructor(object):
 			self.__fix_countryname_to_iso3n = countryname_to_iso3n
 			return countryname_to_iso3n
 
-	def split_countrycodes(self, on='dataset', apply_fixes=True, verbose=True):
+	def split_countrycodes(self, dataset=True, apply_fixes=True, verbose=True):
 		"""
 		Split CountryCodes into components ('icode', 'ecode')
 		XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+
+		This is a special function that can alter self.__raw_data as it doesn't alter the underlying
+		columns but adds split codes of the countrycodes
 
 		Notes
 		-----
 		[1] Should this be done more efficiently? (i.e. over a single pass of the data) 
 			Current timeit result: 975ms per loop for 1 year
 		"""
+		if dataset:
+			data = self.dataset 
+		else:
+			data = self.raw_data
+
 		#-Check if Operation has been conducted-#
 		op_string = u"(split_countrycodes)"
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(data, op_string): return None
 
 		# - Importers - #
 		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
-		self._dataset['iregion'] = self._dataset['icode'].apply(lambda x: int(x[:2]))
-		self._dataset['iiso3n']  = self._dataset['icode'].apply(lambda x: int(x[2:5]))
-		self._dataset['imod'] 	 = self._dataset['icode'].apply(lambda x: int(x[-1]))
+		# self._dataset['iregion'] = self._dataset['icode'].apply(lambda x: int(x[:2]))
+		# self._dataset['iiso3n']  = self._dataset['icode'].apply(lambda x: int(x[2:5]))
+		# self._dataset['imod'] 	 = self._dataset['icode'].apply(lambda x: int(x[-1]))
+		data['iregion'] = data['icode'].apply(lambda x: int(x[:2]))
+		data['iiso3n']  = data['icode'].apply(lambda x: int(x[2:5]))
+		data['imod'] 	= data['icode'].apply(lambda x: int(x[-1]))
 		# - Exporters - #
 		if verbose: print "Spliting ecode into (eregion, eiso3n, emod)"
-		self._dataset['eregion'] = self._dataset['ecode'].apply(lambda x: int(x[:2]))
-		self._dataset['eiso3n']  = self._dataset['ecode'].apply(lambda x: int(x[2:5]))
-		self._dataset['emod'] 	 = self._dataset['ecode'].apply(lambda x: int(x[-1]))
+		# self._dataset['eregion'] = self._dataset['ecode'].apply(lambda x: int(x[:2]))
+		# self._dataset['eiso3n']  = self._dataset['ecode'].apply(lambda x: int(x[2:5]))
+		# self._dataset['emod'] 	 = self._dataset['ecode'].apply(lambda x: int(x[-1]))
+		data['eregion'] = data['ecode'].apply(lambda x: int(x[:2]))
+		data['eiso3n']  = data['ecode'].apply(lambda x: int(x[2:5]))
+		data['emod'] 	= data['ecode'].apply(lambda x: int(x[-1]))
 
 		#-Apply Custom Fixes-#
 		if apply_fixes:
@@ -1225,15 +1247,15 @@ class NBERFeenstraWTFConstructor(object):
 		if self.complete_dataset != True:
 			if force == False:
 				raise ValueError("[ERROR] Not a Complete Dataset!")
-		#-Split Codes-#
-		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
-			if verbose: print "Running .split_countrycodes() as is required ..."
-			self.split_countrycodes(verbose=verbose)
 		#-Parse Options-#
 		if dataset:
 			data = self.dataset 
 		else:
-			data = self.raw_data 		#Default Action
+			data = self.raw_data 									#Default Action
+		#-Split Codes-#
+		if not check_operations(data, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			if verbose: print "Running .split_countrycodes() as is required ..."
+			self.split_countrycodes(dataset=dataset, verbose=verbose)
 		#-Core-#
 		#-Importers-#
 		table_iiso3n = data[['year', 'importer', 'icode', 'iiso3n']].drop_duplicates().set_index(['importer', 'icode', 'year'])
@@ -1258,15 +1280,15 @@ class NBERFeenstraWTFConstructor(object):
 		if self.complete_dataset != True:
 			if force == False:
 				raise ValueError("[ERROR] Not a Complete Dataset!")
-		#-Split Codes-#
-		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
-			if verbose: print "Running .split_countrycodes() as is required ..."
-			self.split_countrycodes(verbose=verbose)
 		#-Parse Options-#
 		if dataset:
 			data = self.dataset 
 		else:
 			data = self.raw_data 		#Default Action
+		#-Split Codes-#
+		if not check_operations(data, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			if verbose: print "Running .split_countrycodes() as is required ..."
+			self.split_countrycodes(dataset=dataset, verbose=verbose)
 		#-Core-#
 		table_sitc4 = data[['year', 'sitc4']].drop_duplicates()
 		table_sitc4['code'] = 1

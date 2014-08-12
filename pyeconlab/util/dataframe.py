@@ -437,12 +437,31 @@ def compute_spell_lengths(wide_df, inplace=False):
 	def spell_len(x):
 		t = list(x.value_counts())
 		return list(chain.from_iterable(repeat(i,i) for i in t))
+
+	def spell_len2(s):
+		spell = 1
+		for idx, item in s.iteritems():
+			next_idx = idx+1
+			if next_idx > s.index[-1]:
+				s[idx] = spell
+				break
+			s[idx] = spell
+			if np.isnan(item):
+				spell = 1
+				s[idx] = np.nan
+			elif item == s[next_idx]:
+				spell += 1
+			else:
+				spell = 1
+		return s
+
 	#-Options-#
 	if not inplace:
 		wide_df = wide_df.copy(deep=True)
 	#-Core-#
-	wide_df = wide_df.apply(spell_len, axis=1)
+	wide_df = wide_df.apply(spell_len2, axis=1)
 	return wide_df
+
 
 
 def compute_number_of_continuous_spells(wide_df, inplace=False):
