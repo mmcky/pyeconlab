@@ -420,7 +420,7 @@ def compute_number_of_spells(wide_df, inplace=False):
 	wide_df = wide_df.apply(num_spells, axis=1)
 	return wide_df
 
-def compute_spell_lengths(wide_df, inplace=False):
+def compute_spell_lengths(wide_df, incremental=False, inplace=False):
 	"""
 	Compute Spell Lengths for Wide DataFrames
 	Columns : Time Data
@@ -432,13 +432,8 @@ def compute_spell_lengths(wide_df, inplace=False):
 	Future Work
 	-----------
 	[1] Add Tests
-	[2] Make this robust to np.nan
 	"""
-	def spell_len(x):
-		t = list(x.value_counts())
-		return list(chain.from_iterable(repeat(i,i) for i in t))
-
-	def spell_len2(s):
+	def spell_len(s):
 		spell = 1
 		for idx, item in s.iteritems():
 			next_idx = idx+1
@@ -455,11 +450,37 @@ def compute_spell_lengths(wide_df, inplace=False):
 				spell = 1
 		return s
 
+	def rewrite_group(s, group, group_items):
+		for gidx in group:
+			s[gidx] = max(group_items)
+
+	def final_len(s):
+		group = []
+		group_items = []
+		for idx, item in s.iteritems():
+			next_idx = idx+1
+			group.append(idx)
+			group_items.append(item)
+			if next_idx > s.index[-1]:	
+				rewrite_group(s, group, group_items)
+				break
+			if s[next_idx] > item:
+				continue
+			else:
+				#-Rewrite Max Value for Group-#
+				rewrite_group(s, group, group_items)
+				group = []
+				group_items = []
+		return s
+
 	#-Options-#
 	if not inplace:
 		wide_df = wide_df.copy(deep=True)
 	#-Core-#
-	wide_df = wide_df.apply(spell_len2, axis=1)
+	wide_df = wide_df.apply(spell_len, axis=1)
+	if incremental:
+		return wide_df
+	wide_df = wide_df.apply(final_len, axis=1)
 	return wide_df
 
 
