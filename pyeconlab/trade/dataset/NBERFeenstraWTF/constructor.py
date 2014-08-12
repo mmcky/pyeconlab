@@ -837,11 +837,10 @@ class NBERFeenstraWTFConstructor(object):
 		#-OpString-#
 		op_string = u"(add_isocountrynames)"
 		if check_operations(self._dataset, op_string): return None
-
-		#-Core-#
+		#-Checks-#
 		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
-
+		#-Core-#
 		un_iso3n_to_un_name = iso3n_to_name(source_institution='un') 
 		#-Concord and Add a Column-#
 		self._dataset['icountryname'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
@@ -852,7 +851,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	def countries_only(self, error_code='.', verbose=True):
 		"""
-		Filter Dataset for Countries Only
+		Filter Dataset for Countries Only AND returns a reference to dataset attribute
 
 		Requires
 		--------
@@ -863,8 +862,17 @@ class NBERFeenstraWTFConstructor(object):
 		[1] This uses the iso3c codes to filter on countries only
 		[2] Write Tests to check the sum of a countries exports and compare to Corresponding World Export Line
 		[3] Build a Report for Dropped countrycodes
+		[4] This leaves in old countries that may no longer currently exist
+
+		Future Work
+		-----------
+		[1] Rewrite these to use .loc method
 		"""
-		if not check_operations(self._dataset, u"(add_iso3c)"): 		#Requires iiso3n, eiso3n
+		#-OpString-#
+		op_string = u"(countries_only)"
+		if check_operations(self._dataset, op_string): return self.dataset 	#Already been computed
+		#-Checks-#
+		if not check_operations(self._dataset, u"(add_iso3c)"): 			#Requires iiso3n, eiso3n
 			self.add_iso3c(verbose=verbose)
 		#-Drop NES and Unmatched Countries-#
 		self._dataset = self.dataset[self.dataset.iiso3c != error_code] 	#Keep iiso3n Countries
@@ -872,10 +880,14 @@ class NBERFeenstraWTFConstructor(object):
 		#-Drop WLD-#
 		self._dataset = self.dataset[self.dataset.iiso3c != 'WLD']
 		self._dataset = self.dataset[self.dataset.eiso3c != 'WLD']
+		#-OpString-#
+		update_operations(self._dataset, op_string)
+		return self.dataset
+
 
 	def world_only(self, error_code='.', verbose=True):
 		"""
-		Filter Dataset for World Exports Only
+		Filter Dataset for World Exports Only and returns a reference to the dataset attribute
 
 		Requires
 		--------
@@ -884,18 +896,30 @@ class NBERFeenstraWTFConstructor(object):
 		Notes
 		-----
 		[1] Build a Report
-		"""
-		if not check_operations(self._dataset, u"(add_iso3c)"): 		#Requires iiso3n, eiso3n
-			self.add_iso3c(verbose=verbose)
 
-		self._dataset = self.dataset[self.dataset.iiso3c == 'WLD']
-		self._dataset = self.dataset[self.dataset.eiso3c == 'WLD']
+		Future Work
+		-----------
+		[1] Add inplace option to return a dataframe rather than right to dataset
+		"""
+		#-OpString-#
+		op_string = u"(world_only)"
+		if check_operations(self._dataset, op_string): return self.dataset 	#Already been computed
+		#-Checks-#
+		if not check_operations(self._dataset, u"(add_iso3c)"): 			#Requires iiso3n, eiso3n
+			self.add_iso3c(verbose=verbose)
+		#-Core-#
+		self._dataset = self._dataset.loc[(self._dataset.iiso3c == 'WLD') | (self._dataset.eiso3c == 'WLD')] 			#Take WLD either in iiso3c or eiso3c (| = or)
+		#-OpString-#	
+		update_operations(self._dataset, op_string)
+		return self.dataset
 
 	def intertemporal_country_adjustments(self, verbose=True):
 		"""
 		Adjust Country Codes to be Inter-temporally Consistent
 		"""
 		raise NotImplementedError
+
+
 
 	# - Operations on Product Codes - #
  	# ------------------------------- #	
@@ -1189,10 +1213,14 @@ class NBERFeenstraWTFConstructor(object):
 			raise TypeError("out_type: Must be of type 'csv' or 'py'")
 		
 
-	def intertemporal_countrycodes(self, force=False, verbose=False):
+	def intertemporal_countrycodes(self, dataset='raw', force=False, verbose=False):
 		"""
 		Construct a table of importer and exporter country codes by year
-		Note: Works on self.raw_data
+		
+		dataset 	: 	True/False 
+						[Default: False => Perform Operation on Raw Data]
+		force 		:  	True/False
+						[Deafult: True => doesn't raise a ValueError if trying to conduct function on an incomplete dataset]
 		"""
 		if self.complete_dataset != True:
 			if force == False:
@@ -1200,22 +1228,31 @@ class NBERFeenstraWTFConstructor(object):
 		#-Split Codes-#
 		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
+		#-Parse Options-#
+		if dataset:
+			data = self.dataset 
+		else:
+			data = self.raw_data 		#Default Action
 		#-Core-#
 		#-Importers-#
-		table_iiso3n = self.raw_data[['year', 'importer', 'icode', 'iiso3n']].drop_duplicates().set_index(['importer', 'icode', 'year'])
+		table_iiso3n = data[['year', 'importer', 'icode', 'iiso3n']].drop_duplicates().set_index(['importer', 'icode', 'year'])
 		table_iiso3n = table_iiso3n.unstack(level='year')
 		table_iiso3n.columns = table_iiso3n.columns.droplevel() 	#Removes Unnecessary 'iiso3n' label
 		#-Exporters-#
-		table_eiso3n = self.raw_data[['year', 'exporter', 'ecode', 'eiso3n']].drop_duplicates().set_index(['exporter', 'ecode', 'year'])
+		table_eiso3n = data[['year', 'exporter', 'ecode', 'eiso3n']].drop_duplicates().set_index(['exporter', 'ecode', 'year'])
 		table_eiso3n = table_eiso3n.unstack(level='year')
 		table_eiso3n.columns = table_eiso3n.columns.droplevel() 	#Removes Unnecessary 'eiso3n' label
 		return table_iiso3n, table_eiso3n
 
 
-	def intertemporal_productcodes(self, force=False, verbose=False):
+	def intertemporal_productcodes(self, dataset=False, force=False, verbose=False):
 		"""
 		Construct a table of productcodes by year
-		Note: Works on self.raw_data
+		
+		dataset 	: 	True/False 
+						[Default: False => Perform Operation on Raw Data]
+		force 		:  	True/False
+						[Deafult: True => doesn't raise a ValueError if trying to conduct function on an incomplete dataset]
 		"""
 		if self.complete_dataset != True:
 			if force == False:
@@ -1223,8 +1260,13 @@ class NBERFeenstraWTFConstructor(object):
 		#-Split Codes-#
 		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
+		#-Parse Options-#
+		if dataset:
+			data = self.dataset 
+		else:
+			data = self.raw_data 		#Default Action
 		#-Core-#
-		table_sitc4 = self.raw_data[['year', 'sitc4']].drop_duplicates()
+		table_sitc4 = data[['year', 'sitc4']].drop_duplicates()
 		table_sitc4['code'] = 1
 		table_sitc4 = table_sitc4.set_index(['sitc4', 'year']).unstack(level='year')
 		#-Drop TopLevel Name in Columns MultiIndex-#

@@ -23,6 +23,7 @@ import copy
 import re
 import pandas as pd
 import numpy as np
+from itertools import chain, repeat
 
 # ------------------- #
 # - Index Functions - #
@@ -383,18 +384,81 @@ def check_rows_from_random_sample_bybroadcasting_columniteration(df, rs):
 	[2] This is the fastest implementation and is used in assert_functions 
 	"""
 	def finder(df, row):
-	    for col in df:
-	        df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
-	    return df
+		for col in df:
+			df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
+		return df
 	
 	for rsidx, rsrow in rs.iterrows():
 		assert len(finder(df, rsrow)) == 1
+
+
 
 
 # ----------------------------------- #
 # - Intertemporal/Dynamic Functions - #
 # ----------------------------------- #
 
+def compute_number_of_spells(wide_df, inplace=False):
+	"""
+	Compute Number of Spells in a Wide DataFrame for Each Row
+	Columns : Time Data
+	"""
+	def num_spells(x):
+		""" Compute the spells in each row """
+		t = list(x.dropna().unique())
+		r = []
+		for el in x:
+			if not np.isnan(el):				
+				r.append(t.index(el)+1)
+			else:
+				r.append(np.nan) 			#Handle np.nan case
+		return r
+	#-Options-#
+	if not inplace:
+		wide_df = wide_df.copy(deep=True)
+	#-Core-#
+	wide_df = wide_df.apply(num_spells, axis=1)
+	return wide_df
+
+def compute_spell_lengths(wide_df, inplace=False):
+	"""
+	Compute Spell Lengths for Wide DataFrames
+	Columns : Time Data
+
+	Usage
+	-----
+	[1] Useful for computing dynamic or intertemporal data in computing length of spells across years in a wide dataframe
+	
+	Future Work
+	-----------
+	[1] Add Tests
+	[2] Make this robust to np.nan
+	"""
+	def spell_len(x):
+		t = list(x.value_counts())
+		return list(chain.from_iterable(repeat(i,i) for i in t))
+	#-Options-#
+	if not inplace:
+		wide_df = wide_df.copy(deep=True)
+	#-Core-#
+	wide_df = wide_df.apply(spell_len, axis=1)
+	return wide_df
+
+
+def compute_number_of_continuous_spells(wide_df, inplace=False):
+	"""
+	Compute Number of Continuous Spells in a Wide DataFrame for Each Row
+	Columns : Time Data
+
+	This function needs to account for non-adjacent np.nan occurances to compute the number of continuous spells. 
+	Perhaps parsing each row and adjusting np.nan() occurances to be [-1, -1, val, -2, ... -n etc.] for [np.nan, np.nan, 4, np.nan,]
+	This could be done using compute_spell_lengths?
+
+	Future Work
+	-----------
+	[1] Add Tests
+	"""
+	raise NotImplementedError
 
 
 
@@ -403,17 +467,7 @@ def check_rows_from_random_sample_bybroadcasting_columniteration(df, rs):
 # - IN WORK - #
 # ----------- #
 
-def compute_spell_lengths(wide_df):
-	"""
-	Compute Spell Lengths for Wide DataFrames
-	
-	Asumption: Adjacent Columns can be compared
 
-	Usage
-	-----
-	[1] Useful for computing dynamic or intertemporal data in computing length of spells across years in a wide dataframe
-	"""
-	raise NotImplementedError
 
 
 def change_message(old_idx, recode):
