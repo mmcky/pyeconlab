@@ -7,6 +7,7 @@ UNCountryCodes 	: 	Wrapper for UN Country Codes Data (ISO3C, ISO3N, Names)
 
 """
 
+import sys
 import pandas as _pd
 import pyeconlab.util as _util
 
@@ -74,8 +75,10 @@ class UNCountryCodes(CountryCodes):
 		"""
 		# - Attributes - #
 		self._fn 		= u"unstats_CountryCodeAndNameToISO2ISO3.xls"
-		#self._md5hash 	= u"332efad5c0c03064658fbd35c40646b0"
-		self._md5hash 	= u"0ae80063248db7a9446d155c1360345d" 						#This is the md5sum on the mac?
+		if sys.platform.startswith('win'):
+			self._md5hash 	= u"332efad5c0c03064658fbd35c40646b0" 						#Why are these checksums different?
+		else:
+			self._md5hash 	= u"0ae80063248db7a9446d155c1360345d" 						#This is the md5sum on the mac?
 		self._fl 		= _util.package_folder(__file__, "data") + self._fn
 
 		# - Acquire Data From Package - #
