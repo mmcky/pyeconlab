@@ -1213,20 +1213,21 @@ class NBERFeenstraWTFConstructor(object):
 			raise TypeError("out_type: Must be of type 'csv' or 'py'")
 		
 
-	def intertemporal_countrycodes(self, dataset='raw', force=False, verbose=False):
+	def intertemporal_countrycodes(self, dataset=False, force=False, verbose=False):
 		"""
 		Construct a table of importer and exporter country codes by year
 		
 		dataset 	: 	True/False 
 						[Default: False => Perform Operation on Raw Data]
 		force 		:  	True/False
-						[Deafult: True => doesn't raise a ValueError if trying to conduct function on an incomplete dataset]
+						[Default: True => doesn't raise a ValueError if trying to conduct function on an incomplete dataset]
 		"""
 		if self.complete_dataset != True:
 			if force == False:
 				raise ValueError("[ERROR] Not a Complete Dataset!")
 		#-Split Codes-#
 		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			if verbose: print "Running .split_countrycodes() as is required ..."
 			self.split_countrycodes(verbose=verbose)
 		#-Parse Options-#
 		if dataset:
@@ -1259,6 +1260,7 @@ class NBERFeenstraWTFConstructor(object):
 				raise ValueError("[ERROR] Not a Complete Dataset!")
 		#-Split Codes-#
 		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			if verbose: print "Running .split_countrycodes() as is required ..."
 			self.split_countrycodes(verbose=verbose)
 		#-Parse Options-#
 		if dataset:
