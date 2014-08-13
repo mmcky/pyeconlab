@@ -1490,15 +1490,18 @@ class NBERFeenstraWTFConstructor(object):
 		table_sitc4 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum()
 		table_sitc4 = table_sitc4.unstack(level='year')
 		table_sitc4 = table_sitc4.reset_index()
-		
+		table_sitc4['sitc3'] = table_sitc4['sitc4'].apply(lambda x: str(x)[:3])
+
 		#-SITC3-#
 		table_sitc3 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum().reset_index()
 		table_sitc3['sitc3'] = table_sitc3['sitc4'].apply(lambda x: str(x)[:3])
 		table_sitc3 = table_sitc3[['year', 'sitc3', 'value']].groupby(['year', 'sitc3']).sum().reset_index()
 
-		#---------------#
-		#- WORKING HERE #
-		#---------------#
+		#-------------------------------------------------------#
+		#- WORKING HERE 										#
+		#-Compute Compsitions of SITC4 within each SITC3 Level	#
+		#-------------------------------------------------------#
+
 
 		raise NotImplementedError
 
