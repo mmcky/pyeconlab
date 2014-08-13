@@ -1487,28 +1487,33 @@ class NBERFeenstraWTFConstructor(object):
 	def intertemporal_productcode_valuecompositions(self, level=3, verbose=False):
 		"""
 		Produce Value Composition Tables for Looking at SITC4 relative to some other level of aggregation
+
+		Note
+		----
+		[1] Write Tests
 		"""
 		#-DATASET-#
 		data = self.dataset
 		
+		sitcl = 'sitc%s' % level
+
 		#-SITC4-#
-		table_sitc4 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum()
-		table_sitc4 = table_sitc4.unstack(level='year')
-		table_sitc4 = table_sitc4.reset_index()
-		table_sitc4['sitc3'] = table_sitc4['sitc4'].apply(lambda x: str(x)[:3])
+		table_sitc4 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum().reset_index()
+		table_sitc4[sitcl] = table_sitc4['sitc4'].apply(lambda x: str(x)[:level])
 
-		#-SITC3-#
-		table_sitc3 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum().reset_index()
-		table_sitc3['sitc3'] = table_sitc3['sitc4'].apply(lambda x: str(x)[:3])
-		table_sitc3 = table_sitc3[['year', 'sitc3', 'value']].groupby(['year', 'sitc3']).sum().reset_index()
+		#-SITCL-#
+		table_sitcl = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum().reset_index()
+		table_sitcl[sitcl] = table_sitcl['sitc4'].apply(lambda x: str(x)[:level])
+		table_sitcl = table_sitcl[['year', sitcl, 'value']].groupby(['year', sitcl]).sum().reset_index()
 
-		#-------------------------------------------------------#
-		#- WORKING HERE 										#
-		#-Compute Compsitions of SITC4 within each SITC3 Level	#
-		#-------------------------------------------------------#
+		table = table_sitc4.merge(table_sitcl, on=['year', sitcl])
+		table[sitcl.upper()] = table['value_x'] / table['value_y'] * 100
+		table = table[['year', 'sitc4', sitcl.upper()]]
+		table = table.set_index(['year', 'sitc4'])
+		table = table.unstack(level='year')
+		table.columns = table.columns.droplevel()
 
-
-		raise NotImplementedError
+		return table 
 
 
 	def write_metadata(self, target_dir='./meta', verbose=True):
