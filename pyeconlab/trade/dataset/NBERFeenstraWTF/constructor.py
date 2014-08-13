@@ -932,6 +932,7 @@ class NBERFeenstraWTFConstructor(object):
 			return self.dataset
 
 
+
 	def intertemporal_country_adjustments(self, verbose=True):
 		"""
 		Adjust Country Codes to be Inter-temporally Consistent
@@ -940,15 +941,18 @@ class NBERFeenstraWTFConstructor(object):
 		op_string = u"(intertemporal_country_adjustments)"
 		if check_operations(self._dataset, op_string): return self.dataset 	#Already been computed
 		#-Checks-#
-		if not check_operations(self._dataset, u"(countries_only)"): 	  	
+		if not check_operations(self._dataset, u"(countries_only)"): 	   	#Adds iso3c	
 			self.countries_only(verbose=verbose)
-		#-Compute Data-#
-		i, e = self.intertemporal_countrycodes(dataset=True, verbose=verbose) 	
-		ispells = compute_number_of_spells(i) 									
-		total_coverage = len(ispells.columns)
-		ispells['coverage'] = ispells.sum(axis=1)
+		#-Adjust Codes-#
+		from pyeconlab.trade.dataset.NBERFeenstraWTF.meta import iso3c_recodes_for_1962_2000
+		from pyeconlab.util import concord_data
+		self._dataset['iiso3c'] = self._dataset['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+		self._dataset['eiso3c'] = self._dataset['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 
-		#-WORKING HERE-#
+
+		# ------------ #
+		#-WORKING HERE-# 	To Collapse at some point need to work on near final dataset to contain the groupby and useful columns!
+		# ------------ # 	This needs to be done prior to this function call
 
 		#-OpString-#	
 		update_operations(self._dataset, op_string)
