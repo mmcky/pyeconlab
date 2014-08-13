@@ -401,7 +401,13 @@ def check_rows_from_random_sample_bybroadcasting_columniteration(df, rs):
 def compute_number_of_spells(wide_df, inplace=False):
 	"""
 	Compute Number of Spells in a Wide DataFrame for Each Row
+	This is based on identifying unique codes in a series. 
+
 	Columns : Time Data
+
+	Note
+	----
+	[1] continuous spells can be computed using compute_number_of_continuous_spells() method.
 	"""
 	def num_spells(x):
 		""" Compute the spells in each row """
@@ -413,6 +419,43 @@ def compute_number_of_spells(wide_df, inplace=False):
 			else:
 				r.append(np.nan) 			#Handle np.nan case
 		return r
+	#-Options-#
+	if not inplace:
+		wide_df = wide_df.copy(deep=True)
+	#-Core-#
+	wide_df = wide_df.apply(num_spells, axis=1)
+	return wide_df
+
+def compute_number_of_continuous_spells(wide_df, inplace=False):
+	"""
+	Compute Number of Continuous Spells in a Wide DataFrame for Each Row
+	Columns : Time Data
+
+	This function needs to account for non-adjacent np.nan occurances to compute the number of continuous spells. 
+	Perhaps parsing each row and adjusting np.nan() occurances to be [-1, -1, val, -2, ... -n etc.] for [np.nan, np.nan, 4, np.nan,]
+	This could be done using compute_spell_lengths?
+
+	Future Work
+	-----------
+	[1] Add Tests
+	"""
+	def num_spells(s):
+		""" Compute the spells in each row """
+		uniq_codes = list(s.dropna().unique())
+		spell = 1
+		for idx, item in s.iteritems():
+			next_idx = idx+1
+			s[idx] = spell
+			if np.isnan(item):
+				#spell += 1 		#increment spell?
+				s[idx] = np.nan
+				continue
+			if next_idx > s.index[-1]:
+				break
+			if item != s[next_idx]:
+				spell += 1 			#increment spell
+		return s
+
 	#-Options-#
 	if not inplace:
 		wide_df = wide_df.copy(deep=True)
@@ -437,14 +480,15 @@ def compute_spell_lengths(wide_df, incremental=False, inplace=False):
 		spell = 1
 		for idx, item in s.iteritems():
 			next_idx = idx+1
+			if np.isnan(item):
+				spell = 1
+				s[idx] = np.nan
+				continue
 			if next_idx > s.index[-1]:
 				s[idx] = spell
 				break
 			s[idx] = spell
-			if np.isnan(item):
-				spell = 1
-				s[idx] = np.nan
-			elif item == s[next_idx]:
+			if item == s[next_idx]:
 				spell += 1
 			else:
 				spell = 1
@@ -484,21 +528,6 @@ def compute_spell_lengths(wide_df, incremental=False, inplace=False):
 	return wide_df
 
 
-
-def compute_number_of_continuous_spells(wide_df, inplace=False):
-	"""
-	Compute Number of Continuous Spells in a Wide DataFrame for Each Row
-	Columns : Time Data
-
-	This function needs to account for non-adjacent np.nan occurances to compute the number of continuous spells. 
-	Perhaps parsing each row and adjusting np.nan() occurances to be [-1, -1, val, -2, ... -n etc.] for [np.nan, np.nan, 4, np.nan,]
-	This could be done using compute_spell_lengths?
-
-	Future Work
-	-----------
-	[1] Add Tests
-	"""
-	raise NotImplementedError
 
 
 
