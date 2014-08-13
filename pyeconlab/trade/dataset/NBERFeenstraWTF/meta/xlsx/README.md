@@ -36,12 +36,29 @@ Manually Edited / Notes
 		md5hash: 		2a7d7a2ae3ee3308a7837eeb914dcffe
 		Notes: 			This File Requires MANUAL ADITIONS to Establish Appropriate Groups
 
-[1] exporter-eiso3n_intertemporal_countrycode_adjustments.xlsx 													{2}
+[2] exporter-eiso3n_intertemporal_countrycode_adjustments.xlsx 													{2}
 		Description: 	Contains Adjustments and Special Cases to get Consistent Country Classifications Over time. 
 						[WARNING: Includes Adjustment notes for Splits and Merges - Do not simply replace from {2}]
 		md5hash: 		ac11487884239e53d39efb4ecb30983e
 		Notes: 			This File Requires MANUAL ADITIONS to Establish Appropriate Groups
 
+[3] intertemporal_sitc4_wmeta.xlsx 																				{3}
+		Status: 		BEING EDITED
+		Description: 	Contains Adjustments and Notes considering intertemporal sitc4 codes and includes a marker
+						for SITC Revision 2 official Codes
+		md5hash: 		???
+		Notes:
+
+[4] intertemporal_sitc4_values_wmeta.xlsx																		{3}
+		Status: 		BEING EDITED
+		Description: 	Same as [3] except includes Total Values Contained in the Dataset 		
+		md5hash: 		???
+		Notes:
+
+[5] intertemporal_sitc4_wmeta_adjustments.xlsx 																	{3}
+		Status: 		BEING EDITED
+		Description: 	Same as [3] Except Contains only cases that need to be adjusted
+						Codes != SITCR2 Offical Code OR 'prc_coverage' != 1
 
 Construction Recipe:
 --------------------
@@ -77,3 +94,22 @@ Construction Recipe:
 
 		espell_cases = espells[espells['coverage'] != total_coverage]
 		espell_cases.to_excel('exporter-eiso3n_intertemporal_countrycode_adjustments.xlsx') #Requires Manual Adjustment
+
+{3} 	from pyeconlab import NBERFeenstraWTFConstructor
+		SOURCE_DATA_DIR = "E:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\" #win7
+		a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
+
+		table = a.intertemporal_productcodes_dataset(values=True, verbose=True)
+		table.to_excel('./intertemporal_sitc4_values_wmeta.xlsx')
+
+		from __future__ import division
+		table = a.intertemporal_productcodes_dataset(values=False, verbose=True)
+		total_coverage = len(table.columns)
+		table['coverage'] = table.sum(axis=1)
+		table['prc_coverage'] = table['coverage'] / total_coverage
+		table.to_excel('./intertemporal_sitc4_wmeta.xlsx')
+
+		table = table.reset_index()
+		table = table.loc[(table.SITCR2 != 1) | (table.prc_coverage != 1)]
+		table = table.set_index(['sitc4', 'SITCR2'])
+		table.to_excel('./intertemporal_sitc4_wmeta_adjustments.xlsx')
