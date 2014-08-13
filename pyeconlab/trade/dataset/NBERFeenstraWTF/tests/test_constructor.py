@@ -180,12 +180,12 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 	#-SetUp-#
 
 	@classmethod
-	def setUpClass(self): #should this be cls
+	def setUpClass(cls): #should this be cls
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
 		years = [1962, 1985, 1990, 2000]
-		self.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, years=years, ftype='dta', standardise=False, skip_setup=False, verbose=False)
+		cls.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, years=years, ftype='dta', standardise=False, skip_setup=False, verbose=False)
 		#-Adjust Units as Stata Imports '' as '' whereas csv imports '' as np.nan-#
-		self.obj.raw_data['unit'] = self.obj.raw_data['unit'].apply(lambda x: np.nan if x == '' else x)
+		cls.obj.raw_data['unit'] = cls.obj.raw_data['unit'].apply(lambda x: np.nan if x == '' else x)
 
 	#-Basic Tests-#
 

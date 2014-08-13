@@ -115,6 +115,7 @@ class NBERFeenstraWTFConstructor(object):
 				industries 0222, 0223, or 0224." [FAQ]
 
 		[3] I am not currently sure what these SITC codes are. I have requested further information from Robert Feenstra
+			They only occur in 1962 - 1965 and have a combined value of: $6,683,000
 			0021 	[Associated only with Malta]
 			0023 	[Various Eastern European Countries and Austria]
 			0024
@@ -169,6 +170,8 @@ class NBERFeenstraWTFConstructor(object):
 	[4] To be more memory efficient we could enforce raw_data to be an HDFStore
 	[5] Construct a BASE Constructor Class that contains generic methods (like IO)
 	[6] Construct more formalised structure to ensure raw_data isn't operated on except split_countrycodes (OR should this always work on dataset?)
+	[7] Move Dataset.operations to be a Class Definition for Persistence across DataFrame Creation and Construction
+
 	"""
 
 	# - Attributes - #
@@ -563,6 +566,18 @@ class NBERFeenstraWTFConstructor(object):
 	# - Operations on Dataset  - #
 	# -------------------------- #
 
+	def reduce_to(self, to=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'], rtrn=False):
+		"""
+		Reduce a dataset to a specified list of columns
+
+		Note
+		----
+		[1] This is an idea candidate for a constructor superclass so that it is inherited
+		"""
+		self._dataset = self._dataset[to]
+		if rtrn:
+			return self._dataset
+
 	def adjust_china_hongkongdata(self, return_dataset=False, verbose=False):
 		"""
 		Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
@@ -670,6 +685,8 @@ class NBERFeenstraWTFConstructor(object):
 
 	# - Operations on Country Codes - #
 	# ------------------------------- #
+
+	#Move These to Meta Data#
 
 	fix_exporter_to_iso3n = 	{
 									'Asia NES' 	: 896,
@@ -896,6 +913,8 @@ class NBERFeenstraWTFConstructor(object):
 		#-Drop WLD-#
 		self._dataset = self.dataset[self.dataset.iiso3c != 'WLD']
 		self._dataset = self.dataset[self.dataset.eiso3c != 'WLD']
+		#-ResetIndex-#
+		self._dataset = self._dataset.reset_index() 						#This leaves in an index series = observation number
 		#-OpString-#
 		update_operations(self._dataset, op_string)
 		if rtrn:
@@ -932,32 +951,46 @@ class NBERFeenstraWTFConstructor(object):
 			return self.dataset
 
 
-
-	def intertemporal_country_adjustments(self, verbose=True):
+	def intertemporal_country_adjustments(self, force=False, verbose=True):
 		"""
 		Adjust Country Codes to be Inter-temporally Consistent
+
+		Future Work
+		-----------
+		[1] Write Tests
 		"""
+		from pyeconlab.trade.dataset.NBERFeenstraWTF.meta import iso3c_recodes_for_1962_2000
+		from pyeconlab.util import concord_data
+
+		#-Parse Complete Dataset Check-#
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("This is not a complete Dataset! ... use force=True if you want to proceed.")
 		#-OpString-#
 		op_string = u"(intertemporal_country_adjustments)"
 		if check_operations(self._dataset, op_string): return self.dataset 	#Already been computed
 		#-Checks-#
 		if not check_operations(self._dataset, u"(countries_only)"): 	   	#Adds iso3c	
 			self.countries_only(verbose=verbose)
+		operations = self._dataset.operations 								#Preserve Performed Operations
 		#-Adjust Codes-#
-		from pyeconlab.trade.dataset.NBERFeenstraWTF.meta import iso3c_recodes_for_1962_2000
-		from pyeconlab.util import concord_data
+		if verbose: print "[INFO] Adjusting Codes for Intertemporal Consistency from meta subpackage (iso3c_recodes_for_1962_2000)"
 		self._dataset['iiso3c'] = self._dataset['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 		self._dataset['eiso3c'] = self._dataset['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
-
-
-		# ------------ #
-		#-WORKING HERE-# 	To Collapse at some point need to work on near final dataset to contain the groupby and useful columns!
-		# ------------ # 	This needs to be done prior to this function call
-
+		#-Drop Removals-#
+		if verbose: print "[INFO] Deleting Recodes to '.'"
+		self._dataset = self._dataset[self._dataset['iiso3c'] != '.']
+		self._dataset = self._dataset[self._dataset['eiso3c'] != '.']
+		#-Collapse Constructed Duplicates-#
+		if verbose: print "[INFO] Collapsing Dataset to SUM duplicate entries"
+		self.reduce_to(to=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'])  								#Collapsing here makes the groupby logic more coherent
+		self._dataset = self._dataset.groupby(['year', 'iiso3c', 'eiso3c', 'sitc4']).sum()
+		self._dataset = self._dataset.reset_index() 													#Return Flat File
+		self._dataset.operations = operations 															
 		#-OpString-#	
 		update_operations(self._dataset, op_string)
 
-
+	# ------------------------------- #	
 	# - Operations on Product Codes - #
  	# ------------------------------- #	
 
@@ -970,6 +1003,7 @@ class NBERFeenstraWTFConstructor(object):
 		---------
 		1. Does this need to be performed before adjust_china_hongkongdata (as this might match multiple times!)?
 		2. Write Tests
+
 		"""
 		#-Check if Operation has been conducted-#
 		op_string = u"(collapse_to_valuesonly)"
@@ -1019,7 +1053,6 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset['SITCR2'] = self._dataset['sitc4'].apply(lambda x: 1 if x in codes else 0)
 		#-OpString-#
 		update_operations(self._dataset, op_string)
-
 
 	def add_productcode_levels(self, verbose=False):
 		"""
@@ -1088,8 +1121,40 @@ class NBERFeenstraWTFConstructor(object):
 	def intertemporal_consistent_productcodes(self, verbose=False):
 		""" 
 		Construct a set of ProductCodes that are Inter-temporally Consistent based around SITC Revision 2
+
+		Full TimeFrames
+		===============
+
+		Dataset #1 [1962 to 2000]
+		-------------------------
+
+			The longest time horizon in the dataset. 
+			Need to aggregate a lot of Product Codes to Level 3 + 0 to allow for dynamic consistency
+
+			**Current Focus**
+		
+		Dataset #2 [1962 to 2000] [SITCR2L3]
+		-------------------------------------
+
+			Aggregate ALL Codes to SITCR2 Level 3 
+			This brings in the vast majority of data and Level4 'Corrections'
+			Easy to Construct
+
+		Subset TimeFrames
+		=================
+
+		Dataset #3 [1974 to 2000]
+		-------------------------
+
+			A lot of SITCR2 Codes get introduced into the dataset in 1974. 
+			Starting from 1974 would allow a greater diversity of products but removes 10 years of dynamics
+
+			TBD		
+
 		"""
+
 		### -- Working Here --- ###
+		
 		raise NotImplementedError
 
 	def intertemporal_consistent_productcodes_concord(self, verbose=False):
@@ -1334,25 +1399,38 @@ class NBERFeenstraWTFConstructor(object):
 
 	def intertemporal_productcodes(self, dataset=False, force=False, verbose=False):
 		"""
-		Construct a table of productcodes by year
-		
-		dataset 	: 	True/False 
-						[Default: False => Perform Operation on Raw Data]
-		force 		:  	True/False
-						[Deafult: True => doesn't raise a ValueError if trying to conduct function on an incomplete dataset]
+		Wrapper for finding intertemporal product codes meta data from RAW DATA or DATASET
+
+		dataset 	: 	[True/False] Default => False
+
+		Returns
+		-------
+			table_sitc4
 		"""
 		if self.complete_dataset != True:
 			if force == False:
 				raise ValueError("[ERROR] Not a Complete Dataset!")
-		#-Parse Options-#
 		if dataset:
-			data = self.dataset 
+			return self.intertemporal_productcodes_dataset(force=force, verbose=verbose)
 		else:
-			data = self.raw_data 		#Default Action
+			return self.intertemporal_productcodes_raw_data(force=force, verbose=verbose)
+
+	def intertemporal_productcodes_raw_data(self, force=False, verbose=False):
+		"""
+		Construct a table of productcodes by year
+		
+		force 		:  	True/False
+						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
+		"""
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("[ERROR] Not a Complete Dataset!")
+		#-RAW DATA-#
+		data = self.raw_data 		
 		#-Split Codes-#
-		if not check_operations(data, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+		if not check_operations(data, u"(split_countrycodes"): 						#Requires iiso3n, eiso3n
 			if verbose: print "Running .split_countrycodes() as is required ..."
-			self.split_countrycodes(dataset=dataset, verbose=verbose)
+			self.split_countrycodes(dataset=False, verbose=verbose)
 		#-Core-#
 		table_sitc4 = data[['year', 'sitc4']].drop_duplicates()
 		table_sitc4['code'] = 1
@@ -1360,6 +1438,70 @@ class NBERFeenstraWTFConstructor(object):
 		#-Drop TopLevel Name in Columns MultiIndex-#
 		table_sitc4.columns = table_sitc4.columns.droplevel() 	#Removes Unnecessary 'code' label
 		return table_sitc4
+
+	def intertemporal_productcodes_dataset(self, tabletype='values', meta=True, source_institution='un', force=False, verbose=False):
+		"""
+		Construct a table of productcodes by year
+		This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
+		
+		values 		: 	['values', 'indicator'] 	'composition'
+		meta 		: 	True/False
+						Adds SITCR2 Marker in the Index
+		force 		:  	True/False
+						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
+		"""
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("[ERROR] Not a Complete Dataset!")
+		#-DATASET-#
+		data = self.dataset 
+		#-Split Codes-#
+		if not check_operations(data, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+			if verbose: print "Running .split_countrycodes() as is required ..."
+			self.split_countrycodes(dataset=True, verbose=verbose)
+		#-Core-#
+		if tabletype == 'values':
+			table_sitc4 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum()
+			table_sitc4 = table_sitc4.unstack(level='year')
+		elif tabletype == 'composition':
+			raise NotImplementedError
+		else: 																					# 'indicator' if not other match found
+			table_sitc4 = data[['year', 'sitc4']].drop_duplicates()
+			table_sitc4['attr'] = 1 																							
+			table_sitc4 = table_sitc4.set_index(['sitc4', 'year']).unstack(level='year') 
+		table_sitc4.columns = table_sitc4.columns.droplevel() 		 								#Drop TopLevel Name 'value' or 'attr' in Columns MultiIndex							
+		#-Add in Meta for ProductCodes-#
+		if meta:
+			table_sitc4 = table_sitc4.reset_index()
+			sitc = SITC(revision=2, source_institution=source_institution)
+			codes = sitc.get_codes(level=4)
+			table_sitc4['SITCR2'] = table_sitc4['sitc4'].apply(lambda x: 1 if x in codes else 0)
+			table_sitc4 = table_sitc4.set_index(['sitc4', 'SITCR2'])
+		return table_sitc4
+
+	def intertemporal_productcode_valuecompositions(self, level=3, verbose=False):
+		"""
+		Produce Value Composition Tables for Looking at SITC4 relative to some other level of aggregation
+		"""
+		#-DATASET-#
+		data = self.dataset
+		
+		#-SITC4-#
+		table_sitc4 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum()
+		table_sitc4 = table_sitc4.unstack(level='year')
+		table_sitc4 = table_sitc4.reset_index()
+		
+		#-SITC3-#
+		table_sitc3 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum().reset_index()
+		table_sitc3['sitc3'] = table_sitc3['sitc4'].apply(lambda x: str(x)[:3])
+		table_sitc3 = table_sitc3[['year', 'sitc3', 'value']].groupby(['year', 'sitc3']).sum().reset_index()
+
+		#---------------#
+		#- WORKING HERE #
+		#---------------#
+
+		raise NotImplementedError
+
 
 	def write_metadata(self, target_dir='./meta', verbose=True):
 		"""
