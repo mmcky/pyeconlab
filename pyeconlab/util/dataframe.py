@@ -245,10 +245,24 @@ def random_sample(df, sample_size = 1000):
 # - Attribute Functions - #
 # ----------------------- #
 
-# pd.DataFrame.operations = placeholder for attaching op_strings
+def update_operations(self, add_op_string):
+	""" 
+	Update a Operations attribute on a class attribute .operations 
 
-def update_operations(df, add_op_string):
-	""" Update a Special operations attribute on a DataFrame """
+	Note
+	----
+	[1] This requires the passed object to have an operations attribute
+	"""
+	try:
+		if type(self.operations) == str or type(self.operations) == unicode:
+			self.operations += add_op_string
+	except:
+		self.operations = add_op_string
+
+def update_operations_df(df, add_op_string):
+	""" 
+	Update a Special operations attribute on a DataFrame
+	"""
 	try:
 		if type(df.operations) == str or type(df.operations) == unicode:
 			df.operations += add_op_string
@@ -257,8 +271,28 @@ def update_operations(df, add_op_string):
 	# return df
 
 
-def check_operations(df, op_string, verbose=False):
-	""" Check if operation has been conducted on a DataFrame with re.search(op, df.operation) """
+def check_operations(self, opstring, verbose=False):
+	""" 
+	Check if Operation has been conducted on class attribute .operations
+	Moving towards class attribute as DataFrame's are created and destroyed making operations attribute difficult to track
+	
+	Note
+	----
+	[1] This requires the passed object to have an operations attribute
+	"""
+	try:
+		if re.search(opstring, self.operations):
+			if verbose: print "[INFO] Operation %s has already been conducted on dataset" % opstring 
+			return True
+		else:
+			return False
+	except:
+		raise ValueError("The incoming class does not have an operations attribute")
+
+def check_operations_df(df, op_string, verbose=False):
+	""" 
+	Check if operation has been conducted on a DataFrame with re.search(op, df.operation)
+	"""
 	try:
 		if verbose: print "Searching for %s in %s" % (op_string, df.operations)
 		if re.search(op_string, df.operations):

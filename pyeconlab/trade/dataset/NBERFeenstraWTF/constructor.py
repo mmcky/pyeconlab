@@ -188,6 +188,7 @@ class NBERFeenstraWTFConstructor(object):
 	source_last_checked = np.datetime64('2014-07-04')
 	complete_dataset 	= False 										#Make this harder to set
 	years 				= []
+	operations 			= ''
 	_available_years 	= xrange(1962,2000+1,1)
 	_fn_prefix			= u'wtf'
 	_fn_postfix			= u'.dta'
@@ -195,6 +196,7 @@ class NBERFeenstraWTFConstructor(object):
 	_raw_units 			= 1000
 	_file_interface 	= [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot', u'value', u'quantity']
 	
+
 	# - Other Data in NBER Feenstra WTF -#
 	_supp_data 			= dict
 	
@@ -446,19 +448,20 @@ class NBERFeenstraWTFConstructor(object):
 			return self._dataset
 
 
-	def set_dataset(self, df, force=False):
+	def set_dataset(self, df, force=False, reset_operations=False):
 		""" 
 		Check if Dataset Exists Prior to Assignment
 		Q: Is this ever going to be used?
 		"""
 		if type(self._dataset) == pd.DataFrame:
-			if force == True:
-				pass
-			else:
+			if force == False:
 				print "[WARNING] The dataset attribute has previously been set. To force the replacement use 'force'=True"
 				return None
 		self._dataset =  df 	#Should this make a copy?
-		
+		if reset_operations:
+			print "[INFO] Reseting operations attribute"
+			self.operations = ''
+
 	# ---------------------- #
 	# - Supplementary Data - #
 	# ---------------------- #
@@ -574,7 +577,9 @@ class NBERFeenstraWTFConstructor(object):
 		----
 		[1] This is an idea candidate for a constructor superclass so that it is inherited
 		"""
+		opstring = u"(reduce_to(to=%s))" % to
 		self._dataset = self._dataset[to]
+		self.operations += opstring
 		if rtrn:
 			return self._dataset
 
@@ -590,7 +595,7 @@ class NBERFeenstraWTFConstructor(object):
 		op_string = u'(adjust_raw_china_hongkongdata)'
 		
 		#-Check if Operation has been conducted-#
-		if check_operations(self._dataset, op_string):
+		if check_operations(self.operations, op_string):
 			#-Parse Return Option-#
 			if return_dataset:
 				return self._dataset
@@ -598,7 +603,7 @@ class NBERFeenstraWTFConstructor(object):
 				return None
 
 		#-Merge Settings-#
-		if check_operations(self._dataset, u"collapse_to_valuesonly", verbose=False):
+		if check_operations(self, u"collapse_to_valuesonly", verbose=False):
 			on 			= 	[u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'dot']
 		else:
 		 	on 			= 	[u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']
@@ -671,7 +676,7 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		op_string = u"(standardise_data)"
 		#-Check if Operation has been conducted-#
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(self, op_string): return None
 
 		self.change_value_units(verbose=verbose) 			#Change Units to $'s
 		self.add_iso3c(verbose=verbose)
@@ -679,7 +684,7 @@ class NBERFeenstraWTFConstructor(object):
 		self.add_sitcr2_official_marker(verbose=verbose) 	#Build SITCR2 Marker
 
 		#- Add Operation to df attribute -#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 
 
@@ -778,7 +783,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		#-Check if Operation has been conducted-#
 		op_string = u"(split_countrycodes)"
-		if check_operations(data, op_string): return None
+		if check_operations(self, op_string): return None
 
 		# - Importers - #
 		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
@@ -796,12 +801,12 @@ class NBERFeenstraWTFConstructor(object):
 			self.apply_iso3n_custom_fixes(verbose=verbose)
 
 		#- Add Operation to df attribute -#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	def apply_iso3n_custom_fixes(self, verbose=True):
 		""" Apply Custom Fixes for ISO3N Numbers """
 		op_string = u"(apply_iso3n_custom_fixes)"
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(self, op_string): return None
 
 		fix_countryname_to_iso3n = self.fix_countryname_to_iso3n
 		for key in sorted(fix_countryname_to_iso3n.keys()):
@@ -811,7 +816,7 @@ class NBERFeenstraWTFConstructor(object):
 			df.loc[df.exporter == key, 'eiso3n'] = fix_countryname_to_iso3n[key]
 
 		#- Add Operation to df attribute -#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	def add_iso3c(self, verbose=False):
 		""" 
@@ -839,9 +844,9 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-OpString-#
 		op_string = u"(add_iso3c)"
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(self, op_string): return None
 		#-Core-#
-		if not check_operations(self._dataset, u"(split_countrycodes)"): 		#Requires iiso3n, eiso3n
+		if not check_operations(self, u"(split_countrycodes)"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
 
 		un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un')
@@ -850,7 +855,7 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset['eiso3c'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
 
 		#-OpString-#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	def add_isocountrynames(self, verbose=False):
 		"""
@@ -869,9 +874,9 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-OpString-#
 		op_string = u"(add_isocountrynames)"
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(self, op_string): return None
 		#-Checks-#
-		if not check_operations(self._dataset, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+		if not check_operations(self, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
 			self.split_countrycodes(verbose=verbose)
 		#-Core-#
 		un_iso3n_to_un_name = iso3n_to_name(source_institution='un') 
@@ -880,7 +885,7 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset['ecountryname'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
 
 		#-OpString-#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	def countries_only(self, error_code='.', rtrn=False, verbose=True):
 		"""
@@ -903,9 +908,9 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-OpString-#
 		op_string = u"(countries_only)"
-		if check_operations(self._dataset, op_string): return self.dataset 	#Already been computed
+		if check_operations(self, op_string): return self.dataset 	#Already been computed
 		#-Checks-#
-		if not check_operations(self._dataset, u"(add_iso3c)"): 			#Requires iiso3n, eiso3n
+		if not check_operations(self, u"(add_iso3c)"): 			#Requires iiso3n, eiso3n
 			self.add_iso3c(verbose=verbose)
 		#-Drop NES and Unmatched Countries-#
 		self._dataset = self.dataset[self.dataset.iiso3c != error_code] 	#Keep iiso3n Countries
@@ -916,7 +921,7 @@ class NBERFeenstraWTFConstructor(object):
 		#-ResetIndex-#
 		self._dataset = self._dataset.reset_index() 						#This leaves in an index series = observation number
 		#-OpString-#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 		if rtrn:
 			return self.dataset
 
@@ -939,14 +944,14 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-OpString-#
 		op_string = u"(world_only)"
-		if check_operations(self._dataset, op_string): return self.dataset 	#Already been computed
+		if check_operations(self, op_string): return self.dataset 	#Already been computed
 		#-Checks-#
-		if not check_operations(self._dataset, u"(add_iso3c)"): 			#Requires iiso3n, eiso3n
+		if not check_operations(self, u"(add_iso3c)"): 			#Requires iiso3n, eiso3n
 			self.add_iso3c(verbose=verbose)
 		#-Core-#
 		self._dataset = self._dataset.loc[(self._dataset.iiso3c == 'WLD') | (self._dataset.eiso3c == 'WLD')] 			#Take WLD either in iiso3c or eiso3c (| = or)
 		#-OpString-#	
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 		if rtrn:
 			return self.dataset
 
@@ -968,9 +973,9 @@ class NBERFeenstraWTFConstructor(object):
 				raise ValueError("This is not a complete Dataset! ... use force=True if you want to proceed.")
 		#-OpString-#
 		op_string = u"(intertemporal_country_adjustments)"
-		if check_operations(self._dataset, op_string): return self.dataset 	#Already been computed
+		if check_operations(self, op_string): return self.dataset 	#Already been computed
 		#-Checks-#
-		if not check_operations(self._dataset, u"(countries_only)"): 	   	#Adds iso3c	
+		if not check_operations(self, u"(countries_only)"): 	   	#Adds iso3c	
 			self.countries_only(verbose=verbose)
 		operations = self._dataset.operations 								#Preserve Performed Operations
 		#-Adjust Codes-#
@@ -988,7 +993,7 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset = self._dataset.reset_index() 													#Return Flat File
 		self._dataset.operations = operations 															
 		#-OpString-#	
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	# ------------------------------- #	
 	# - Operations on Product Codes - #
@@ -1007,7 +1012,7 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-Check if Operation has been conducted-#
 		op_string = u"(collapse_to_valuesonly)"
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(self, op_string): return None
 		idx = ['year', 'icode',	'importer',	'ecode', 'exporter', 'sitc4']	
 		# - Conduct Duplicate Analysis - #
 		dup = self._dataset.duplicated(subset=idx)  
@@ -1023,7 +1028,7 @@ class NBERFeenstraWTFConstructor(object):
 		if verbose:
 			print "[INFO] New Dataset Length: %s" % self._dataset.shape[0]
 		#- Add Operation to df attribute -#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	def change_value_units(self, verbose=False):
 		""" 
@@ -1031,12 +1036,12 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-OpString-#
 		op_string = u"(change_value_units)"
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(self, op_string): return None
 		#-Core-#
 		if verbose: print "[INFO] Setting Values to be in $'s not %s$'s" % (self._raw_units)
 		self._dataset['value'] = self._dataset['value'] * self._raw_units
 		#-OpString-#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	def add_sitcr2_official_marker(self, source_institution='un', verbose=False):
 		""" 
@@ -1045,14 +1050,14 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-OpString-#
 		op_string = u"(add_sitcr2_official_marker)"
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(self, op_string): return None
 		#-Core-#
 		if verbose: print "[INFO] Adding SITC Revision 2 (Source='un') marker variable 'SITCR2'"
 		sitc = SITC(revision=2, source_institution=source_institution)
 		codes = sitc.get_codes(level=4)
 		self._dataset['SITCR2'] = self._dataset['sitc4'].apply(lambda x: 1 if x in codes else 0)
 		#-OpString-#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	def add_productcode_levels(self, verbose=False):
 		"""
@@ -1067,13 +1072,13 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		if level == 1:
 			op_string = u"(add_productcode_level1)"
-			if check_operations(self._dataset, op_string): return None
+			if check_operations(self, op_string): return None
 		elif level == 2:
 			op_string = u"(add_productcode_level2)"
-			if check_operations(self._dataset, op_string): return None
+			if check_operations(self, op_string): return None
 		elif level == 3:
 			op_string = u"(add_productcode_level3)"
-			if check_operations(self._dataset, op_string): return None
+			if check_operations(self, op_string): return None
 		else:
 			raise ValueError("SITC4 Can Only Be Split into Levels 1,2, or 3")
 		#-Core-#
@@ -1085,7 +1090,7 @@ class NBERFeenstraWTFConstructor(object):
 		if level == 3:
 			self._dataset['SITCL3'] = self._dataset['sitc4'].apply(lambda x: x[0:3])
 		#-OpString-#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
  	def identify_alpha_productcodes(self, verbose=False):
 		"""
@@ -1110,13 +1115,13 @@ class NBERFeenstraWTFConstructor(object):
 
 		"""
 		op_string = u"(add_productcode_alpha_indicator)"
-		if check_operations(self._dataset, op_string): return None
+		if check_operations(self, op_string): return None
 		#-Core-#
 		if verbose: print "[INFO] Identifying SITC Codes with A and X"
 		self._dataset['SITCA'] = self._dataset['sitc4'].apply(lambda x: 1 if re.search("[aA]",x) else 0)
  		self._dataset['SITCX'] = self._dataset['sitc4'].apply(lambda x: 1 if re.search("[xX]",x) else 0)
 		#-OpString-#
-		update_operations(self._dataset, op_string)
+		update_operations(self, op_string)
 
 	def intertemporal_consistent_productcodes(self, verbose=False):
 		""" 
@@ -1347,7 +1352,7 @@ class NBERFeenstraWTFConstructor(object):
 		#-Set RAW DATA-#
 		data = self.raw_data 		
 		#-Split Codes-#
-		if not check_operations(data, u"(split_countrycodes"): 							#Requires iiso3n, eiso3n
+		if not check_operations(self, u"(split_countrycodes"): 							#Requires iiso3n, eiso3n
 			if verbose: print "Running .split_countrycodes() as is required ..."
 			self.split_countrycodes(dataset=False, verbose=verbose)
 		#-Core-#
@@ -1380,10 +1385,10 @@ class NBERFeenstraWTFConstructor(object):
 		#-Set Dataset-#
 		data = self.dataset 
 		#-Split Codes-#
-		if not check_operations(data, u"(split_countrycodes"): 						#Requires iiso3n, eiso3n
+		if not check_operations(self, u"split_countrycodes"): 						#Requires iiso3n, eiso3n
 			if verbose: print "Running .split_countrycodes() as is required ..."
 			self.split_countrycodes(dataset=True, verbose=verbose)
-		if not check_operations(data, u"(add_iso3c"): 					
+		if not check_operations(self, u"add_iso3c"): 					
 			if verbose: print "Running .add_iso3c() as is required ..."
 			self.add_iso3c(verbose=verbose)
 		#-Core-#
@@ -1428,7 +1433,7 @@ class NBERFeenstraWTFConstructor(object):
 		#-RAW DATA-#
 		data = self.raw_data 		
 		#-Split Codes-#
-		if not check_operations(data, u"(split_countrycodes"): 						#Requires iiso3n, eiso3n
+		if not check_operations(self, u"(split_countrycodes"): 						#Requires iiso3n, eiso3n
 			if verbose: print "Running .split_countrycodes() as is required ..."
 			self.split_countrycodes(dataset=False, verbose=verbose)
 		#-Core-#
@@ -1456,7 +1461,7 @@ class NBERFeenstraWTFConstructor(object):
 		#-DATASET-#
 		data = self.dataset 
 		#-Split Codes-#
-		if not check_operations(data, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
+		if not check_operations(self, u"split_countrycodes"): 		#Requires iiso3n, eiso3n
 			if verbose: print "Running .split_countrycodes() as is required ..."
 			self.split_countrycodes(dataset=True, verbose=verbose)
 		#-Core-#
