@@ -23,6 +23,9 @@ Generated Data Files
 		Description: 	Intertemporal CountryCode Spells of Unique iso3n country codes found in the dataset
 		md5hash: 		d5d473689b87da17e767c8eb6b63eb26
 
+[5] exporter-eiso3n_intertemporal_countrycode_spells.xlsx 														{2}
+		Description: 	Intertemporal CountryCode Spells of Unique iso3n country codes found in the dataset
+		md5hash: 		d5d473689b87da17e767c8eb6b63eb26
 
 Manually Edited / Notes
 -----------------------
@@ -30,7 +33,13 @@ Manually Edited / Notes
 [1] importer-iiso3n_intertemporal_countrycode_adjustments.xlsx 													{2}
 		Description: 	Contains Adjustments and Special Cases to get Consistent Country Classifications Over time. 
 						[WARNING: Includes Adjustment notes for Splits and Merges - Do not simply replace from {2}]
-		md5hash: 		4c83439f2efd56320044d21326853888
+		md5hash: 		2a7d7a2ae3ee3308a7837eeb914dcffe
+		Notes: 			This File Requires MANUAL ADITIONS to Establish Appropriate Groups
+
+[1] exporter-eiso3n_intertemporal_countrycode_adjustments.xlsx 													{2}
+		Description: 	Contains Adjustments and Special Cases to get Consistent Country Classifications Over time. 
+						[WARNING: Includes Adjustment notes for Splits and Merges - Do not simply replace from {2}]
+		md5hash: 		ac11487884239e53d39efb4ecb30983e
 		Notes: 			This File Requires MANUAL ADITIONS to Establish Appropriate Groups
 
 
@@ -49,6 +58,7 @@ Construction Recipe:
 		i,e = a.intertemporal_countrycodes(dataset=True)
 		
 		from pyeconlab.util import compute_number_of_spells
+		#ispells
 		ispells = compute_number_of_spells(i)
 		total_coverage = len(ispells.columns)
 		ispells['coverage'] = ispells.sum(axis=1)
@@ -56,4 +66,14 @@ Construction Recipe:
 		ispells.to_excel('importer-iiso3n_intertemporal_countrycode_spells.xlsx')
 
 		ispell_cases = ispells[ispells['coverage'] != total_coverage]
-		ispell_cases.to_excel('importer-iiso3n_intertemporal_countrycode_adjustments.xlsx')
+		ispell_cases.to_excel('importer-iiso3n_intertemporal_countrycode_adjustments.xlsx') #Requires Manual Adjustment
+
+		#espells
+		espells = compute_number_of_spells(e)
+		total_coverage = len(espells.columns)
+		espells['coverage'] = espells.sum(axis=1)
+		espells['prc_coverage'] = espells['coverage'] / total_coverage
+		espells.to_excel('exporter-eiso3n_intertemporal_countrycode_spells.xlsx')
+
+		espell_cases = espells[espells['coverage'] != total_coverage]
+		espell_cases.to_excel('exporter-eiso3n_intertemporal_countrycode_adjustments.xlsx') #Requires Manual Adjustment
