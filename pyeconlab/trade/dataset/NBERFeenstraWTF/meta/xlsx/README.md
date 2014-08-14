@@ -27,6 +27,31 @@ Generated Data Files
 		Description: 	Intertemporal CountryCode Spells of Unique iso3n country codes found in the dataset
 		md5hash: 		d5d473689b87da17e767c8eb6b63eb26
 
+[6] intertemporal_sitc4.xlsx 																					{3}
+		Description: 	Contains table of intertemporal sitc4 codes
+		md5hash: 		357662baf4db691b10b182e2a683adda
+
+[7] intertemporal_sitc4_wmeta.xlsx 																				{3}
+		Description: 	Contains Adjustments and Notes considering intertemporal sitc4 codes and includes a marker
+						for SITC Revision 2 official Codes
+		md5hash: 		dc37c350133cc60bf294a71acf9bdedb
+
+[8] intertemporal_sitc4_values_wmeta.xlsx																		{3}
+		Description: 	Same as [7] except includes Total Aggregated Values Contained in the Dataset 		
+		md5hash: 		29d154760c3826942797e4d6167ba488
+
+[9] intertemporal_sitc4_valuecompositions_L3.xlsx 														{3}
+		Description 	Same as [7] except values are Compositions relative to Level 3 Codes
+		md5hash: 		208eb56e6bda87b1a4e41f604402fe43
+
+[10] intertemporal_sitc4_valuecompositions_L2.xlsx 														{3}
+		Description 	Same as [7] except values are Compositions relative to Level 2 Codes
+		md5hash: 		bdbf90cd6178ce5c7fe1357e21b73753
+
+[11] intertemporal_sitc4_valuecompositions_L1.xlsx 														{3}
+		Description 	Same as [7] except values are Compositions relative to Level 1 Codes
+		md5hash: 		ba60871412a8045e1ade3caf37d7c3d2
+
 Manually Edited / Notes
 -----------------------
 
@@ -42,22 +67,10 @@ Manually Edited / Notes
 		md5hash: 		ac11487884239e53d39efb4ecb30983e
 		Notes: 			This File Requires MANUAL ADITIONS to Establish Appropriate Groups
 
-[3] intertemporal_sitc4_wmeta.xlsx 																				{3}
-		Status: 		BEING EDITED
-		Description: 	Contains Adjustments and Notes considering intertemporal sitc4 codes and includes a marker
-						for SITC Revision 2 official Codes
-		md5hash: 		???
-		Notes:
 
-[4] intertemporal_sitc4_values_wmeta.xlsx																		{3}
+[3] intertemporal_sitc4_wmeta_adjustments.xlsx 																	{3}
 		Status: 		BEING EDITED
-		Description: 	Same as [3] except includes Total Values Contained in the Dataset 		
-		md5hash: 		???
-		Notes:
-
-[5] intertemporal_sitc4_wmeta_adjustments.xlsx 																	{3}
-		Status: 		BEING EDITED
-		Description: 	Same as [3] Except Contains only cases that need to be adjusted
+		Description: 	Same as [7] Except Contains only cases that need to be adjusted
 						Codes != SITCR2 Offical Code OR 'prc_coverage' != 1
 
 Construction Recipe:
@@ -99,17 +112,23 @@ Construction Recipe:
 		SOURCE_DATA_DIR = "E:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\" #win7
 		a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
 
-		table = a.intertemporal_productcodes_dataset(values=True, verbose=True)
-		table.to_excel('./intertemporal_sitc4_values_wmeta.xlsx')
+		x = a.intertemporal_productcodes_dataset(tabletype='values')
+		x.to_excel('intertemporal_sitc4_values_wmeta.xlsx')
 
-		from __future__ import division
-		table = a.intertemporal_productcodes_dataset(values=False, verbose=True)
-		total_coverage = len(table.columns)
-		table['coverage'] = table.sum(axis=1)
-		table['prc_coverage'] = table['coverage'] / total_coverage
-		table.to_excel('./intertemporal_sitc4_wmeta.xlsx')
+		x = a.intertemporal_productcodes_dataset(tabletype='indicator')
+		x.to_excel('intertemporal_sitc4_wmeta.xlsx')
 
-		table = table.reset_index()
-		table = table.loc[(table.SITCR2 != 1) | (table.prc_coverage != 1)]
-		table = table.set_index(['sitc4', 'SITCR2'])
-		table.to_excel('./intertemporal_sitc4_wmeta_adjustments.xlsx')
+		x = x.reset_index()
+		x = x.loc[(x.SITCR2 != 1) | (x.prc_coverage != 1)]
+		x = x.set_index(['sitc4', 'SITCR2'])
+		x.to_excel('./intertemporal_sitc4_wmeta_adjustments.xlsx')
+
+		x = a.intertemporal_productcodes_dataset(tabletype='composition', level=3)
+		x.to_excel('intertemporal_sitc4_valuecompositions_L3.xlsx')
+
+		x = a.intertemporal_productcodes_dataset(tabletype='composition', level=2)
+		x.to_excel('intertemporal_sitc4_valuecompositions_L2.xlsx')
+
+		x = a.intertemporal_productcodes_dataset(tabletype='composition', level=1)
+		x.to_excel('intertemporal_sitc4_valuecompositions_L1.xlsx')
+

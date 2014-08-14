@@ -1157,6 +1157,8 @@ class NBERFeenstraWTFConstructor(object):
 			TBD		
 
 		"""
+		#-List of Codes to DROP-#
+		drop_sitc4_1962_2000 = ['0021', '0022', '0023', '0024', '0025', '0031', '0035', '0039']  #Codes in 1962 to 1965 and are of unknown origin. 
 
 		### -- Working Here --- ###
 		
@@ -1444,14 +1446,15 @@ class NBERFeenstraWTFConstructor(object):
 		table_sitc4.columns = table_sitc4.columns.droplevel() 	#Removes Unnecessary 'code' label
 		return table_sitc4
 
-	def intertemporal_productcodes_dataset(self, tabletype='values', meta=True, source_institution='un', force=False, verbose=False):
+	def intertemporal_productcodes_dataset(self, tabletype='indicator', meta=True, source_institution='un', level=3, force=False, verbose=False):
 		"""
 		Construct a table of productcodes by year
 		This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
 		
-		values 		: 	['values', 'indicator'] 	'composition'
+		tabletype 		: 	['values', 'indicator'] 	'composition'
 		meta 		: 	True/False
 						Adds SITCR2 Marker in the Index
+		level 		: 	Level for Composition Table
 		force 		:  	True/False
 						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
 		"""
@@ -1467,16 +1470,26 @@ class NBERFeenstraWTFConstructor(object):
 		#-Core-#
 		if tabletype == 'values':
 			table_sitc4 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum()
-			table_sitc4 = table_sitc4.unstack(level='year')
+			table_sitc4 = table_sitc4.unstack(level='year') 	
+			table_sitc4.columns = table_sitc4.columns.droplevel() 								#Drop 'value' Name in Columns MultiIndex
 		elif tabletype == 'composition':
-			raise NotImplementedError
+			table_sitc4 = self.intertemporal_productcode_valuecompositions(level=level)
 		else: 																					# 'indicator' if not other match found
 			table_sitc4 = data[['year', 'sitc4']].drop_duplicates()
 			table_sitc4['attr'] = 1 																							
-			table_sitc4 = table_sitc4.set_index(['sitc4', 'year']).unstack(level='year') 
-		table_sitc4.columns = table_sitc4.columns.droplevel() 		 								#Drop TopLevel Name 'value' or 'attr' in Columns MultiIndex							
+			table_sitc4 = table_sitc4.set_index(['sitc4', 'year']).unstack(level='year')
+			table_sitc4.columns = table_sitc4.columns.droplevel()  								#Drop TopLevel Name 'attr' in Columns MultiIndex
+			#-Add Coverage Stats-#
+			total_coverage = len(table_sitc4.columns)
+			table_sitc4['coverage'] = table_sitc4.sum(axis=1)
+			table_sitc4['prc_coverage'] = table_sitc4['coverage'] / total_coverage				
 		#-Add in Meta for ProductCodes-#
 		if meta:
+			#-Coverage Stats-#
+			if tabletype != 'indicator':
+				coverage = self.intertemporal_productcodes_dataset(tabletype='indicator', meta=False)[['coverage', 'prc_coverage']]
+				table_sitc4 = table_sitc4.merge(coverage, left_index=True, right_index=True)
+			#-SITCR2-#
 			table_sitc4 = table_sitc4.reset_index()
 			sitc = SITC(revision=2, source_institution=source_institution)
 			codes = sitc.get_codes(level=4)
@@ -1494,25 +1507,21 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-DATASET-#
 		data = self.dataset
-		
 		sitcl = 'sitc%s' % level
-
 		#-SITC4-#
 		table_sitc4 = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum().reset_index()
 		table_sitc4[sitcl] = table_sitc4['sitc4'].apply(lambda x: str(x)[:level])
-
 		#-SITCL-#
 		table_sitcl = data[['year', 'sitc4', 'value']].groupby(['sitc4', 'year']).sum().reset_index()
 		table_sitcl[sitcl] = table_sitcl['sitc4'].apply(lambda x: str(x)[:level])
 		table_sitcl = table_sitcl[['year', sitcl, 'value']].groupby(['year', sitcl]).sum().reset_index()
-
+		#-Construct Table-#
 		table = table_sitc4.merge(table_sitcl, on=['year', sitcl])
 		table[sitcl.upper()] = table['value_x'] / table['value_y'] * 100
 		table = table[['year', 'sitc4', sitcl.upper()]]
 		table = table.set_index(['year', 'sitc4'])
 		table = table.unstack(level='year')
 		table.columns = table.columns.droplevel()
-
 		return table 
 
 
