@@ -30,27 +30,45 @@ Generated Data Files
 [6] intertemporal_sitc4.xlsx 																					{3}
 		Description: 	Contains table of intertemporal sitc4 codes
 		md5hash: 		357662baf4db691b10b182e2a683adda
+		Notes: 			[1] Country Specific Versions are also available but NOT held in the repository due to 
+						their size ~45Mb. These can be generated for exporters using country='exporter' and
+						importers using country='importer' in the recipes below. 
 
 [7] intertemporal_sitc4_wmeta.xlsx 																				{3}
 		Description: 	Contains Adjustments and Notes considering intertemporal sitc4 codes and includes a marker
 						for SITC Revision 2 official Codes
 		md5hash: 		dc37c350133cc60bf294a71acf9bdedb
+		Notes: 			[1] Country Specific Versions are also available but NOT held in the repository due to 
+						their size ~45Mb. These can be generated for exporters using country='exporter' and
+						importers using country='importer' in the recipes below. 
 
 [8] intertemporal_sitc4_values_wmeta.xlsx																		{3}
 		Description: 	Same as [7] except includes Total Aggregated Values Contained in the Dataset 		
 		md5hash: 		29d154760c3826942797e4d6167ba488
+		Notes: 			[1] Country Specific Versions are also available but NOT held in the repository due to 
+						their size ~45Mb. These can be generated for exporters using country='exporter' and
+						importers using country='importer' in the recipes below. 
 
 [9] intertemporal_sitc4_valuecompositions_L3.xlsx 														{3}
 		Description 	Same as [7] except values are Compositions relative to Level 3 Codes
 		md5hash: 		208eb56e6bda87b1a4e41f604402fe43
+		Notes: 			[1] Country Specific Versions are also available but NOT held in the repository due to 
+						their size ~45Mb. These can be generated for exporters using country='exporter' and
+						importers using country='importer' in the recipes below. 
 
 [10] intertemporal_sitc4_valuecompositions_L2.xlsx 														{3}
 		Description 	Same as [7] except values are Compositions relative to Level 2 Codes
 		md5hash: 		bdbf90cd6178ce5c7fe1357e21b73753
+		Notes: 			[1] Country Specific Versions are also available but NOT held in the repository due to 
+						their size ~45Mb. These can be generated for exporters using country='exporter' and
+						importers using country='importer' in the recipes below. 
 
 [11] intertemporal_sitc4_valuecompositions_L1.xlsx 														{3}
 		Description 	Same as [7] except values are Compositions relative to Level 1 Codes
 		md5hash: 		ba60871412a8045e1ade3caf37d7c3d2
+		Notes: 			[1] Country Specific Versions are also available but NOT held in the repository due to 
+						their size ~45Mb. These can be generated for exporters using country='exporter' and
+						importers using country='importer' in the recipes below. 
 
 Manually Edited / Notes
 -----------------------
