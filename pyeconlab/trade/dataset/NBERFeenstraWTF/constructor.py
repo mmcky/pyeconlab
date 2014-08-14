@@ -1180,6 +1180,7 @@ class NBERFeenstraWTFConstructor(object):
 		[1] At the SITCL3 the maximum value contained in AX codes is 4% (mean: 0.2%)
 			There isn't a huge loss of data by deleting them. 
 			These values will get captured in the SITCL3 Dataset
+		[2] Should I unstack 'year'
 		"""
 		#-RequiredItems-#
 		self.add_iso3c()
@@ -1200,6 +1201,60 @@ class NBERFeenstraWTFConstructor(object):
 		data.columns = data.columns.droplevel()
 		data.columns = pd.Index(['NOAX', 'AX'])
 		data['%Tot'] = data['AX'].div(data['NOAX'] + data['AX']) * 100
+		return data
+
+	def compute_val_unofficialcodes_sitclevel(self, level=3, includeAX=False):
+		""" 
+		Compute the Value of Codes that are Unofficial and the percentage of that Groups Value based on an aggregated level
+
+		level 	: 	specify a higher level of aggregation [0,1,2,3]
+					[Default: 3]
+
+		Future Work
+		-----------
+		[1] Implement the case level = 0
+			# if sitcl == 'SITCL0':
+			# 	subidx = ['year', 'AX', 'value']
+			# 	data = data[subidx].groupby(['year', 'MARKER']).sum()
+			# else:
+		"""
+		#-RequiredItems-#
+		#self.add_iso3c()
+		self.add_productcode_levels() 												# SITCL3
+		self.add_sitcr2_official_marker(source_institution='un')					# SITCR2
+		if includeAX:
+			self.identify_alpha_productcodes()										# SITCA, SITCX
+		#-Data-#
+		sitcl = 'SITCL%s' % level
+		data = self.dataset.copy(deep=True)
+		if includeAX:
+			data['AX'] = data['SITCA'] + data['SITCX'] 								#A or X
+			data['AX'] = data['AX'].apply(lambda x: 1 if x >= 1 else 0)
+			subidx = ['year', sitcl, 'AX', 'SITCR2', 'value']
+			data = data[subidx].groupby(['year', sitcl, 'AX', 'SITCR2']).sum()
+			data = data.unstack(level=['AX', 'SITCR2'])
+			data.columns = data.columns.droplevel()
+			midx = pd.MultiIndex.from_tuples([(0,1)], names=['AX', 'SITCR2']) 					
+			s1 	= data[[(0,1)]].div(pd.DataFrame(data.sum(axis=1), columns=midx)) * 100
+			s1.columns = ['%Official']
+			midx = pd.MultiIndex.from_tuples([(1,0)], names=['AX', 'SITCR2'])
+			s2 	= data[[(1,0)]].div(pd.DataFrame(data.sum(axis=1), columns=midx)) * 100
+			s2.columns = ['%AX'] 									
+			s3 	= pd.DataFrame(data[[(0,0), (1,0)]].sum(axis=1).div(data.sum(axis=1)) * 100, columns=['%NotOffandAX'])
+			for item in [s1,s2,s3]:
+				data = data.merge(item, left_index=True, right_index=True)
+			data.columns = ['NotAX-NotSITCR2', 'NotAX-SITCR2', 'AX-NotSITCR2'] + list(data.columns[3:])
+			data = data.stack().unstack(level='year')
+			return data
+		else:
+			subidx = ['year', sitcl, 'SITCR2', 'value']
+			data = data[subidx].groupby(['year', sitcl, 'SITCR2']).sum()
+			data = data.unstack(level='SITCR2')
+			data.columns = data.columns.droplevel()
+			data.columns = pd.Index(['SITCR2', 'NOT-SITCR2'])
+			data['%Tot'] = data['NOT-SITCR2'].div(data['SITCR2'] + data['NOT-SITCR2']) * 100
+			data = data.stack.unstack(level='year')
+
 		return data
 
 
@@ -1720,6 +1775,9 @@ class NBERFeenstraWTFConstructor(object):
 		[1] For each Unofficial 'sitc4' Code Ending with '0' check if Official Codes in the SAME LEAF are CONTINUOUS. IF they ARE keep the CHILDREN as they are 
 			disaggregated classified goods ELSE wrap up the data into the Unofficial '0' Code as these groups have intertemporal classification issues for the 1962-2000
 			dataset
+
+			[a] is dropping the '0' unofficial category systemically dropping certain countries data from the dataset?
+			[b] What is the value of unofficial codes categories by year?
 
 		Looking at 'A' and 'X' Groups
 		-----------------------------
