@@ -1766,7 +1766,7 @@ class NBERFeenstraWTFConstructor(object):
 		table.columns = table.columns.droplevel()
 		return table 
 
-	def intertemporal_productcode_adjustments_table(self):
+	def intertemporal_productcode_adjustments_table(self, force=False, verbose=False):
 		"""
 		Documents and Produces the Adjustments Table for Meta Data Reference 
 		
@@ -1783,10 +1783,54 @@ class NBERFeenstraWTFConstructor(object):
 		-----------------------------
 		[1] Remove 'A' and 'X' Codes as they are assignable and hold relative little data (these will be captured in SITCL3 Dataset as a robustness check)
 		 	Supporting Evidence can be considered with .compute_valAX_sitclevel() method
-		
-		
+
+		Method
+		------
+		[1] Collapse A and X Codes into the Unofficial Code Line (IF AVAILABLE)
+			IF NOT AVAILABE: DELETE
+		[2] Check EACH SITCL3 GROUP and compare the Unofficial Code '0' with the Official Codes within the group. 
+			IF Children == FULL COVERAGE (i.e. 39) then keep Children AND DELETE UNOFFICIAL Line
+			IF Children != FULL COVERAGE (i.e 30) then collapse sum the Children into the Unoficial line item
+
+		Notes
+		-----
+		025 and 011 are good examples and test cases	
 		"""
-		pass
+
+		comp = self.intertemporal_productcodes_dataset(tabletype='composition', meta=True, level=3, force=force)
+		idxnames = comp.index.names
+		colnames = comp.columns
+		comp = comp.reset_index()
+		comp['SITCL3'] = comp['sitc4'].apply(lambda x: str(x)[:3])
+		comp['4D'] = comp['sitc4'].apply(lambda x: str(x)[3:])       	 
+		# comp = comp.loc[(comp.SITCL3 == '011') | (comp.SITCL3 == '025')] 	#Test Filter. Think about special cases when remove
+		r = pd.DataFrame()
+		for idx, df in comp.groupby(by=['SITCL3']):
+			s1 = df[['SITCR2', '%Coverage']].groupby(by=['SITCR2']).mean()['%Coverage'] #Average Coverage Within SITCL3
+			try: 
+				avg_official_coverage = s1[1]
+			except: 
+				avg_official_coverage = 0
+			try:
+				avg_notofficial_coverage = s1[0]
+			except:
+				avg_notofficial_coverage = 0
+			s2 = df[['SITCR2', 'Avg']].groupby(by=['SITCR2']).sum()['Avg']
+			try:
+				comp_official = s2[1]
+			except:
+				comp_official = 0
+			try:
+				comp_notofficial = s2[0]
+			except: 
+				comp_notofficial = 0
+			if avg_official_coverage > 0.95 and comp_official >0.95:
+			    df['ACTION'] = df['SITCR2'].apply(lambda x: 'K' if x == 1 else 'D')              #Keep Offical Codes, Delete Unofficial
+			else:
+			    df['ACTION'] = 'C' # Collapse ALL Codes
+			r = r.append(df[list(idxnames)+list(colnames)+['ACTION']])
+		r = r.set_index(list(idxnames))
+		return r
 
 	def write_metadata(self, target_dir='./meta', verbose=True):
 		"""
