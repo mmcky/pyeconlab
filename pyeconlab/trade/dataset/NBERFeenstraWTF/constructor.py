@@ -1548,6 +1548,8 @@ class NBERFeenstraWTFConstructor(object):
 		tabletype 	: 	['values', 'indicator', 'composition']
 		meta 		: 	True/False
 						Adds SITCR2 Marker in the Index
+		countries 	: 	['None', 'exporter', 'importer']
+						Default = 'None'
 		level 		: 	Level for Composition Table
 		force 		:  	True/False
 						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
@@ -1656,10 +1658,11 @@ class NBERFeenstraWTFConstructor(object):
 		table_sitc4 = self.intertemporal_productcode_valuecompositions(level=level, countries=countries) 		
 		#-Add in Meta for ProductCodes-#
 		if meta:
-			#-Mean/Min/Max-#
+			#-Mean/Min/Max-#	
 			table_sitc4['Avg'] = table_sitc4.mean(axis=1)
 			table_sitc4['Min'] = table_sitc4.min(axis=1)
 			table_sitc4['Max'] = table_sitc4.max(axis=1)
+			table_sitc4['AvgNorm'] = table_sitc4.sum(axis=1).div(len(self.years)) 		#Normalised by Number of Years (Average Composition over Time) np.nan = 0
 			#-Coverage-#
 			coverage = self.intertemporal_productcodes_dataset_indicator(meta=False, countries=countries, force=force)[['Coverage', '%Coverage']]
 			table_sitc4 = table_sitc4.merge(coverage, left_index=True, right_index=True)
@@ -1770,18 +1773,21 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		Documents and Produces the Adjustments Table for Meta Data Reference 
 		
+		force 	: 	True/False - Check if Complete Dataset 
+					[Default: False]
+
 		Looking at SITCL3 GROUPS
 		------------------------
 		[1] For each Unofficial 'sitc4' Code Ending with '0' check if Official Codes in the SAME LEAF are CONTINUOUS. IF they ARE keep the CHILDREN as they are 
 			disaggregated classified goods ELSE wrap up the data into the Unofficial '0' Code as these groups have intertemporal classification issues for the 1962-2000
 			dataset
 
-			[a] is dropping the '0' unofficial category systemically dropping certain countries data from the dataset?
+			[a] is dropping the '0' unofficial category systemically dropping certain countries data from the dataset?** See [2] in Notes
 			[b] What is the value of unofficial codes categories by year?
 
 		Looking at 'A' and 'X' Groups
 		-----------------------------
-		[1] Remove 'A' and 'X' Codes as they are assignable and hold relative little data (these will be captured in SITCL3 Dataset as a robustness check)
+		[1] Remove 'A' and 'X' Codes as they are assignable and hold relatively little data (these will be captured in SITCL3 Dataset as a robustness check)
 		 	Supporting Evidence can be considered with .compute_valAX_sitclevel() method
 
 		Method
@@ -1794,9 +1800,15 @@ class NBERFeenstraWTFConstructor(object):
 
 		Notes
 		-----
-		025 and 011 are good examples and test cases	
+		[1] '025*'' and '011*'' are good examples and test cases	
+		[2] Check meta/xlsx/intertemporal_sitc4_compositions_wmeta_adjustments.xlsx to review and check output
+			{A} We should check how many countries are using the unofficial code vs. the official codes in each group as this may effect intercountry 
+				variation. By deleting the Unofficial Level 3 Code this may be systemically removing exports from some developing countries. A full
+				treatment of countries needs to be done for each SITCL3 subgroup to decide the best collapse and deletion strategy.
+				Case Study: '057*' => Check Exporters using '0570' and exporters using '0571' to '0577'
+		[3] This table suggests that SITCL3 should be used for inter-temporal consistency re: 2-A remark.  
 		"""
-
+		#-Core-#
 		comp = self.intertemporal_productcodes_dataset(tabletype='composition', meta=True, level=3, force=force)
 		idxnames = comp.index.names
 		colnames = comp.columns
@@ -1974,8 +1986,46 @@ class NBERFeenstraWTFConstructor(object):
 
 
 
+		#--------------#
+		#-Case Studies-#
+		#--------------#
 
+		def case_study_useofsitc3_exporterhetero_code(self, code):
+			"""
+			Composition Study on SITC Code [ie. code='057']
 
+			Purpose
+			-------
+			This study products a table of 'exporter' compositional data. The Composition is the percent 
+			of exports from that country attributed to each SITC4 digit code for a level 3 code such as '057'. 
+			This table shows  significant cross-country heterogeneity in how countries "use" the coding system. 
+
+			In the 1960's data for Australia coded '0570' makes up ~36% of the category. If a dataset is 
+			constructed using only official codes then 36% of Australia's export in this family of products 
+			would be dropped from the sample from the 1960's. 
+			However in the case of Brazil, this line item '0570' is not used much at all (~0.3%) and it's exports 
+			would be relatively unchanged. 
+
+			Note: Cross Sections can still be studied with the high level of disaggregation. But for dynamic studies,
+			these compositional affects will skew export lines showing export growth and decline in cases of compositional 
+			shift from one to another coding system.
+
+			Main Outcome
+			------------
+			[1] For dynamic consistency between 1962 and 2000 the only real option is to aggregate families of goods to the 3-Digit Level
+				This aggregation will also capture A and X adjustments and countries usuing the high level classification with records 
+				found in '0' categories that aren't always found in the SITCR2 classification. 
+			[2] For dynamic consistency from 1984 onwards, it is possible to use SITCR2 official codes. 
+
+			"""
+			self.countries_only()
+			df = self.intertemporal_productcodes_dataset(tabletype='composition', countries='exporter')
+			df = df.reset_index()
+			df['sitc3'] = df['sitc4'].apply(lambda x: str(x)[:3])
+			df = df.set_index(['sitc3', 'exporter', 'sitc4'])
+			df = df.ix[str(code)[0:3]]
+			df.name = code
+			return df
 
 
 
