@@ -2,7 +2,7 @@
 """
 NBERFeenstraWTF Constructor
 
-Compile NBERFeenstra RAW data Files and Perform Basic Data Preparation Tasks
+Compile NBERFeenstra RAW data Files and Perform Data Preparation Tasks
 
 Conventions
 -----------
