@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-NBERFeenstraWTF Constructer
+NBERFeenstraWTF Constructor
 
 Compile NBERFeenstra RAW data Files and Perform Basic Data Preparation Tasks
 
@@ -12,19 +12,20 @@ dataset 	: Contains the Modified Dataset
 Notes
 -----
 A) Load Times
-[1] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~41s] 		From a complevel=9 file (Filesize: 148Mb)
-[2] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~34.5s]   	From a complevel=0 file (FileSize: 2.9Gb)
-[3] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') [~14min 23s]
+	[1] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~41s] 		From a complevel=9 file (Filesize: 148Mb)
+	[2] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~34.5s]   	From a complevel=0 file (FileSize: 2.9Gb)
+	[3] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') [~14min 23s]
 
 B) Convert Times (from a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta'))
-[1] a.convert_raw_data_to_hdf(complevel=0) [1min 21seconds]
-[2] a.convert_raw_data_to_hdf(complevel=9) [2min 54seconds]
+	[1] a.convert_raw_data_to_hdf(complevel=0) [1min 21seconds]
+	[2] a.convert_raw_data_to_hdf(complevel=9) [2min 54seconds]
 
 Outcome: Default complevel=9 (Doubles the conversion time but load time isn't significantly deteriorated)
 
 Future Work
 -----------
-[1] A More memory efficient for Export and Import Data Only would be to collapse prior to adjustments
+[1] A More memory efficient for Export and Import Data Only would be to collapse prior to adjustments?
+[2] Clarify operators on raw_data vs. dataset
 """
 
 from __future__ import division
@@ -52,9 +53,10 @@ from pyeconlab.country import iso3n_to_iso3c, iso3n_to_name 			#Why does this im
 class NBERFeenstraWTFConstructor(object):
 	"""
 	Data Constructor / Compilation Object for Feenstra NBER World Trade Data
-	Years: 1962 to 2000
+	Years: 	1962 to 2000
 	Classification: SITC R2 L4 (Not Entirely Standard)
-	Notes: Pre-1974 care is required for constructing intertemporally consistent data
+	Notes: 	Pre-1974 and Pre-1984 care is required for constructing intertemporally or dynamically consistent data
+			(Check .dynamic_dataset())
 
 	Interface:
 	---------
@@ -73,7 +75,7 @@ class NBERFeenstraWTFConstructor(object):
 	Unit 		: 	Units or measurement (see below)
 	Year 		: 	4-digit year
 	Quantity 	: 	Quantity (only for years 1984 – 2000)
-		Value 		: 	Nominal Thousands of US dollars
+	Value 		: 	Nominal Thousands of US dollars
 
 
 	Summary of Important Documentation:
@@ -102,6 +104,7 @@ class NBERFeenstraWTFConstructor(object):
 		----------
 			years 	: 	1962-1983 [Converted to SITC R2 [Section 2 of Documentation PDF]]
 								  [Table #3: SITC Rev1 and SITC Rev2 Concordance]
+						Note: This produces some dynamic inconsistencies if working over time. 
 
 		SITC Rev 2
 		----------
@@ -118,7 +121,8 @@ class NBERFeenstraWTFConstructor(object):
 				digit code. For example, trade within SITC 0220 really means trade within one of the SITC
 				industries 0222, 0223, or 0224." [FAQ]
 
-		[3] I am not currently sure what these SITC codes are. I have requested further information from Robert Feenstra
+		[3] I am not currently sure what these SITC codes are. 
+			I have requested further information from Robert Feenstra
 			They only occur in 1962 - 1965 and have a combined value of: $6,683,000
 			0021 	[Associated only with Malta]
 			0023 	[Various Eastern European Countries and Austria]
@@ -128,69 +132,69 @@ class NBERFeenstraWTFConstructor(object):
 			0035
 			0039
 			2829	[Assume: 282 NES. The MIT MediaLabs has this as “Waste and scrap metal of iron or steel” ]
+			Note: Currently these items will be dropped. See delete_productcode_issues_with_raw_data():
 
-		[4] There are currently 28 observations with no SITC4 codes. See issues_with_raw_data()
+		[4] There are currently 28 observations with no SITC4 codes. See issues_with_raw_data(),  See delete_issues_with_raw_data()
 
 	CountryCodes
 	------------
-	[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
-	[2] Default Dataset should Match on ISO3N and merge in ISO3C from pyeconlab.country.concordance (iso3n_to_iso3c)
+		[1] icode & ecode are structured: XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+		[2] Default Dataset should Match on ISO3N and merge in ISO3C from pyeconlab.country.concordance (iso3n_to_iso3c)
 
 	Types of Operations
 	-------------------
-	[1] Reduction/Collapse 	: 	This collapses data and applies a function like ADD to lines with the same idx 
-								These need to happen BEFORE adjust methods
-	[2] Merge 				: 	Merge methods that add data (such as Hong Kong adjusted data etc.)
-	[3] Adjust 				: 	Adjust Methods alter the data but don't change it's length (spliting codes etc.)
+		[1] Reduction/Collapse 	: 	This collapses data and applies a function like ADD to lines with the same idx 
+									These need to happen BEFORE adjust methods
+		[2] Merge 				: 	Merge methods that add data (such as Hong Kong adjusted data etc.)
+		[3] Adjust 				: 	Adjust Methods alter the data but don't change it's length (spliting codes etc.)
 
-	Order of Operations: 	Reduction/Collapse -> Merge -> Adjust
+		Order of Operations: 	Reduction/Collapse -> Merge -> Adjust
 
 	Organisation of Class:
 	----------------------
-	[1] Attributes
-	[2] Internal Methods (__init__())
-	[3] Properties
-	[4] Supplementary Data (Loading Data)
-	[5] Operations on Dataset (Adjusting self._dataset, cleaning tasks etc)
-	[6] Construct a Dataset (NBERFeenstraWTF)
-	[7] Supporting Functions
-	[8] Generate Meta Data Files For Inclusion into Project Package (meta/)
-	[9] Converters (hd5 Files etc.)
+		[1] Attributes
+		[2] Internal Methods (__init__())
+		[3] Properties
+		[4] Supplementary Data (Loading Data)
+		[5] Operations on Dataset (Adjusting self._dataset, cleaning tasks etc)
+		[6] Construct Datasets (NBERFeenstraWTF)
+		[7] Supporting Functions
+		[8] Generate Meta Data Files For Inclusion into Project Package (meta/)
+		[9] Converters (hd5 Files etc.)
+		[10] Generate Data to support construction of tests
+		[11] Construct Case Study Data
 
 	Notes:
 	------
-	[1] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
-		Any modification prior to returning an NBERFeenstraWTF object should be carried out on "._dataset"
-	[2] All Methods in this Class should operate on **NON** Indexed Data
-	[3] This Dataset Requires ~25GB of RAM
+		[1] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
+			Any modification prior to returning an NBERFeenstraWTF object should be carried out on "._dataset"
+		[2] All Methods in this Class should operate on **NON** Indexed Data
+		[3] This Dataset Requires ~25GB of RAM
 
 	Future Work:
 	-----------
-	[1] Update Pandas Stata to read older .dta files (then get wget directly from the website)
-	[2] When constructing meta/ data for inclusion in the package, it might be better to import from .dta files directly the required information
-		For example. CountryCodes only needs to bring in a global panel of countrynames and then that can be converted to countrycodes
-		[Update: This is currently not possible due to *.dta files being binary]
-	[3] Move op_string work and turn it into a decorator function
-	[4] To be more memory efficient we could enforce raw_data to be an HDFStore
-	[5] Construct a BASE Constructor Class that contains generic methods (like IO)
-	[6] Construct more formalised structure to ensure raw_data isn't operated on except split_countrycodes (OR should this always work on dataset?)
-	[7] Move Dataset.operations to be a Class Definition for Persistence across DataFrame Creation and Construction
-
+		[1] Update Pandas Stata to read older .dta files (then get wget directly from the website)
+		[2] When constructing meta/ data for inclusion in the package, it might be better to import from .dta files directly the required information
+			For example. CountryCodes only needs to bring in a global panel of countrynames and then that can be converted to countrycodes
+			[Update: This is currently not possible due to *.dta files being binary]
+		[3] Move op_string work and turn it into a decorator function
+		[5] Construct a BASE Constructor Class that contains generic methods (like IO)
+	  **[6] Construct more formalised structure to ensure raw_data isn't operated on except split_countrycodes (OR should this always work on dataset?)
 	"""
 
 	# - Attributes - #
 
-	_exporters 			= None
+	_exporters 			= None 						#These are defined due to property check to None. But these could be removed if property just try/except
 	_importers 			= None 
 	_country_list 		= None
-	_dataset 			= None 									#Place holder for a constructed
+	_dataset 			= None 									
 
 	# - Dataset Attributes - #
 
 	_name 				= u'NBERFeenstraWTF'
 	source_web 			= u"http://cid.econ.ucdavis.edu/nberus.html"
 	source_last_checked = np.datetime64('2014-07-04')
-	complete_dataset 	= False 										#Make this harder to set
+	complete_dataset 	= False 										#Make this harder to set with self.__?
 	years 				= []
 	operations 			= ''
 	_available_years 	= xrange(1962,2000+1,1)
@@ -205,15 +209,8 @@ class NBERFeenstraWTFConstructor(object):
 	_supp_data 			= dict
 	
 	# - Dataset Reference - #
-	_mydataset_md5 		= u'36a376e5a01385782112519bddfac85e'
 	__raw_data_hdf_fn 	= u'wtf62-00_raw.h5'
 	__raw_data_hdf_yearindex_fn = u'wtf62-00_yearindex.h5'
-
-	def set_fn_prefix(self, prefix):
-		self._fn_prefix = prefix
-
-	def set_fn_postfix(self, postfix):
-		self._fn_postfix = postfix
 
 	def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, default_dataset=False, skip_setup=False, force=False, reduce_memory=False, verbose=True):
 		""" 
@@ -314,48 +311,14 @@ class NBERFeenstraWTFConstructor(object):
 		except:
 			pass
 		return string
-	
-	# - IO - #
-
-	def load_raw_from_dta(self, verbose=True):
-		"""
-		Load RAW *.dta files from a source_directory
 		
-		Notes
-		-----
-		[1] Move to Generic Class of DatasetConstructors?
-		[2] This should try and load from a raw_data file first rather than raw_data_year
-		"""
-		if verbose: print "[INFO]: Loading RAW [.dta] Files from: %s" % (self._source_dir)
-		self.__raw_data 	= pd.DataFrame() 									
-		for year in self.years:
-			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
-			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
-			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
-		self.__raw_data = self.__raw_data.reset_index() 									#Otherwise Each year has repeated obs numbers
-		del self.__raw_data['index'] 														#Remove Old Index
+	# - Object Properties - #
 
-	def load_raw_from_hdf(self, years=[], verbose=True):
-		"""
-		Load HDF Version of RAW Dataset from a source_directory
-		Note: 	To construct your own hdf version requires to initially load from NBER supplied RAW dta files
-				Then use Constructor method ``convert_source_dta_to_hdf()``
+	def set_fn_prefix(self, prefix):
+		self._fn_prefix = prefix
 
-		Notes
-		-----
-		[1] Move to Generic Class of DatasetConstructors?
-		"""
-		self.__raw_data 	= pd.DataFrame() 
-		if years == [] or years == self._available_years: 						#years assigned prior to loading data
-			fn = self._source_dir + self.__raw_data_hdf_fn
-			if verbose: print "[INFO] Loading RAW DATA from %s" % fn
-			self.__raw_data = pd.read_hdf(fn, key='raw_data')
-		else:
-			fn = self._source_dir + self.__raw_data_hdf_yearindex_fn 
-			for year in years:
-				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
-				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
-		
+	def set_fn_postfix(self, postfix):
+		self._fn_postfix = postfix
 
 	# - Raw Data Properties - #
 
@@ -466,7 +429,50 @@ class NBERFeenstraWTFConstructor(object):
 			print "[INFO] Reseting operations attribute"
 			self.operations = ''
 
-	# ---------------------- #
+
+	# ------ #
+	# - IO - #
+	# ------ #
+
+	def load_raw_from_dta(self, verbose=True):
+		"""
+		Load RAW *.dta files from a source_directory
+		
+		Notes
+		-----
+		[1] Move to Generic Class of DatasetConstructors?
+		[2] This should try and load from a raw_data file first rather than raw_data_year
+		"""
+		if verbose: print "[INFO]: Loading RAW [.dta] Files from: %s" % (self._source_dir)
+		self.__raw_data 	= pd.DataFrame() 									
+		for year in self.years:
+			fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
+			if verbose: print "Loading Year: %s from file: %s" % (year, fn)
+			self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
+		self.__raw_data = self.__raw_data.reset_index() 									#Otherwise Each year has repeated obs numbers
+		del self.__raw_data['index'] 														#Remove Old Index
+
+	def load_raw_from_hdf(self, years=[], verbose=True):
+		"""
+		Load HDF Version of RAW Dataset from a source_directory
+		Note: 	To construct your own hdf version requires to initially load from NBER supplied RAW dta files
+				Then use Constructor method ``convert_source_dta_to_hdf()``
+
+		Notes
+		-----
+		[1] Move to Generic Class of DatasetConstructors?
+		"""
+		self.__raw_data 	= pd.DataFrame() 
+		if years == [] or years == self._available_years: 						#years assigned prior to loading data
+			fn = self._source_dir + self.__raw_data_hdf_fn
+			if verbose: print "[INFO] Loading RAW DATA from %s" % fn
+			self.__raw_data = pd.read_hdf(fn, key='raw_data')
+		else:
+			fn = self._source_dir + self.__raw_data_hdf_yearindex_fn 
+			for year in years:
+				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
+				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
+
 	# - Supplementary Data - #
 	# ---------------------- #
 
@@ -587,23 +593,15 @@ class NBERFeenstraWTFConstructor(object):
 		if rtrn:
 			return self._dataset
 
-	def adjust_china_hongkongdata(self, return_dataset=False, verbose=False):
+	def adjust_china_hongkongdata(self, verbose=False):
 		"""
 		Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
 		This will merge in the Hong Kong / China Adjustments provided with the dataset for the years 1988 to 2000. 
-
-		Arguments
-		---------
-		return_dataset 		: 	True/False [Default: False -> The Dataset is writen to self.dataset
 		"""
 		op_string = u'(adjust_raw_china_hongkongdata)'
 		
 		#-Check if Operation has been conducted-#
 		if check_operations(self.operations, op_string):
-			#-Parse Return Option-#
-			if return_dataset:
-				return self._dataset
-			else:
 				return None
 
 		#-Merge Settings-#
@@ -646,13 +644,10 @@ class NBERFeenstraWTFConstructor(object):
 			pass 	#-Quantity Merge Hasn't Taken Place-#
 
 		#- Add Notes -#
-		update_operations(updated_raw_values, op_string)
+		update_operations(self, op_string)
 
 		#-Set Dataset to the Update Values-#
 		self._dataset = updated_raw_values
-		#-Parse Inplace Option-#
-		if return_dataset == True:
-			return self._dataset
 		
 
 	def standardise_data(self, force=False, verbose=False):
@@ -661,9 +656,9 @@ class NBERFeenstraWTFConstructor(object):
 		
 		Actions
 		-------
-		[1] Trade Values in $'s 
-		[2] Add ISO3C Codes and Well Formatted CountryNames ('exportername', 'importername')
-		[3] Marker for Standard SITC Revision 2 Codes
+			[1] Trade Values in $'s 
+			[2] Add ISO3C Codes and Well Formatted CountryNames ('exportername', 'importername')
+			[3] Marker for Standard SITC Revision 2 Codes
 
 		Notes
 		-----
@@ -671,12 +666,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		Future Work
 		-----------
-		[1] Migrate set of standardisation methods to methods!
-			change_units()
-			add_iso3c()
-			add_isocountrynames() 	#iso 
-			add_sitcr2_official_marker()
-		[2] Remove this and use subfunctions in __init__ to be more explicit
+		[1] Remove this and use subfunctions in __init__ to be more explicit?
 		"""
 		op_string = u"(standardise_data)"
 		#-Check if Operation has been conducted-#
@@ -720,7 +710,7 @@ class NBERFeenstraWTFConstructor(object):
 	# Note: These are technically duplicates, but does it help to keep the logic separable?
 
 	fix_importer_to_iso3n = 	{ 
-									'Asia NES' : 896,
+									'Asia NES' 	: 896,
 									'Italy'		: 381,
 									'Norway' 	: 579,
 									'Samoa'		: 882,
@@ -767,28 +757,21 @@ class NBERFeenstraWTFConstructor(object):
 			self.__fix_countryname_to_iso3n = countryname_to_iso3n
 			return countryname_to_iso3n
 
-	def split_countrycodes(self, dataset=True, apply_fixes=True, verbose=True):
+	def split_countrycodes(self, apply_fixes=True, verbose=True):
 		"""
 		Split CountryCodes into components ('icode', 'ecode')
 		XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
-
-		This is a special function that can alter self.__raw_data as it doesn't alter the underlying
-		columns but adds split codes of the countrycodes
 
 		Notes
 		-----
 		[1] Should this be done more efficiently? (i.e. over a single pass of the data) 
 			Current timeit result: 975ms per loop for 1 year
 		"""
-		if dataset:
-			data = self.dataset 
-		else:
-			data = self.raw_data
-
+		#-Set Data from Dataset-#
+		data = self.dataset
 		#-Check if Operation has been conducted-#
 		op_string = u"(split_countrycodes)"
 		if check_operations(self, op_string): return None
-
 		# - Importers - #
 		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
 		data['iregion'] = data['icode'].apply(lambda x: int(x[:2]))
@@ -799,27 +782,31 @@ class NBERFeenstraWTFConstructor(object):
 		data['eregion'] = data['ecode'].apply(lambda x: int(x[:2]))
 		data['eiso3n']  = data['ecode'].apply(lambda x: int(x[2:5]))
 		data['emod'] 	= data['ecode'].apply(lambda x: int(x[-1]))
-
 		#-Apply Custom Fixes-#
 		if apply_fixes:
 			self.apply_iso3n_custom_fixes(verbose=verbose)
-
 		#- Add Operation to df attribute -#
 		update_operations(self, op_string)
 
 	def apply_iso3n_custom_fixes(self, verbose=True):
-		""" Apply Custom Fixes for ISO3N Numbers """
+		""" 
+		Apply Custom Fixes for ISO3N Numbers
+		
+		Note
+		----
+		[1] This uses attribute fix_countryname_to_iso3n
+		"""
+		#-Op String-#
 		op_string = u"(apply_iso3n_custom_fixes)"
 		if check_operations(self, op_string): return None
-
+		#-Core-#
 		fix_countryname_to_iso3n = self.fix_countryname_to_iso3n
 		for key in sorted(fix_countryname_to_iso3n.keys()):
 			if verbose: print "For countryname %s updating iiso3n and eiso3n codes to %s" % (key, fix_countryname_to_iso3n[key])
 			df = self._dataset
 			df.loc[df.importer == key, 'iiso3n'] = fix_countryname_to_iso3n[key]
 			df.loc[df.exporter == key, 'eiso3n'] = fix_countryname_to_iso3n[key]
-
-		#- Add Operation to df attribute -#
+		#- Add Operation to cls attribute -#
 		update_operations(self, op_string)
 
 	def add_iso3c(self, verbose=False):
@@ -827,9 +814,9 @@ class NBERFeenstraWTFConstructor(object):
 		Add ISO3C codes to dataset
 
 		This method uses the iso3n codes embedded in icode and ecode to add in iso3c codes
-		This is the most reliable matching method. 
+		I find this to be the most reliable matching method. 
 		However there are other ways by matching on countrynames etc.
-		These concordances can be found in './meta'
+		Some of these concordances can be found in './meta'
 
 		Alternatives
 		------------
@@ -842,28 +829,28 @@ class NBERFeenstraWTFConstructor(object):
 
 		Notes
 		-----
-		[1] This matches all UN iso3n codes which aren't all countries. 
-			These include items such as 'WLD' for World
-		[2] Custom Fixes to ISO3N codes are applied in split_countrycodes()
+		[1] This matches all UN iso3n codes which aren't just a collection of countries. 
+			For example, this concordance includes items such as 'WLD' for World
 		"""
 		#-OpString-#
 		op_string = u"(add_iso3c)"
 		if check_operations(self, op_string): return None
 		#-Core-#
 		if not check_operations(self, u"(split_countrycodes)"): 		#Requires iiso3n, eiso3n
-			self.split_countrycodes(verbose=verbose)
-
+			self.split_countrycodes(apply_fixes=True, verbose=verbose)
 		un_iso3n_to_iso3c = iso3n_to_iso3c(source_institution='un')
 		#-Concord and Add a Column-#
 		self._dataset['iiso3c'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
 		self._dataset['eiso3c'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_iso3c, x, issue_error='.'))
-
-		#-OpString-#
+		#- Add Operation to cls attribute -#
 		update_operations(self, op_string)
 
-	def add_isocountrynames(self, verbose=False):
+	def add_isocountrynames(self, source_institution='un', verbose=False):
 		"""
 		Add Standard Country Names
+
+		source_institution 	:	Allows to specify which institution data to use in the match between iso3n and countryname
+								[Default: 'un']
 
 		Requires
 		--------
@@ -874,16 +861,15 @@ class NBERFeenstraWTFConstructor(object):
 		-----
 		[1] This matches all UN iso3n codes which aren't all countries. 
 			These include items such as 'WLD' for World
-		[2] Custom Fixes to ISO3N codes are applied in split_countrycodes()
 		"""
 		#-OpString-#
 		op_string = u"(add_isocountrynames)"
 		if check_operations(self, op_string): return None
 		#-Checks-#
 		if not check_operations(self, u"(split_countrycodes"): 		#Requires iiso3n, eiso3n
-			self.split_countrycodes(verbose=verbose)
+			self.split_countrycodes(apply_fixes=True, verbose=verbose)
 		#-Core-#
-		un_iso3n_to_un_name = iso3n_to_name(source_institution='un') 
+		un_iso3n_to_un_name = iso3n_to_name(source_institution=source_institution) 
 		#-Concord and Add a Column-#
 		self._dataset['icountryname'] = self._dataset['iiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
 		self._dataset['ecountryname'] = self._dataset['eiso3n'].apply(lambda x: concord_data(un_iso3n_to_un_name, x, issue_error='.'))
@@ -904,17 +890,17 @@ class NBERFeenstraWTFConstructor(object):
 		[1] This uses the iso3c codes to filter on countries only
 		[2] Write Tests to check the sum of a countries exports and compare to Corresponding World Export Line
 		[3] Build a Report for Dropped countrycodes
-		[4] This leaves in old countries that may no longer currently exist
+		[4] This leaves in old countries that may no longer currently exist!
 
 		Future Work
 		-----------
-		[1] Rewrite these to use .loc method
+		[1] Rewrite these to use .loc method?
 		"""
 		#-OpString-#
 		op_string = u"(countries_only)"
-		if check_operations(self, op_string): return self.dataset 	#Already been computed
+		if check_operations(self, op_string): return self.dataset 			#Already been computed
 		#-Checks-#
-		if not check_operations(self, u"(add_iso3c)"): 			#Requires iiso3n, eiso3n
+		if not check_operations(self, u"(add_iso3c)"): 			
 			self.add_iso3c(verbose=verbose)
 		#-Drop NES and Unmatched Countries-#
 		self._dataset = self.dataset[self.dataset.iiso3c != error_code] 	#Keep iiso3n Countries
@@ -922,6 +908,9 @@ class NBERFeenstraWTFConstructor(object):
 		#-Drop WLD-#
 		self._dataset = self.dataset[self.dataset.iiso3c != 'WLD']
 		self._dataset = self.dataset[self.dataset.eiso3c != 'WLD']
+		#-Drop '.'-#
+		self._dataset = self.dataset[self.dataset.iiso3c != '.']
+		self._dataset = self.dataset[self.dataset.eiso3c != '.']
 		#-ResetIndex-#
 		self._dataset = self._dataset.reset_index() 						#This leaves in an index series = observation number
 		#-OpString-#
@@ -938,13 +927,10 @@ class NBERFeenstraWTFConstructor(object):
 		--------
 		[1] add_iso3c()
 
-		Notes
-		-----
-		[1] Build a Report
-
 		Future Work
 		-----------
-		[1] Add inplace option to return a dataframe rather than right to dataset
+		[1] Build a Report
+		[1] Add inplace option to return a dataframe rather than right to dataset?
 		"""
 		#-OpString-#
 		op_string = u"(world_only)"
@@ -981,7 +967,6 @@ class NBERFeenstraWTFConstructor(object):
 		#-Checks-#
 		if not check_operations(self, u"(countries_only)"): 	   	#Adds iso3c	
 			self.countries_only(verbose=verbose)
-		operations = self._dataset.operations 								#Preserve Performed Operations
 		#-Adjust Codes-#
 		if verbose: print "[INFO] Adjusting Codes for Intertemporal Consistency from meta subpackage (iso3c_recodes_for_1962_2000)"
 		self._dataset['iiso3c'] = self._dataset['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
@@ -994,8 +979,7 @@ class NBERFeenstraWTFConstructor(object):
 		if verbose: print "[INFO] Collapsing Dataset to SUM duplicate entries"
 		self.reduce_to(to=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'])  								#Collapsing here makes the groupby logic more coherent
 		self._dataset = self._dataset.groupby(['year', 'iiso3c', 'eiso3c', 'sitc4']).sum()
-		self._dataset = self._dataset.reset_index() 													#Return Flat File
-		self._dataset.operations = operations 															
+		self._dataset = self._dataset.reset_index() 													#Return Flat File															
 		#-OpString-#	
 		update_operations(self, op_string)
 
@@ -1065,7 +1049,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	def add_productcode_levels(self, verbose=False):
 		"""
-		Split 'sitc4' into SITCL1, L2, and L3 Codes
+		Add SITC L1, L2, and L3 Codes derived from 'sitc4'
 		"""
 		for level in [1,2,3]:
 			self.add_productcode_level(level, verbose)
@@ -1073,6 +1057,10 @@ class NBERFeenstraWTFConstructor(object):
 	def add_productcode_level(self, level, verbose=False):
 		"""
 		Add a Product Code for a specified level between 1 and 3 for 'sitc4'
+
+		Note
+		----
+		[1] This could be simplified by using sitcl = 'sitc%s' % level string 
 		"""
 		if level == 1:
 			op_string = u"(add_productcode_level1)"
@@ -1096,6 +1084,83 @@ class NBERFeenstraWTFConstructor(object):
 		#-OpString-#
 		update_operations(self, op_string)
 
+	def collapse_to_productcode_level(self, level=3, subidx=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'], verbose=False):
+		"""
+		Collapse the Dataset to a Higher Level of Aggregation 
+
+		level 	: 	[1,2,3]
+					Default: 3
+		subidx 	: 	Specify a Column Filter
+					Default = ['year', 'iiso3c', 'eiso3c', 'sitc4', 'value']
+
+		Note
+		----
+		[1] This is a good candidate to be in a superclass
+		[2] Why restrict to the default subidx?
+		"""
+		op_string = u"(collapse_to_productcode_level%s)" % level
+		if check_operations(self, op_string): 
+			return None
+		if check_operations(self, u"collapse_to_valuesonly") == False:
+			self.collapse_to_valuesonly(verbose=verbose)	 						#This excludes aggregations on quantity which is not accurate due to differences in units
+		if check_operations(self, u"add_iso3c") == False:
+			self.add_iso3c(verbose=verbose)	 										#Add iso3c
+			# if check_operations(self, u"add_sitcr2_official_marker") == False: 		#Why is this required? Propose to Delete
+			# 	self.add_sitcr2_official_marker(verbose=verbose)	 		
+		if level not in [1,2,3]:
+			raise ValueError("Level must be 1,2, or 3 for SITC4 Data")
+		if verbose: print "[INFO] Collapsing Data to SITC Level #%s" % level
+		colcode = 'sitc%s' % level
+		self._dataset[colcode] = self._dataset['sitc4'].apply(lambda x: x[0:level])
+		#-Aggregate-#
+		for idx,item in enumerate(subidx):
+			if item == 'sitc4': subidx[idx] = colcode 								# Remove sitc4 and add in the lower level of aggregation sitc3 etc.
+		self._dataset = self._dataset[subidx].groupby(by=subidx[:-1]).sum() 		# Exclude 'value', as want to sum over it. It needs to be last in the list!
+		self._dataset = self._dataset.reset_index()
+		#-OpString-#
+		update_operations(self, op_string)
+
+	def delete_sitc4_issues_with_raw_data(self, verbose=False):
+		"""
+		This method deletes any known issues with the raw_data associated with productcodes
+
+		Required Columns: 'sitc4'
+
+		Deletions
+		---------
+		The following values only appear in 1962 to 1966 and are not found to be sitcr2 codes
+		Their combined value is also relatively small. Further information has been requested. 
+			0021 	[Associated only with Malta]
+			0023 	[Various Eastern European Countries and Austria]
+			0024
+			0025
+			0031
+			0035
+			0039
+			2829
+
+		Note
+		----
+		[1] This needs to be done before any aggregations as it will only operate on 'sitc4'
+		[2] Write a Required Columns Utility?
+		"""
+		self.sitc4_deletions = [ 
+								'0021',	
+								'0023',	
+								'0024',
+								'0025',
+								'0031',
+								'0035',
+								'0039',
+								'2829',
+		]
+		for item in self.sitc4_deletions:
+			if verbose: print "[INFO] Deleting sitc4 productcode: %s" % item
+			self._dataset = self.dataset[self.dataset['sitc4'] != item]
+		#-Delete '.' ProductCodes-#
+		if verbose: print "[INFO] Deleting sitc4 productcodes == '.'"
+		self._dataset = self.dataset[self.dataset['sitc4'] != '.']
+
  	def identify_alpha_productcodes(self, verbose=False):
 		"""
 		Identify Productcodes that contain an alpha code 'A', 'X'
@@ -1108,6 +1173,8 @@ class NBERFeenstraWTFConstructor(object):
 		'A' : 	No disaggregated details reported, but there are values at higher levels of aggregation 
 				444 	= $200 but no 4441 or 4442 defined then 
 				444A 	= $200 
+
+		Required Columns: 'sitc4'
 
 		Note
 		----
@@ -1139,8 +1206,6 @@ class NBERFeenstraWTFConstructor(object):
 
 			The longest time horizon in the dataset. 
 			Need to aggregate a lot of Product Codes to Level 3 + 0 to allow for dynamic consistency
-
-			**Current Focus**
 		
 		Dataset #2 [1962 to 2000] [SITCR2L3]
 		-------------------------------------
@@ -1148,6 +1213,8 @@ class NBERFeenstraWTFConstructor(object):
 			Aggregate ALL Codes to SITCR2 Level 3 
 			This brings in the vast majority of data and Level4 'Corrections'
 			Easy to Construct
+
+			**Current Focus** [See meta data for reasons]
 
 		Subset TimeFrames
 		=================
@@ -1160,9 +1227,17 @@ class NBERFeenstraWTFConstructor(object):
 
 			TBD		
 
+		Dataset #4 [1984 to 2000]
+		-------------------------
+
+			A lot of SITCR2 Codes get introduced into the dataset in 1984. 
+			Starting from 1984 would allow a greater diversity of products but removes 10 years of dynamics
+
+			TBD	
+
 		"""
 		#-List of Codes to DROP-#
-		drop_sitc4_1962_2000 = ['','0010', '0021', '0022', '0023', '0024', '0025', '0031', '0035', '0039']  #Codes in 1962 to 1965 and are of unknown origin. 
+		# See: .delete_sitc4_issues_with_raw_data()
 
 		### -- Working Here --- ###
 		
@@ -1175,15 +1250,16 @@ class NBERFeenstraWTFConstructor(object):
 		level 	: 	specify a higher level of aggregation [0,1,2,3]
 					[Default: 3]
 
+		Required Columns: 'SITC#' #=[1,2,3]; 'year', 'value'
+
 		Notes
 		-----
 		[1] At the SITCL3 the maximum value contained in AX codes is 4% (mean: 0.2%)
-			There isn't a huge loss of data by deleting them. 
-			These values will get captured in the SITCL3 Dataset
+			There isn't a huge loss of data by deleting them. These values should be included in the SITCL3 Dataset
 		[2] Should I unstack 'year'
 		"""
-		#-RequiredItems-#
-		self.add_iso3c()
+		#-Required Items-#
+		self.add_iso3c() 															# ISO3C
 		self.add_productcode_levels() 												# SITCL3
 		self.identify_alpha_productcodes()											# SITCA, SITCX
 		#-Data-#
@@ -1261,14 +1337,42 @@ class NBERFeenstraWTFConstructor(object):
 	def intertemporal_consistent_productcodes_concord(self, verbose=False):
 		"""
 		Produce a concordance for inter-temporal consistent product codes for converting data post year 2000
+
+		SITCR2 to CONCORD
 		"""
-		### -- Working Here --- ###
+		# ---------------- #
+		# - Working Here - #
+		# ---------------- #
+
 		raise NotImplementedError
 
 
 	# ----------------------- #
-	# - Construct a Dataset - #
+	# - Construct Datasets - #
 	# ----------------------- #
+
+	def construct_dynamically_consistent_dataset(self, verbose=True):
+		"""
+		Constructs DEFAULT Dynamically Consistent Dataset for ProductCodes and CountryCodes
+
+		IN-WORK
+
+		Operations
+		----------
+			[1] Alter Country Codes to be Intertemporally Consistent Units of Analysis (i.e. SUN = Soviet Union)
+			[2] Collapse Values to SITCL3 Data
+			[3] Remove Problematic Codes
+
+		Future Work
+		-----------
+		[1] Work through these steps to ensure operations are on dataset and they flow from one to another
+		"""
+		
+		# a.delete_productcode_issues_with_raw_data(verbose=verbose)
+		# a.collapse_to_valuesonly(verbose=verbose)
+		# a.intertemporal_country_adjustments(verbose=verbose)
+		
+		raise NotImplementedError
 
 	def to_nberfeenstrawtf(self, verbose=True):
 		"""
@@ -1277,10 +1381,10 @@ class NBERFeenstraWTFConstructor(object):
 
 		Interface: ['year', iiso3c', 'eiso3c', 'sitc4', 'value', 'quantity']
 
-
 		"""
 		raise NotImplementedError
 
+	
 	# ----------------------------- #
 	# - Supporting Functions 	  - #
 	# ----------------------------- #
@@ -1343,8 +1447,10 @@ class NBERFeenstraWTFConstructor(object):
 		return self.country_concordance
 
 	# --------------------------------------------------------------- #
-	# - Generate Meta Data Files For Inclusion into Project Package - #
-	# - Note: These are largely for internal package construction 	- #
+	# - META DATA FUNCTIONS 										- #
+	# 																  #
+	# - Note: These are largely for internal package construction   - #
+	# - And for intertemporal diagnosis tables for sitc4 etc 	 	- #
 	# --------------------------------------------------------------- #
 
 	def generate_global_info(self, target_dir, out_type='py', verbose=False):
@@ -1364,14 +1470,14 @@ class NBERFeenstraWTFConstructor(object):
 
 		Parameters:
 		-----------
-		[1] target_dir 	: 	target directory where files are to be written
+			target_dir 	: 	target directory where files are to be written
 							[Should specify REPO Location if updating REPO Files OR DATA_PATH if replace in Installed Package]
-		[2] out_type 	: 	file type for results files 'csv', 'py' 
+			out_type 	: 	file type for results files 'csv', 'py' 
 							[Default: 'py']
 
 		Usage:
 		-----
-		Useful if NBER Feenstra's Dataset get's updated etc.
+		Useful if NBER Feenstra's Dataset get's updated etc. OR for constructing manual country concordances etc.
 
 		Future Work:
 		------------
@@ -1382,11 +1488,9 @@ class NBERFeenstraWTFConstructor(object):
 		# - Check if Dataset is Complete for Global Info Property - #
 		if self.complete_dataset != True:
 			raise ValueError("Dataset must be complete. Try running the constructor without defining years=[]")
-		
 		# - Summary - #
 		if verbose: 
 			print "[INFO] Writing Exporter, Importer, and CountryLists to %s files in location: %s" % (out_type, target_dir)
-
 		#-CSV-#
 		if out_type == 'csv':
 			# - Exporters - #
@@ -1418,7 +1522,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	def intertemporal_countrycodes(self, dataset=False, force=False, verbose=False):
 		"""
-		Wrapper for Generating intertemporal_countrycodes from 'raw_data' or 'dataset'
+		Wrapper for Generating intertemporal_countrycodes FROM 'raw_data' or 'dataset'
 		"""
 		if dataset:
 			if verbose: print "Constructing Intertemporal Country Code Tables from Dataset ..."
@@ -1445,7 +1549,7 @@ class NBERFeenstraWTFConstructor(object):
 		if self.complete_dataset != True:
 			if force == False:
 				raise ValueError("[ERROR] Not a Complete Dataset!")
-		#-Set RAW DATA-#
+		#-Get Raw Data -#
 		data = self.raw_data 		
 		#-Split Codes-#
 		if not check_operations(self, u"(split_countrycodes"): 							#Requires iiso3n, eiso3n
@@ -1478,7 +1582,7 @@ class NBERFeenstraWTFConstructor(object):
 		if self.complete_dataset != True:
 			if force == False:
 				raise ValueError("[ERROR] Not a Complete Dataset!")
-		#-Set Dataset-#
+		#-Get Dataset-#
 		data = self.dataset 
 		#-Split Codes-#
 		if not check_operations(self, u"split_countrycodes"): 						#Requires iiso3n, eiso3n
@@ -1553,10 +1657,6 @@ class NBERFeenstraWTFConstructor(object):
 		level 		: 	Level for Composition Table
 		force 		:  	True/False
 						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
-
-		Future Work
-		-----------
-		[1] Split these up into the tabletype functions
 		"""
 		if self.complete_dataset != True:
 			if force == False:
@@ -1776,6 +1876,8 @@ class NBERFeenstraWTFConstructor(object):
 		force 	: 	True/False - Check if Complete Dataset 
 					[Default: False]
 
+		STATUS: IN-WORK
+
 		Looking at SITCL3 GROUPS
 		------------------------
 		[1] For each Unofficial 'sitc4' Code Ending with '0' check if Official Codes in the SAME LEAF are CONTINUOUS. IF they ARE keep the CHILDREN as they are 
@@ -1844,9 +1946,62 @@ class NBERFeenstraWTFConstructor(object):
 		r = r.set_index(list(idxnames))
 		return r
 
+	def compute_cases_intertemporal_sitc4_3digits(self, force=False, verbose=False):
+		"""
+		Compute a Cases Table for SITC4 Intertemporal ProductCodes at the 3 Digit Level
+
+		STATUS: IN-WORK
+
+		Cases
+		-----
+		For Each SITC Level 3 Group apply a classifier for the following cases
+
+		'Case1' 	: 	Avg(Official Coverage) 					> 95% (Official Codes are represented across 95% of the years on average)
+						Avg(Composition % of Official Codes) 	> 95% (most of the value lies in Official encodings across al 39 years)
+						{This shows groups that are represented by a majority of trade flows in official SITCR2 Codes across the whole dataset i.e. 0011)
+
+		'Case2' 	: 	Unofficial Code Ending in '0' is present
+						{This will highlight groups that have an Unofficial 3Digit Level Code Present in the data. 
+						These groups suffer heavily from inter-country heterogeneity in how similar products are grouped} 
+
+		'Case3' 	: 	??
+
+		"""
+		
+		#-Core-#
+		comp = self.intertemporal_productcodes_dataset(tabletype='composition', meta=True, level=3, force=force)
+		idxnames = comp.index.names
+		colnames = comp.columns
+		comp = comp.reset_index()
+		comp['SITCL3'] = comp['sitc4'].apply(lambda x: str(x)[:3])
+		comp['4D'] = comp['sitc4'].apply(lambda x: str(x)[3:])       	 
+		# comp = comp.loc[(comp.SITCL3 == '011') | (comp.SITCL3 == '025')] 	#Test Filter. Think about special cases when remove
+		r = pd.DataFrame()
+		for idx, df in comp.groupby(by=['SITCL3']):
+			#-Case1-#
+			s1 = df[['SITCR2', '%Coverage']].groupby(by=['SITCR2']).mean()['%Coverage'] #Average Coverage Within SITCL3
+			try: avg_official_coverage = s1[1]
+			except: avg_official_coverage = 0
+			s2 = df[['SITCR2', 'Avg']].groupby(by=['SITCR2']).sum()['Avg']
+			try: comp_official = s2[1]
+			except: comp_official = 0
+			if avg_official_coverage > 0.95 and comp_official >0.95:
+			    df['CASE1'] = 1
+			else:
+			    df['CASE1'] = 0
+			#-Case2-#
+			if len(df.loc[(df.sitc4 == str(idx)+'0') & (df.SITCR2 == 0)]) == 1:
+				df['CASE2'] = 1
+			else:
+				df['CASE2'] = 0
+			r = r.append(df[list(idxnames)+list(colnames)+['CASE1', 'CASE2']])
+		r = r.set_index(list(idxnames))
+		return r
+
+
 	def write_metadata(self, target_dir='./meta', verbose=True):
 		"""
-		Write Files for ./meta in Excel Format
+		Write Basic Files for ./meta in Excel Format for inclusion into the REPO
 
 		Files
 		-----
@@ -1922,7 +2077,6 @@ class NBERFeenstraWTFConstructor(object):
 		pd.set_option('io.hdf.default_format', 'table')
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
 		hdf.put('raw_data', self.raw_data, format='table')
-
 		print hdf
 		hdf.close()
 
@@ -1937,8 +2091,10 @@ class NBERFeenstraWTFConstructor(object):
 
 		[1] Missing SITC4 Codes (28 observations) -> './missing_sitc4.xlsx'
 		"""
+		#-Missing Codes-#
 		codelength = self.raw_data['sitc4'].apply(lambda x: len(x))
 		self.raw_data[codelength != 4].to_excel('missing_sitc4.xlsx')
+
 
 
 	# - Construct Test Data - #
@@ -1986,46 +2142,46 @@ class NBERFeenstraWTFConstructor(object):
 
 
 
-		#--------------#
-		#-Case Studies-#
-		#--------------#
+	#--------------#
+	#-Case Studies-#
+	#--------------#
 
-		def case_study_useofsitc3_exporterhetero_code(self, code):
-			"""
-			Composition Study on SITC Code [ie. code='057']
+	def case_study_useofsitc3_exporterhetero_code(self, code):
+		"""
+		Composition Study on SITC Code [ie. code='057']
 
-			Purpose
-			-------
-			This study products a table of 'exporter' compositional data. The Composition is the percent 
-			of exports from that country attributed to each SITC4 digit code for a level 3 code such as '057'. 
-			This table shows  significant cross-country heterogeneity in how countries "use" the coding system. 
+		Purpose
+		-------
+		This study products a table of 'exporter' compositional data. The Composition is the percent 
+		of exports from that country attributed to each SITC4 digit code for a level 3 code such as '057'. 
+		This table shows  significant cross-country heterogeneity in how countries "use" the coding system. 
 
-			In the 1960's data for Australia coded '0570' makes up ~36% of the category. If a dataset is 
-			constructed using only official codes then 36% of Australia's export in this family of products 
-			would be dropped from the sample from the 1960's. 
-			However in the case of Brazil, this line item '0570' is not used much at all (~0.3%) and it's exports 
-			would be relatively unchanged. 
+		In the 1960's data for Australia coded '0570' makes up ~36% of the category. If a dataset is 
+		constructed using only official codes then 36% of Australia's export in this family of products 
+		would be dropped from the sample from the 1960's. 
+		However in the case of Brazil, this line item '0570' is not used much at all (~0.3%) and it's exports 
+		would be relatively unchanged. 
 
-			Note: Cross Sections can still be studied with the high level of disaggregation. But for dynamic studies,
-			these compositional affects will skew export lines showing export growth and decline in cases of compositional 
-			shift from one to another coding system.
+		Note: Cross Sections can still be studied with the high level of disaggregation. But for dynamic studies,
+		these compositional affects will skew export lines showing export growth and decline in cases of compositional 
+		shift from one to another coding system.
 
-			Main Outcome
-			------------
-			[1] For dynamic consistency between 1962 and 2000 the only real option is to aggregate families of goods to the 3-Digit Level
-				This aggregation will also capture A and X adjustments and countries usuing the high level classification with records 
-				found in '0' categories that aren't always found in the SITCR2 classification. 
-			[2] For dynamic consistency from 1984 onwards, it is possible to use SITCR2 official codes. 
+		Main Outcome
+		------------
+		[1] For dynamic consistency between 1962 and 2000 the only real option is to aggregate families of goods to the 3-Digit Level
+			This aggregation will also capture A and X adjustments and countries usuing the high level classification with records 
+			found in '0' categories that aren't always found in the SITCR2 classification. 
+		[2] For dynamic consistency from 1984 onwards, it is possible to use SITCR2 official codes. 
 
-			"""
-			self.countries_only()
-			df = self.intertemporal_productcodes_dataset(tabletype='composition', countries='exporter')
-			df = df.reset_index()
-			df['sitc3'] = df['sitc4'].apply(lambda x: str(x)[:3])
-			df = df.set_index(['sitc3', 'exporter', 'sitc4'])
-			df = df.ix[str(code)[0:3]]
-			df.name = code
-			return df
+		"""
+		self.countries_only()
+		df = self.intertemporal_productcodes_dataset(tabletype='composition', countries='exporter')
+		df = df.reset_index()
+		df['sitc3'] = df['sitc4'].apply(lambda x: str(x)[:3])
+		df = df.set_index(['sitc3', 'exporter', 'sitc4'])
+		df = df.ix[str(code)[0:3]]
+		df.name = code
+		return df
 
 
 
