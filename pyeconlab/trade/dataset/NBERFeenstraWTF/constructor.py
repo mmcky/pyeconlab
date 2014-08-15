@@ -4,6 +4,9 @@ NBERFeenstraWTF Constructor
 
 Compile NBERFeenstra RAW data Files and Perform Data Preparation Tasks
 
+It is the CORE responsibility of this module to clean, prepare and investigate the data.
+The NATURE of the data shouldn't be changed in this class. For example, routines for collapsing the bilateral flows to exports should be contained in NBERFeenstraWTF 
+
 Conventions
 -----------
 __raw_data 	: Should be an exact copy of the imported files and protected. 
@@ -1379,8 +1382,13 @@ class NBERFeenstraWTFConstructor(object):
 		Construct NBERFeenstraWTF Object with Common Core Object Names
 		Note: This is constructed from the ._dataset attribute
 
+		This will export the cleaned bilateral data to the NBERFeenstraWTF object. 
+
 		Interface: ['year', iiso3c', 'eiso3c', 'sitc4', 'value', 'quantity']
 
+		Notes
+		-----
+		[1] It will be the responsibility of NBERFeenstraWTF to export to ProductLevelExportSystems etc. 
 		"""
 		raise NotImplementedError
 
