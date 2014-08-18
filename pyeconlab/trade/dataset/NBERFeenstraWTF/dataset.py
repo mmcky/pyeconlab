@@ -44,7 +44,7 @@ class NBERFeenstraWTF(object):
 	raw_units 		= 1000
 	raw_units_str 	= u'US$1000\'s'
 	interface 		= {
-						 'default' : ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value'], 
+						 'default' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
 					  }
 
 	# - Internal Methods - #
@@ -63,13 +63,11 @@ class NBERFeenstraWTF(object):
 		[2] from_hd5py
 		"""
 		self.__data = None
-		return self 
 	
 	def __repr__(self):
 		""" Representation String Of Object """
 		string = "Class: %s\n" % (self.__class__) 							+ \
-				 "Years: %s\n" % (self.years)								+ \
-				 "[Available Years: %s]\n" 	% (self.available_years)	 	+ \
+				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" 	% (self.available_years)		+ \
 				 "Number of Importers: %s\n" % (self.num_importers) 		+ \
 				 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
 				 "Number of Products: %s\n" % (self.num_products) 			+ \
@@ -112,11 +110,12 @@ class NBERFeenstraWTF(object):
 		#-Force Interface Variables-#
 		if type(df) == pd.DataFrame:
 			# - Check Incoming Data Conforms - #
-			columns = set(data.columns)
+			columns = set(df.columns)
 			for item in self.interface['default']:
-				if item not in columns: raise TypeError("Need %s to be specified in the incoming data") % item
+				if item not in columns: 
+					raise TypeError("Need %s to be specified in the incoming data" % item)
 			#-Set Attributes-#
-			self.data = df.reindex_axis(self.interface['default'][:-1], axis=1) 									#Index by all values except 'value'
+			self.__data = df.set_index(self.interface['default'][:-1]) 	#Index by all values except 'value'
 			self.years = years
 		else:
 			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface['default'])

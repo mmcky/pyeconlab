@@ -40,7 +40,7 @@ import pandas as pd
 import numpy as np
 import countrycode as cc
 
-from dataset import NBERFeenstraWTF 
+from .dataset import NBERFeenstraWTF 
 from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
 							countryname_concordance, concord_data, random_sample, find_row
 from pyeconlab.trade.classification import SITC
@@ -199,6 +199,7 @@ class NBERFeenstraWTFConstructor(object):
 	source_last_checked = np.datetime64('2014-07-04')
 	complete_dataset 	= False 										#Make this harder to set with self.__?
 	years 				= []
+	level 				= 4
 	operations 			= ''
 	_available_years 	= xrange(1962,2000+1,1)
 	_fn_prefix			= u'wtf'
@@ -215,7 +216,7 @@ class NBERFeenstraWTFConstructor(object):
 	__raw_data_hdf_fn 	= u'wtf62-00_raw.h5'
 	__raw_data_hdf_yearindex_fn = u'wtf62-00_yearindex.h5'
 
-	def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, default_dataset=False, skip_setup=False, force=False, reduce_memory=False, verbose=True):
+	def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, skip_setup=False, force=False, reduce_memory=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -225,15 +226,6 @@ class NBERFeenstraWTFConstructor(object):
 		years 			: 	Apply a Year Filter [Default: ALL]
 		ftype 			: 	File Type ['dta', 'hdf'] [Default 'hdf' -> however it will generate on if not found from 'dta']
 		standardise 	: 	Include Standardised Codes (Countries: ISO3C etc.)
-		default_dataset : 	[True/False] Return a Default NBERFeenstraWTF Dataset 
-								a. Collapse to Values ONLY
-								b. Merge HongKong-China Adjustments
-								c. Standardise
-									-> Values in US$
-									-> Add ISO3C Codes and Well Formatted CountryNames
-									-> Include Indicator for Standard SITCR2 Codes ('sitcr2')
-								c. Return NBERFeenstraWTF
-									[year, importer, exporter, sitc4, value, sitcr2]
 		skip_setup 		: 	[Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
 							This is mainly used for loading test data to check attributes and methods etc. 
 		force 			: 	If not working with the full dataset you may enter force=True to run standardisation routines etc.
@@ -281,25 +273,11 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			self._dataset = self.__raw_data.copy(deep=True) 					#[Default] pandas.DataFrame.copy(deep=True) is much more efficient than copy.deepcopy()
 
-		#-Construct Default Dataset-#
-		if default_dataset == True:
-			#-Reduction/Collapse-#
-			self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
-			#-Merge-#
-			self.china_hongkongdata(years=years, verbose=verbose) 				
-			self.adjust_china_hongkongdata(verbose=verbose)
-			#-Adjust-#
-			standardise = True 													#-Leave Standardisation to standardise option but ensure it is switched on
-
 		#-Simple Standardization-#
 		if standardise == True: 
 			if verbose: print "[INFO] Running Interface Standardisation ..."
 			self.standardise_data(force=force, verbose=verbose)
-		
-		#-Return NBERFeenstraWTF Object-#
-		if default_dataset == True:
-			if verbose: print "[INFO] Returning an NBERFeenstraWTF Data Object"
-			return NBERFeenstraWTF(data=self._dataset, years=self.years, verbose=verbose)
+
 
 	def __repr__(self):
 		""" Representation String Of Object """
@@ -340,7 +318,11 @@ class NBERFeenstraWTFConstructor(object):
 			self.__raw_data = None
 
 	@property
-	def raw_data_operations(self):	 
+	def raw_data_operations(self):
+		"""
+		Check RAW data operations. 
+		Note: This should be 'None' now that ALL operations have moved to dataset
+		"""	 
 		try: 
 			return self.__raw_data.operations
 		except: 
@@ -432,6 +414,15 @@ class NBERFeenstraWTFConstructor(object):
 			print "[INFO] Reseting operations attribute"
 			self.operations = ''
 
+	@property
+	def verify_raw_data(self):
+		if len(self.raw_data) != 27573764:
+			return False
+		if self.raw_data['value'].sum() != 337094011179.25201:
+			return False 
+		if self.raw_data['quantity'].sum() != 10302685608925.896:
+			return False
+		return True
 
 	# ------ #
 	# - IO - #
@@ -475,6 +466,16 @@ class NBERFeenstraWTFConstructor(object):
 			for year in years:
 				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
 				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
+
+	def dataset_to_hdf(self, flname='default', key='default', verbose=True):
+		"""
+		Save a dataset to HDF File
+		"""
+		if flname == 'default':
+			flname = self._name+'-dataset.h5'
+		if key == 'default':
+			 key = self._name
+		self.dataset.to_hdf(flname, mode='w', complevel=9, complib='zlib', format='table')
 
 	# - Supplementary Data - #
 	# ---------------------- #
@@ -604,7 +605,7 @@ class NBERFeenstraWTFConstructor(object):
 		op_string = u'(adjust_raw_china_hongkongdata)'
 		
 		#-Check if Operation has been conducted-#
-		if check_operations(self.operations, op_string):
+		if check_operations(self, op_string):
 				return None
 
 		#-Merge Settings-#
@@ -674,12 +675,11 @@ class NBERFeenstraWTFConstructor(object):
 		op_string = u"(standardise_data)"
 		#-Check if Operation has been conducted-#
 		if check_operations(self, op_string): return None
-
+		#-Core-#
 		self.change_value_units(verbose=verbose) 			#Change Units to $'s
 		self.add_iso3c(verbose=verbose)
 		self.add_isocountrynames(verbose=verbose)
 		self.add_sitcr2_official_marker(verbose=verbose) 	#Build SITCR2 Marker
-
 		#- Add Operation to df attribute -#
 		update_operations(self, op_string)
 
@@ -949,7 +949,7 @@ class NBERFeenstraWTFConstructor(object):
 			return self.dataset
 
 
-	def intertemporal_country_adjustments(self, force=False, verbose=True):
+	def intertemporal_country_adjustments(self, level=4, force=False, verbose=True):
 		"""
 		Adjust Country Codes to be Inter-temporally Consistent
 
@@ -980,11 +980,71 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset = self._dataset[self._dataset['eiso3c'] != '.']
 		#-Collapse Constructed Duplicates-#
 		if verbose: print "[INFO] Collapsing Dataset to SUM duplicate entries"
-		self.reduce_to(to=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'])  								#Collapsing here makes the groupby logic more coherent
-		self._dataset = self._dataset.groupby(['year', 'iiso3c', 'eiso3c', 'sitc4']).sum()
+		sitcl = 'sitc%s' % level
+		self.reduce_to(to=['year', 'iiso3c', 'eiso3c', sitcl, 'value'])  								#Collapsing here makes the groupby logic more coherent
+		self._dataset = self._dataset.groupby(['year', 'iiso3c', 'eiso3c', sitcl]).sum()
 		self._dataset = self._dataset.reset_index() 													#Return Flat File															
 		#-OpString-#	
 		update_operations(self, op_string)
+
+
+	def countryname_concordance_using_cc(self, concord_vars=('countryname', 'iso3c'), target_dir=None, force=False, verbose=False):
+		"""
+		Compute a Country Name Concordance using package: pycountrycode
+		
+		Returns:
+		--------
+		pd.DataFrame(countryname,iso3c,iso3n) and/or writes a file
+		 	
+		Dependencies:
+		-------------
+		[1] PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
+			Note: pycountrycode has an issue with converting iso3n to iso3c so currently use country names
+			vincentarelbundock/pycountrycode Issue #24
+
+		Notes
+		-----
+		[1] It is better to use ISO3N Codes that are built into icode and ecode
+			Therefore STOP work on this approach.
+			Current Concordances can be found in "./meta"
+
+		Future Work:
+		------------
+		[1] Build my own version of pycountrycode so that this work is internalised to this package and doesn't depend on PyCountryCode
+			I would like Time Varying Definitions of Country Codes, In addition to Time Varying Aggregates like LDC, MDC, etc.
+		[2] Add Option to Write Concordance to a py file or csv etc
+		[3] Write Some Error Checking tests
+		[4] Turn this Routine into a utility function and remove code duplication
+		"""
+		#-Parse Complete Dataset Check-#
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("This is not a complete Dataset!\n If you want to build a concordance for a given year use force=True")
+		iso3c = cc.countrycode(codes=self.country_list, origin='country_name', target='iso3c')
+		#-Reject Non-String Responses-#
+		for idx,code in enumerate(iso3c):
+			if type(code) != str:
+				iso3c[idx] = '.' 																	#encode as '.' missing
+		#-Check Same Length-# 																		#This is probably redundant as zip will complain?
+		if len(iso3c) != len(self.country_list):
+			raise ValueError("Results != Length of Original Country List")
+		concord = pd.DataFrame(zip(self.country_list, iso3c), columns=['countryname', 'iso3c'])
+		concord['iso3c'] = concord['iso3c'].apply(lambda x: '.' if len(x)!=3 else x)
+		concord['iso3n'] = cc.countrycode(codes=concord.iso3c, origin='iso3c', target='iso3n')
+		concord.name = 'Concordance for %s : %s' % (self._name, concord.columns)
+		self.country_concordance = concord
+		#-Parse File Option-#
+		if type(target_dir) == str:
+			target_dir = check_directory(target_dir)
+			fl = "%s_to_%s.py" % (concord_vars[0], concord_vars[1]) 					#Convention from_to_to
+			if verbose: print "[INFO] Writing concordance to: %s" % (target_dir + fl)
+			concord_series = concord[list(concord_vars)].set_index(concord_vars[0])[concord_vars[1]] 	#Get Indexed Series Index : Value#
+			concord_series.name = u"%s to %s" % (concord_vars[0], concord_vars[1])
+			docstring 	= 	u"Concordance for %s to %s\n" % (concord_vars) 			+ \
+							u"%s" % self
+			from_idxseries_to_pydict(concord_series, target_dir=target_dir, fl=fl, docstring=docstring, verbose=False)
+		return self.country_concordance
+
 
 	# ------------------------------- #	
 	# - Operations on Product Codes - #
@@ -1034,7 +1094,7 @@ class NBERFeenstraWTFConstructor(object):
 		#-OpString-#
 		update_operations(self, op_string)
 
-	def add_sitcr2_official_marker(self, source_institution='un', verbose=False):
+	def add_sitcr2_official_marker(self, level=4, source_institution='un', verbose=False):
 		""" 
 		Add an Official SITCR2 Marker to Dataset
 		source_institution 	: 	allows to specify where SITC() retrieves data [Default: 'un']
@@ -1045,8 +1105,9 @@ class NBERFeenstraWTFConstructor(object):
 		#-Core-#
 		if verbose: print "[INFO] Adding SITC Revision 2 (Source='un') marker variable 'SITCR2'"
 		sitc = SITC(revision=2, source_institution=source_institution)
-		codes = sitc.get_codes(level=4)
-		self._dataset['SITCR2'] = self._dataset['sitc4'].apply(lambda x: 1 if x in codes else 0)
+		codes = sitc.get_codes(level=level)
+		sitcl = 'sitc%s' % level
+		self._dataset['SITCR2'] = self._dataset[sitcl].apply(lambda x: 1 if x in codes else 0)
 		#-OpString-#
 		update_operations(self, op_string)
 
@@ -1087,31 +1148,39 @@ class NBERFeenstraWTFConstructor(object):
 		#-OpString-#
 		update_operations(self, op_string)
 
-	def collapse_to_productcode_level(self, level=3, subidx=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'], verbose=False):
+	def collapse_to_productcode_level(self, level=3, subidx='default', verbose=False):
 		"""
 		Collapse the Dataset to a Higher Level of Aggregation 
 
 		level 	: 	[1,2,3]
 					Default: 3
 		subidx 	: 	Specify a Column Filter
-					Default = ['year', 'iiso3c', 'eiso3c', 'sitc4', 'value']
+					[Default: Builds a SubIDX from self.dataset.columns]
+					Alternatives: 	['year', 'icode', 'importer', 'ecode', 'exporter', 'sitc4', 'dot', 'value']
+									['year', 'iiso3c', 'eiso3c', 'sitc4', 'value']
 
 		Note
 		----
 		[1] This is a good candidate to be in a superclass
 		[2] Why restrict to the default subidx?
 		"""
+		if verbose: print "[INFO] Cannot Aggregate Quantity due to units. Discarding 'quantity'"
 		op_string = u"(collapse_to_productcode_level%s)" % level
 		if check_operations(self, op_string): 
 			return None
-		if check_operations(self, u"collapse_to_valuesonly") == False:
-			self.collapse_to_valuesonly(verbose=verbose)	 						#This excludes aggregations on quantity which is not accurate due to differences in units
-		if check_operations(self, u"add_iso3c") == False:
-			self.add_iso3c(verbose=verbose)	 										#Add iso3c
-			# if check_operations(self, u"add_sitcr2_official_marker") == False: 		#Why is this required? Propose to Delete
-			# 	self.add_sitcr2_official_marker(verbose=verbose)	 		
 		if level not in [1,2,3]:
 			raise ValueError("Level must be 1,2, or 3 for SITC4 Data")
+		if subidx == 'default':
+			cols = set(self.dataset.columns)
+			try:
+				#-Remove Quantity-#
+				cols.remove('quantity')
+				cols.remove('unit')
+			except:
+				pass 																#Not 'quantity' in dataset
+			#-Ensure 'value' is last-#
+			cols.remove('value')
+			subidx = list(cols) + ['value']
 		if verbose: print "[INFO] Collapsing Data to SITC Level #%s" % level
 		colcode = 'sitc%s' % level
 		self._dataset[colcode] = self._dataset['sitc4'].apply(lambda x: x[0:level])
@@ -1120,6 +1189,7 @@ class NBERFeenstraWTFConstructor(object):
 			if item == 'sitc4': subidx[idx] = colcode 								# Remove sitc4 and add in the lower level of aggregation sitc3 etc.
 		self._dataset = self._dataset[subidx].groupby(by=subidx[:-1]).sum() 		# Exclude 'value', as want to sum over it. It needs to be last in the list!
 		self._dataset = self._dataset.reset_index()
+		self.level = level
 		#-OpString-#
 		update_operations(self, op_string)
 
@@ -1351,7 +1421,7 @@ class NBERFeenstraWTFConstructor(object):
 
 
 	# ----------------------- #
-	# - Construct Datasets - #
+	# - Construct Datasets  - #
 	# ----------------------- #
 
 	def construct_dynamically_consistent_dataset(self, verbose=True):
@@ -1369,13 +1439,23 @@ class NBERFeenstraWTFConstructor(object):
 		Future Work
 		-----------
 		[1] Work through these steps to ensure operations are on dataset and they flow from one to another
+		[2] Write Tests
 		"""
-		
-		# a.delete_productcode_issues_with_raw_data(verbose=verbose)
-		# a.collapse_to_valuesonly(verbose=verbose)
-		# a.intertemporal_country_adjustments(verbose=verbose)
-		
-		raise NotImplementedError
+		#-ProductCode Adjustments-#
+		#-------------------------#
+		#-Reduction/Collapse-#
+		self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
+		#-Merge @ SITC4 LEVEL-#
+		self.china_hongkongdata(years=self.years, verbose=verbose) 				#Bring in China/HongKong Adjustments
+		self.adjust_china_hongkongdata(verbose=verbose)
+		#-Collapse to SITCL3-#
+		self.collapse_to_productcode_level(level=3, verbose=verbose) 		#Collapse to SITCL3 Level
+		self.change_value_units(verbose=verbose) 							#Change Units to $'s
+		self.add_sitcr2_official_marker(level=3, verbose=verbose) 			#Build SITCR2 Marker
+		#-CountryCode Adjustments-#
+		#-------------------------#
+		self.intertemporal_country_adjustments(level=3, verbose=verbose)
+		return self.dataset
 
 	def to_nberfeenstrawtf(self, verbose=True):
 		"""
@@ -1390,69 +1470,17 @@ class NBERFeenstraWTFConstructor(object):
 		-----
 		[1] It will be the responsibility of NBERFeenstraWTF to export to ProductLevelExportSystems etc. 
 		"""
-		raise NotImplementedError
+		obj = NBERFeenstraWTF()
+		sitcl = 'sitc%s' % self.level
+		self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
+		obj.from_dataframe(df=self.dataset, years=self.years)
+		return obj
+
 
 	
 	# ----------------------------- #
 	# - Supporting Functions 	  - #
 	# ----------------------------- #
-
-	def countryname_concordance_using_cc(self, concord_vars=('countryname', 'iso3c'), target_dir=None, force=False, verbose=False):
-		"""
-		Compute a Country Name Concordance using package: pycountrycode
-		
-		Returns:
-		--------
-		pd.DataFrame(countryname,iso3c,iso3n) and/or writes a file
-		 	
-		Dependencies:
-		-------------
-		[1] PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
-			Note: pycountrycode has an issue with converting iso3n to iso3c so currently use country names
-			vincentarelbundock/pycountrycode Issue #24
-
-		Notes
-		-----
-		[1] It is better to use ISO3N Codes that are built into icode and ecode
-			Therefore STOP work on this approach.
-			Current Concordances can be found in "./meta"
-
-		Future Work:
-		------------
-		[1] Build my own version of pycountrycode so that this work is internalised to this package and doesn't depend on PyCountryCode
-			I would like Time Varying Definitions of Country Codes, In addition to Time Varying Aggregates like LDC, MDC, etc.
-		[2] Add Option to Write Concordance to a py file or csv etc
-		[3] Write Some Error Checking tests
-		[4] Turn this Routine into a utility function and remove code duplication
-		"""
-		#-Parse Complete Dataset Check-#
-		if self.complete_dataset != True:
-			if force == False:
-				raise ValueError("This is not a complete Dataset!\n If you want to build a concordance for a given year use force=True")
-		iso3c = cc.countrycode(codes=self.country_list, origin='country_name', target='iso3c')
-		#-Reject Non-String Responses-#
-		for idx,code in enumerate(iso3c):
-			if type(code) != str:
-				iso3c[idx] = '.' 																	#encode as '.' missing
-		#-Check Same Length-# 																		#This is probably redundant as zip will complain?
-		if len(iso3c) != len(self.country_list):
-			raise ValueError("Results != Length of Original Country List")
-		concord = pd.DataFrame(zip(self.country_list, iso3c), columns=['countryname', 'iso3c'])
-		concord['iso3c'] = concord['iso3c'].apply(lambda x: '.' if len(x)!=3 else x)
-		concord['iso3n'] = cc.countrycode(codes=concord.iso3c, origin='iso3c', target='iso3n')
-		concord.name = 'Concordance for %s : %s' % (self._name, concord.columns)
-		self.country_concordance = concord
-		#-Parse File Option-#
-		if type(target_dir) == str:
-			target_dir = check_directory(target_dir)
-			fl = "%s_to_%s.py" % (concord_vars[0], concord_vars[1]) 					#Convention from_to_to
-			if verbose: print "[INFO] Writing concordance to: %s" % (target_dir + fl)
-			concord_series = concord[list(concord_vars)].set_index(concord_vars[0])[concord_vars[1]] 	#Get Indexed Series Index : Value#
-			concord_series.name = u"%s to %s" % (concord_vars[0], concord_vars[1])
-			docstring 	= 	u"Concordance for %s to %s\n" % (concord_vars) 			+ \
-							u"%s" % self
-			from_idxseries_to_pydict(concord_series, target_dir=target_dir, fl=fl, docstring=docstring, verbose=False)
-		return self.country_concordance
 
 	# --------------------------------------------------------------- #
 	# - META DATA FUNCTIONS 										- #
@@ -2104,7 +2132,7 @@ class NBERFeenstraWTFConstructor(object):
 		self.raw_data[codelength != 4].to_excel('missing_sitc4.xlsx')
 
 
-
+	# ----------------------- #
 	# - Construct Test Data - #
 	# ----------------------- #
 
@@ -2147,6 +2175,10 @@ class NBERFeenstraWTFConstructor(object):
 
 		return data, result
 
+	def testdata_construct_dynamically_consistent_dataset(self, size=20):
+		"""
+		Product Tests Data to check: construct_dynamically_consistent_dataset
+		"""
 
 
 
