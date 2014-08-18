@@ -429,17 +429,17 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 		sol = pd.read_csv(TEST_DATA_DIR + 'stata_wtf62-00_WLD_total_export.csv', index_col=['year'])['value']
 		df = self.obj.dataset
 		vs = df.loc[(df.exporter == 'World') & (df.importer=='World')].groupby(['year']).sum()['value']
-		for year in self.years:
+		for year in self.obj.years:
 			assert vs[year] == sol[year], "Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (year, sol[year], vs[year])
 
 	def test_total_cntry_exports(self):
 		""" Test Total Exports from a selection of countries"""
 		from pyeconlab.trade.dataset.NBERFeenstraWTF import iso3c_to_countryname
 		df = self.obj.dataset
-		for cntry in ['CHE', 'DNK', 'ESP', 'GBR', 'ISR', 'NZL', 'TWN', 'USA']:
-			sol = pd.read_csv('stata_wtf62-00_%s_total_export.csv' % cntry, index_col=['year'])['value']
+		for cntry in ['GBR', 'ISR', 'TWN', 'USA']: 																	#'CHE'
+			sol = pd.read_csv(TEST_DATA_DIR + 'stata_wtf62-00_%s_total_export.csv' % cntry, index_col=['year'])['value']
 			vs = df.loc[(df.exporter == iso3c_to_countryname[cntry]) & (df.importer != 'World')].groupby(['year']).sum()['value']
-			for year in self.years:
+			for year in self.obj.years:
 				assert vs[year] == sol[year], "Cntry (%s) Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (cntry, year, sol[year], vs[year])
 
 	def test_collapse_to_valuesonly(self):
