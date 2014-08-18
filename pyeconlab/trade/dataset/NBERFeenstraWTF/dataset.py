@@ -87,16 +87,20 @@ class NBERFeenstraWTF(object):
 			return self.__data
 
 	@property 
+	def num_years(self):
+		return self.data.index.levshape[0]
+
+	@property 
 	def num_exporters(self):
-		pass
+		return self.data.index.levshape[1]
 
 	@property 
 	def num_importers(self):
-		pass
+		return self.data.index.levshape[2]
 
 	@property 
 	def num_products(self):
-		pass
+		return self.data.index.levshape[3]
 
 
 	# ----------------------- #
