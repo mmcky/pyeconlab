@@ -442,4 +442,8 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 			assert_rows_in_df(df=obj.dataset, rows=rs)
 			assert_unique_rows_in_df(df=obj.dataset, rows=rs)
 
+	def test_total_exports(self):
+		""" Test Total Exports from a selection of countries """
+
 TestConstructorAgainstKnownSolutionsAllYears.slow = True
+
