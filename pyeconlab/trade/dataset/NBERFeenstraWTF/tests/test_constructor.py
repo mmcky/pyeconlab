@@ -127,25 +127,28 @@ class TestSmallSampleDataset(unittest.TestCase):
 		#-Import Test Data-#
 		self.df = import_csv_as_statatypes(TEST_DATA_DIR+"nberfeenstra_wtf62_random_sample.csv")
 		self.obj = NBERFeenstraWTFConstructor(source_dir=TEST_DATA_DIR, skip_setup=True)
-		self.obj.from_df(df=self.df)
+		self.obj.set_raw_data(df=self.df, force=True)
 		
 		#-Known Solutions-#
 		self.exp = set(['Canada', 'Cyprus', 'Jamaica', 'Poland', 'Spain', 'Taiwan', 'UK', 'World'])
 		self.imp = set(['Cambodia','Canada','Czechoslovak', 'Ghana', 'Kenya', 'Korea Rep.','Mexico','Morocco', 'Switz.Liecht', 'USA'])
 
 	def test_exporters(self):
+		""" Test Exporters Property """
 		exp = self.exp
 		obj = self.obj
 		computed_exp = set(obj.exporters)
 		assert exp == computed_exp, "Different Elements in the Set of Exporters: %s" % (exp.difference(computed_exp))
 		
 	def test_importers(self):
+		""" Test Importers Property """
 		imp = self.imp
 		obj = self.obj
 		computed_imp = set(obj.importers)
 		assert imp == computed_imp, "Different Elements in the Set of Importers: %s" % (imp.difference(computed_imp))
 		
 	def test_standardisation(self):
+		""" Test Standardisation method """
 		df = self.df
 		obj = self.obj
 		obj.set_dataset(df=copy.deepcopy(df[df.columns[0:10]])) 	#Remove Obs Columns
@@ -183,7 +186,7 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 	def setUpClass(cls): #should this be cls
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
 		years = [1962, 1985, 1990, 2000]
-		cls.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, years=years, ftype='dta', standardise=False, skip_setup=False, verbose=False)
+		cls.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, years=years, ftype='hdf', standardise=False, skip_setup=False, verbose=False) #hdf is faster, dta from dta files
 		#-Adjust Units as Stata Imports '' as '' whereas csv imports '' as np.nan-#
 		cls.obj.raw_data['unit'] = cls.obj.raw_data['unit'].apply(lambda x: np.nan if x == '' else x)
 
@@ -361,34 +364,18 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 		del rs['obs']
 		assert_rows_in_df(df=self.obj.raw_data, rows=rs)
 		assert_unique_rows_in_df(df=self.obj.raw_data, rows=rs)
-	
-	def test_first10obs_2000(self):
-		"""
-		Test the First 10 Observation from year 2000
-		These observations contain a lot of np.NaN Values in columns due to aggregation
-		File: 'data/nberfeenstra_wtf00_random_sample2.csv' (md5hash: ???)
-		Dependancies: import_csv_as_statatypes()
-		"""
-		rs = import_csv_as_statatypes(TEST_DATA_DIR+"nberfeenstra_wtf00_random_sample2.csv") 		#First 10 Observations from Stata
-		del rs['obs']
-		assert_rows_in_df(df=self.obj.raw_data, rows=rs)
-		assert_unique_rows_in_df(df=self.obj.raw_data, rows=rs)
 
 	def test_standardise_data(self):
 		""" Test Standardisation of Data Method """
-		#-Standardized Data-#
-		self.obj.standardise_data()
-		### --- WORKING HERE --- ###
-		pass
+		assert False, "Write Test"
 
 	def test_china_hongkongdata(self):
 		""" Test Import of China HongKong Adjustment Data """
-		pass
+		assert False, "Write Test"
 
 	def test_adjust_china_hongkongdata(self):
 		""" Test Adjustment of China & HongKong Data """
-		pass
-		self.obj.adjust_china_hongkongdata()
+		assert False, "Write Test"
 
 	def test_collapse_to_valuesonly_1990(self):
 		""" Test the Collapse to Export Values Only (collapse_to_valuesonly()) Against Some Random Test Cases in Year 1990 """
@@ -402,13 +389,13 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 
 	def test_bilateral_flows(self):
 		""" Test Import of Bilateral Flows to Supp Data """
-		pass
+		assert False, "Write Test"
 
 	### - Global Dataset Tests - ###
 
 	def test_generate_global_info(self):
 		""" Test Global Info Method """
-		pass
+		assert False, "Write Test"
 
 	#-TearDown-#
 
@@ -431,19 +418,37 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 	@classmethod
 	def setUpClass(cls): #should this be cls
 		""" Setup NBERFeenstraWTFConstructor using: source_dir """
-		cls.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, standardise=False, skip_setup=False, verbose=False)
+		cls.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
+
+	def setUp(self):
+		""" Reset Dataset to Raw Data Before each tests """
+		self.obj.set_dataset(self.obj.raw_data, force=True)
+
+	def test_world_exports(self):
+		""" Test World Exports """
+		sol = pd.read_csv(TEST_DATA_DIR + 'stata_wtf62-00_WLD_total_export.csv', index_col=['year'])['value']
+		df = self.obj.dataset
+		vs = df.loc[(df.exporter == 'World') & (df.importer=='World')].groupby(['year']).sum()['value']
+		for year in self.years:
+			assert vs[year] == sol[year], "Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (year, sol[year], vs[year])
+
+	def test_total_cntry_exports(self):
+		""" Test Total Exports from a selection of countries"""
+		from pyeconlab.trade.dataset.NBERFeenstraWTF import iso3c_to_countryname
+		df = self.obj.dataset
+		for cntry in ['CHE', 'DNK', 'ESP', 'GBR', 'ISR', 'NZL', 'TWN', 'USA']:
+			sol = pd.read_csv('stata_wtf62-00_%s_total_export.csv' % cntry, index_col=['year'])['value']
+			vs = df.loc[(df.exporter == iso3c_to_countryname[cntry]) & (df.importer != 'World')].groupby(['year']).sum()['value']
+			for year in self.years:
+				assert vs[year] == sol[year], "Cntry (%s) Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (cntry, year, sol[year], vs[year])
 
 	def test_collapse_to_valuesonly(self):
-			""" Test the Collapse to Export Values Only (collapse_to_valuesonly()) Against Some Random Test Cases Across ALL Years """
-			obj = self.obj
-			obj.set_dataset(obj.raw_data)
-			obj.collapse_to_valuesonly()
-			rs = convert_import_excel_to_statatypes(TEST_DATA_DIR+'testdata_collapse_to_valuesonly_2_result.xlsx')
-			assert_rows_in_df(df=obj.dataset, rows=rs)
-			assert_unique_rows_in_df(df=obj.dataset, rows=rs)
-
-	def test_total_exports(self):
-		""" Test Total Exports from a selection of countries """
+		""" Test the Collapse to Export Values Only (collapse_to_valuesonly()) Against Some Random Test Cases Across ALL Years """
+		rs = convert_import_excel_to_statatypes(TEST_DATA_DIR+'testdata_collapse_to_valuesonly_2_result.xlsx')
+		obj = self.obj
+		obj.collapse_to_valuesonly()
+		assert_rows_in_df(df=obj.dataset, rows=rs)
+		assert_unique_rows_in_df(df=obj.dataset, rows=rs)
 
 TestConstructorAgainstKnownSolutionsAllYears.slow = True
 
