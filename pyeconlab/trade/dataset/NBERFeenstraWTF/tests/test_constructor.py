@@ -365,6 +365,7 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 		assert_rows_in_df(df=self.obj.raw_data, rows=rs)
 		assert_unique_rows_in_df(df=self.obj.raw_data, rows=rs)
 
+
 	def test_standardise_data(self):
 		""" Test Standardisation of Data Method """
 		assert False, "Write Test"
@@ -385,7 +386,6 @@ class TestConstructorAgainstKnownRawDataFromDTA(unittest.TestCase):
 		rs = convert_import_excel_to_statatypes(TEST_DATA_DIR+'testdata_collapse_to_valuesonly_1_result.xlsx')
 		assert_rows_in_df(df=obj.dataset, rows=rs)
 		assert_unique_rows_in_df(df=obj.dataset, rows=rs)
-
 
 	def test_bilateral_flows(self):
 		""" Test Import of Bilateral Flows to Supp Data """

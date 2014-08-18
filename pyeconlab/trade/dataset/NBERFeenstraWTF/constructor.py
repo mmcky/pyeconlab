@@ -238,10 +238,11 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		#-Assign Source Directory-#
 		self._source_dir 	= check_directory(source_dir) 	# check_directory() performs basic tests on the specified directory
-		
+
 		#-Parse Skip Setup-#
-		if skip_setup==True:
+		if skip_setup == True:
 			print "[INFO] Skipping Setup of NBERFeenstraWTFConstructor!"
+			self.__raw_data 	= None 												#Allows to be assigned later on
 			return None
 		
 		#-Setup Object-#
@@ -328,6 +329,16 @@ class NBERFeenstraWTFConstructor(object):
 		except: 
 			return None 	#No Operations Applied
 
+	def set_raw_data(self, df, force=False):
+		"""
+		Force Set raw_data (used for testing)
+		"""
+		if type(self.__raw_data) == pd.DataFrame:
+			if force == False:
+				print "[WARNING] To force the replacement of raw_data use 'force'=True"
+				return None
+		self.__raw_data =  df 	#Should this make a copy?
+
 	@property
 	def exporters(self):
 		""" Returns List of Exporters (from Raw Data) """
@@ -399,16 +410,6 @@ class NBERFeenstraWTFConstructor(object):
 			self._dataset = self.__raw_data.copy(deep=True)
 			return self._dataset
 
-
-	def set_raw_data(self, df, force=False):
-		"""
-		Force Set raw_data (used for testing)
-		"""
-		if type(self.__raw_data) == pd.DataFrame:
-			if force == False:
-				print "[WARNING] To force the replacement of raw_data use 'force'=True"
-				return None
-		self.__raw_data =  df 	#Should this make a copy?
 
 
 	def set_dataset(self, df, force=False, reset_operations=False):
