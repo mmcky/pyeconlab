@@ -22,6 +22,7 @@ from .importers 	import importers
 
 from .countryname_to_iso3c 	import 	countryname_to_iso3c
 from .countryname_to_iso3n 	import 	countryname_to_iso3n
+from .iso3c_to_countryname 	import 	iso3c_to_countryname
 
 # ------------------ #
 # - Recode Objects - #

@@ -400,6 +400,17 @@ class NBERFeenstraWTFConstructor(object):
 			return self._dataset
 
 
+	def set_raw_data(self, df, force=False):
+		"""
+		Force Set raw_data (used for testing)
+		"""
+		if type(self.__raw_data) == pd.DataFrame:
+			if force == False:
+				print "[WARNING] To force the replacement of raw_data use 'force'=True"
+				return None
+		self.__raw_data =  df 	#Should this make a copy?
+
+
 	def set_dataset(self, df, force=False, reset_operations=False):
 		""" 
 		Check if Dataset Exists Prior to Assignment
