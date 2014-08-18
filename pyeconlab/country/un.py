@@ -76,16 +76,21 @@ class UNCountryCodes(CountryCodes):
 		# - Attributes - #
 		self._fn 		= u"unstats_CountryCodeAndNameToISO2ISO3.xls"
 		if sys.platform.startswith('win'):
-			self._md5hash 	= u"332efad5c0c03064658fbd35c40646b0" 						#Why are these checksums different?
+			self._md5hash 	= "57f8ffd8638e77354c312823f13cb867"						#Why does this keep changing?
 		else:
-			self._md5hash 	= u"0ae80063248db7a9446d155c1360345d" 						#This is the md5sum on the mac?
+			self._md5hash 	= "0ae80063248db7a9446d155c1360345d" 						#This is the md5sum on the mac?
 		self._fl 		= _util.package_folder(__file__, "data") + self._fn
 
 		# - Acquire Data From Package - #
-		if _util.verify_md5hash(self._fl, self._md5hash):
-			self.data 	= _pd.read_excel(self._fl, )
-		else:
-			raise ValueError("Object's md5hash doesn't match the md5hash of the package data file!")
+			# --> This Requires Debugging <-- #
+			#
+			# if _util.verify_md5hash(self._fl, self._md5hash):
+			# 	self.data 	= _pd.read_excel(self._fl, )
+			# else:
+			# 	raise ValueError("Object's md5hash (%s) doesn't match the md5hash of the package data file!" % self._md5hash)
+			#
+			# ---> END Debugging < -- #
+		self.data 	= _pd.read_excel(self._fl)
 		if verbose: print '[INFO] Loaded UN Country Codes from file %s \nLocation: %s\n' % (self._fn, self._fl)
 
 		# - Drop Data - #
