@@ -1601,7 +1601,6 @@ class NBERFeenstraWTFConstructor(object):
 		table_sitc4 = self.intertemporal_productcodes(verbose=verbose)
 		table_sitc4.to_excel(target_dir + 'intertemporal_sitc4.xlsx')
 
-
 	# - Country Codes Meta - #
 
 	def intertemporal_countrycodes(self, dataset=False, force=False, verbose=False):
