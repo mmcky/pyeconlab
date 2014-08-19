@@ -1820,10 +1820,13 @@ class NBERFeenstraWTFConstructor(object):
 		#-Add in Meta for ProductCodes-#
 		if meta:
 			#-RowTotals-#
-			table_sitc['Tot'] = table_sitc.sum(axis=1)
-			table_sitc['Avg'] = table_sitc.mean(axis=1)
-			table_sitc['Min'] = table_sitc.min(axis=1)
-			table_sitc['Max'] = table_sitc.max(axis=1)
+			yearcols = []
+			for year in self.years:
+				yearcols.append(year)
+			table_sitc['Tot'] = table_sitc[yearcols].sum(axis=1)
+			table_sitc['Avg'] = table_sitc[yearcols].mean(axis=1)
+			table_sitc['Min'] = table_sitc[yearcols].min(axis=1)
+			table_sitc['Max'] = table_sitc[yearcols].max(axis=1)
 			#-Coverage Stats-#
 			coverage = self.intertemporal_productcodes_dataset_indicator(meta=False, countries=countries, force=force)[['Coverage', '%Coverage']]
 			table_sitc = table_sitc.merge(coverage, left_index=True, right_index=True)
@@ -1875,11 +1878,14 @@ class NBERFeenstraWTFConstructor(object):
 		table_sitc = self.intertemporal_productcode_valuecompositions(level=level, countries=countries) 		
 		#-Add in Meta for ProductCodes-#
 		if meta:
-			#-Mean/Min/Max-#	
-			table_sitc['Avg'] = table_sitc.mean(axis=1)
-			table_sitc['Min'] = table_sitc.min(axis=1)
-			table_sitc['Max'] = table_sitc.max(axis=1)
-			table_sitc['AvgNorm'] = table_sitc.sum(axis=1).div(len(self.years)) 		#Normalised by Number of Years (Average Composition over Time) np.nan = 0
+			#-Mean/Min/Max-#
+			yearcols = []
+			for year in self.years:
+				yearcols.append(year)
+			table_sitc['Avg'] = table_sitc[yearcols].mean(axis=1)
+			table_sitc['Min'] = table_sitc[yearcols].min(axis=1)
+			table_sitc['Max'] = table_sitc[yearcols].max(axis=1)
+			table_sitc['AvgNorm'] = table_sitc[yearcols].sum(axis=1).div(len(self.years)) 		#Normalised by Number of Years (Average Composition over Time) np.nan = 0
 			#-Coverage-#
 			coverage = self.intertemporal_productcodes_dataset_indicator(meta=False, countries=countries, force=force)[['Coverage', '%Coverage']]
 			table_sitc = table_sitc.merge(coverage, left_index=True, right_index=True)
