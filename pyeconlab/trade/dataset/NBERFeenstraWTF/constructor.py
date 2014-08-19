@@ -992,9 +992,17 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset = self._dataset[self._dataset['eiso3c'] != '.']
 		#-Collapse Constructed Duplicates-#
 		if verbose: print "[INFO] Collapsing Dataset to SUM duplicate entries"
-		sitcl = 'sitc%s' % level
-		self.reduce_to(to=['year', 'iiso3c', 'eiso3c', sitcl, 'value'])  								#Collapsing here makes the groupby logic more coherent
-		self._dataset = self._dataset.groupby(['year', 'iiso3c', 'eiso3c', sitcl]).sum()
+		# sitcl = 'sitc%s' % level
+		# self.reduce_to(to=['year', 'iiso3c', 'eiso3c', sitcl, 'value'])  								#Collapsing here makes the groupby logic more coherent
+		# self._dataset = self._dataset.groupby(['year', 'iiso3c', 'eiso3c', sitcl]).sum()
+		subidx = set(self.dataset.columns)
+		subidx.remove('value')
+		try:
+			subidx.remove('quantity')
+			subidx.remove('unit')
+		except:
+			pass
+		self._dataset = self._dataset.groupby(list(subidx)).sum()
 		self._dataset = self._dataset.reset_index() 													#Return Flat File															
 		#-OpString-#	
 		update_operations(self, op_string)
@@ -1567,6 +1575,34 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			raise TypeError("out_type: Must be of type 'csv' or 'py'")
 		
+	def write_metadata(self, target_dir='./meta', verbose=True):
+		"""
+		Write Basic Files for ./meta in Excel Format for inclusion into the REPO
+
+		Files
+		-----
+		[1] intertemporal_iiso3n.xlsx
+		[2] intertemporal_eiso3n.xlsx
+		[3] intertemporal_sitc4.xlsx
+
+		Notes
+		-----
+		[1] Excel is currently used as an easy way to inspect the data
+		[2] Not using local package location as mostly want to check output prior to entry through repo.
+		"""
+		#-Parse Directory-#
+		target_dir = check_directory(target_dir)
+		if verbose: print "Writing Meta Data Files to: %s" % target_dir
+		#-Compute Intertemporal Tables of iiso3n and eiso3n-#
+		table_iiso3n, table_eiso3n = self.intertemporal_countrycodes(verbose=verbose)
+		table_iiso3n.to_excel(target_dir + 'intertemporal_iiso3n.xlsx')
+		table_eiso3n.to_excel(target_dir + 'intertemporal_eiso3n.xlsx')
+		#-Compute Intertemporal ProductCodes-#
+		table_sitc4 = self.intertemporal_productcodes(verbose=verbose)
+		table_sitc4.to_excel(target_dir + 'intertemporal_sitc4.xlsx')
+
+
+	# - Country Codes Meta - #
 
 	def intertemporal_countrycodes(self, dataset=False, force=False, verbose=False):
 		"""
@@ -1650,23 +1686,8 @@ class NBERFeenstraWTFConstructor(object):
 		table_eiso3n.columns = table_eiso3n.columns.droplevel() 	#Removes Unnecessary 'eiso3n' label
 		return table_iiso3n, table_eiso3n
 
-	def intertemporal_productcodes(self, dataset=False, force=False, verbose=False):
-		"""
-		Wrapper for finding intertemporal product codes meta data from RAW DATA or DATASET
 
-		dataset 	: 	[True/False] Default => False
-
-		Returns
-		-------
-			table_sitc4
-		"""
-		if self.complete_dataset != True:
-			if force == False:
-				raise ValueError("[ERROR] Not a Complete Dataset!")
-		if dataset:
-			return self.intertemporal_productcodes_dataset(force=force, verbose=verbose)
-		else:
-			return self.intertemporal_productcodes_raw_data(force=force, verbose=verbose)
+	# - Product Codes Meta - #
 
 	def intertemporal_productcodes_raw_data(self, force=False, verbose=False):
 		"""
@@ -1692,12 +1713,12 @@ class NBERFeenstraWTFConstructor(object):
 		table_sitc4.columns = table_sitc4.columns.droplevel() 	#Removes Unnecessary 'code' label
 		return table_sitc4
 
-	def intertemporal_productcodes_dataset(self, tabletype='indicator', meta=True, countries='None', source_institution='un', level=3, force=False, verbose=False):
+	def intertemporal_productcodes_dataset(self, tabletype='indicator', meta=True, countries='None', source_institution='un', level=-1, force=False, verbose=False):
 		"""
 		Construct a table of productcodes by year
 		This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
 		
-		tabletype 	: 	['values', 'indicator', 'composition']
+		tabletype 	: 	['indicator', 'value', 'composition']
 		meta 		: 	True/False
 						Adds SITCR2 Marker in the Index
 		countries 	: 	['None', 'exporter', 'importer']
@@ -1714,65 +1735,108 @@ class NBERFeenstraWTFConstructor(object):
 		#-Core-#
 		if tabletype == 'value':
 			return self.intertemporal_productcodes_dataset_values(meta=meta, countries=countries, source_institution=source_institution, \
-																	level=level, force=force, verbose=verbose)
+																	force=force, verbose=verbose)
 		elif tabletype == 'composition':
 			return self.intertemporal_productcodes_dataset_compositions(meta=meta, countries=countries, source_institution=source_institution, \
 																	level=level, force=force, verbose=verbose)
 		else: 																																		# 'indicator' if not other match found
 			return self.intertemporal_productcodes_dataset_indicator(meta=meta, countries=countries, source_institution=source_institution, \
-																	level=level, force=force, verbose=verbose)				
+																	force=force, verbose=verbose)				
 	
 
-	def intertemporal_productcodes_dataset_values(self, meta=True, countries='None', source_institution='un', level=3, force=False, verbose=False):
+	def intertemporal_productcodes_dataset_indicator(self, meta=True, countries='None', source_institution='un', force=False, verbose=False):
 		"""
-		Construct a table of productcodes by year containing Values
+		Construct a table of productcodes by year
 		This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
 		
 		meta 		: 	True/False
 						Adds SITCR2 Marker in the Index
-		level 		: 	Level for Composition Table
 		force 		:  	True/False
 						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
 		"""
 		if self.complete_dataset != True:
 			if force == False:
 				raise ValueError("[ERROR] Not a Complete Dataset!")
+		sitcl = "sitc%s" % self.level
 		#-DATASET-#
 		data = self.dataset 
 		#-ParseCountries-#
 		if countries == 'exporter':
-			idx = ['year', 'sitc4', 'exporter', 'value']
-			gidx = ['exporter', 'sitc4', 'year']
+			idx = ['year', 'exporter',sitcl]
 		elif countries == 'importer':
-			idx = ['year', 'sitc4', 'importer', 'value']
-			gidx = ['importer', 'sitc4', 'year']
+			idx = ['year', 'importer', sitcl]
 		else:
-			idx = ['year', 'sitc4', 'value']
-			gidx = ['sitc4', 'year']
+			idx = ['year', sitcl]
+		#-Core-#													
+		table_sitc = data[idx].drop_duplicates()
+		table_sitc['attr'] = 1 																							
+		table_sitc = table_sitc.set_index(idx).unstack(level='year')
+		table_sitc.columns = table_sitc.columns.droplevel()  								#Drop TopLevel Name 'attr' in Columns MultiIndex
+		#-Add Coverage Stats-# 																#Note this isn't classified as meta
+		total_coverage = len(table_sitc.columns)
+		table_sitc['Coverage'] = table_sitc.sum(axis=1)
+		table_sitc['%Coverage'] = table_sitc['Coverage'] / total_coverage				
+		#-Add in Meta for ProductCodes-#
+		if meta:
+			#-SITCR2-#
+			pidx = table_sitc.index.names
+			table_sitc = table_sitc.reset_index()
+			sitc = SITC(revision=2, source_institution=source_institution)
+			codes = sitc.get_codes(level=self.level)
+			table_sitc['SITCR2'] = table_sitc[sitcl].apply(lambda x: 1 if x in codes else 0)
+			table_sitc = table_sitc.set_index(pidx + ['SITCR2'])
+		return table_sitc
+
+	def intertemporal_productcodes_dataset_values(self, meta=True, countries='None', source_institution='un', force=False, verbose=False):
+		"""
+		Construct a table of productcodes by year containing Values
+		This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
+		
+		meta 		: 	True/False
+						Adds SITCR2 Marker in the Index
+		force 		:  	True/False
+						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
+		"""
+		if self.complete_dataset != True:
+			if force == False:
+				raise ValueError("[ERROR] Not a Complete Dataset!")
+		sitcl = 'sitc%s' % self.level
+		#-DATASET-#
+		data = self.dataset 
+		#-ParseCountries-#
+		if countries == 'exporter':
+			idx = ['year', sitcl, 'exporter', 'value']
+			gidx = ['exporter', sitcl, 'year']
+		elif countries == 'importer':
+			idx = ['year', sitcl, 'importer', 'value']
+			gidx = ['importer', sitcl, 'year']
+		else:
+			idx = ['year', sitcl, 'value']
+			gidx = [sitcl, 'year']
 		#-Core-#
-		table_sitc4 = data[idx].groupby(gidx).sum()
-		table_sitc4 = table_sitc4.unstack(level='year') 	
-		table_sitc4.columns = table_sitc4.columns.droplevel() 								#Drop 'value' Name in Columns MultiIndex
+		table_sitc = data[idx].groupby(gidx).sum()
+		table_sitc = table_sitc.unstack(level='year') 	
+		table_sitc.columns = table_sitc.columns.droplevel() 								#Drop 'value' Name in Columns MultiIndex
 		#-Add in Meta for ProductCodes-#
 		if meta:
 			#-RowTotals-#
-			table_sitc4['Tot'] = table_sitc4.sum(axis=1)
-			table_sitc4['Avg'] = table_sitc4.mean(axis=1)
-			table_sitc4['Min'] = table_sitc4.min(axis=1)
-			table_sitc4['Max'] = table_sitc4.max(axis=1)
+			table_sitc['Tot'] = table_sitc.sum(axis=1)
+			table_sitc['Avg'] = table_sitc.mean(axis=1)
+			table_sitc['Min'] = table_sitc.min(axis=1)
+			table_sitc['Max'] = table_sitc.max(axis=1)
 			#-Coverage Stats-#
 			coverage = self.intertemporal_productcodes_dataset_indicator(meta=False, countries=countries, force=force)[['Coverage', '%Coverage']]
-			table_sitc4 = table_sitc4.merge(coverage, left_index=True, right_index=True)
+			table_sitc = table_sitc.merge(coverage, left_index=True, right_index=True)
 			#-SITCR2-#
-			pidx = table_sitc4.index.names
-			table_sitc4 = table_sitc4.reset_index()
+			pidx = table_sitc.index.names
+			table_sitc = table_sitc.reset_index()
 			sitc = SITC(revision=2, source_institution=source_institution)
-			codes = sitc.get_codes(level=4)
-			table_sitc4['SITCR2'] = table_sitc4['sitc4'].apply(lambda x: 1 if x in codes else 0)
-			table_sitc4 = table_sitc4.set_index(pidx + ['SITCR2'])
-		return table_sitc4
+			codes = sitc.get_codes(level=self.level)
+			table_sitc['SITCR2'] = table_sitc[sitcl].apply(lambda x: 1 if x in codes else 0)
+			table_sitc = table_sitc.set_index(pidx + ['SITCR2'])
+		return table_sitc
 
-	def intertemporal_productcodes_dataset_compositions(self, meta=True, countries='None', source_institution='un', level=3, force=False, verbose=False):
+	def intertemporal_productcodes_dataset_compositions(self, meta=True, countries='None', source_institution='un', level=-1, force=False, verbose=False):
 		"""
 		Construct a table of productcodes by year
 		This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
@@ -1780,6 +1844,7 @@ class NBERFeenstraWTFConstructor(object):
 		meta 		: 	True/False
 						Adds SITCR2 Marker in the Index
 		level 		: 	Level for Composition Table
+						Default: 1 x Level Higher than Data in the Dataset (i.e. 4 would generate compositions with level 3 codes)
 		force 		:  	True/False
 						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
 
@@ -1790,126 +1855,94 @@ class NBERFeenstraWTFConstructor(object):
 		if self.complete_dataset != True:
 			if force == False:
 				raise ValueError("[ERROR] Not a Complete Dataset!")
+		#-Aggregation Level Option-#
+		if level == -1:
+			level = self.level - 1
+		sitcl = 'sitc%s' % self.level
 		#-DATASET-#
 		data = self.dataset 
 		#-ParseCountries-#
 		if countries == 'exporter':
-			idx = ['year', 'sitc4', 'exporter', 'value']
-			gidx = ['exporter', 'sitc4', 'year']
+			idx = ['year', sitcl, 'exporter', 'value']
+			gidx = ['exporter', sitcl, 'year']
 		elif countries == 'importer':
-			idx = ['year', 'sitc4', 'importer', 'value']
-			gidx = ['importer', 'sitc4', 'year']
+			idx = ['year', sitcl, 'importer', 'value']
+			gidx = ['importer', sitcl, 'year']
 		else:
-			idx = ['year', 'sitc4', 'value']
-			gidx = ['sitc4', 'year']
+			idx = ['year', sitcl, 'value']
+			gidx = [sitcl, 'year']
 		#-Core-#
-		table_sitc4 = self.intertemporal_productcode_valuecompositions(level=level, countries=countries) 		
+		table_sitc = self.intertemporal_productcode_valuecompositions(level=level, countries=countries) 		
 		#-Add in Meta for ProductCodes-#
 		if meta:
 			#-Mean/Min/Max-#	
-			table_sitc4['Avg'] = table_sitc4.mean(axis=1)
-			table_sitc4['Min'] = table_sitc4.min(axis=1)
-			table_sitc4['Max'] = table_sitc4.max(axis=1)
-			table_sitc4['AvgNorm'] = table_sitc4.sum(axis=1).div(len(self.years)) 		#Normalised by Number of Years (Average Composition over Time) np.nan = 0
+			table_sitc['Avg'] = table_sitc.mean(axis=1)
+			table_sitc['Min'] = table_sitc.min(axis=1)
+			table_sitc['Max'] = table_sitc.max(axis=1)
+			table_sitc['AvgNorm'] = table_sitc.sum(axis=1).div(len(self.years)) 		#Normalised by Number of Years (Average Composition over Time) np.nan = 0
 			#-Coverage-#
 			coverage = self.intertemporal_productcodes_dataset_indicator(meta=False, countries=countries, force=force)[['Coverage', '%Coverage']]
-			table_sitc4 = table_sitc4.merge(coverage, left_index=True, right_index=True)
+			table_sitc = table_sitc.merge(coverage, left_index=True, right_index=True)
 			#-SITCR2-#
-			pidx = table_sitc4.index.names
-			table_sitc4 = table_sitc4.reset_index()
+			pidx = table_sitc.index.names
+			table_sitc = table_sitc.reset_index()
 			sitc = SITC(revision=2, source_institution=source_institution)
-			codes = sitc.get_codes(level=4)
-			table_sitc4['SITCR2'] = table_sitc4['sitc4'].apply(lambda x: 1 if x in codes else 0)
-			table_sitc4 = table_sitc4.set_index(pidx+['SITCR2'])
-		return table_sitc4
+			codes = sitc.get_codes(level=self.level)
+			table_sitc['SITCR2'] = table_sitc[sitcl].apply(lambda x: 1 if x in codes else 0)
+			table_sitc = table_sitc.set_index(pidx+['SITCR2'])
+		return table_sitc
 
-	def intertemporal_productcodes_dataset_indicator(self, meta=True, countries='None', source_institution='un', level=3, force=False, verbose=False):
-		"""
-		Construct a table of productcodes by year
-		This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
-		
-		meta 		: 	True/False
-						Adds SITCR2 Marker in the Index
-		level 		: 	Level for Composition Table
-		force 		:  	True/False
-						[Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
-		"""
-		if self.complete_dataset != True:
-			if force == False:
-				raise ValueError("[ERROR] Not a Complete Dataset!")
-		#-DATASET-#
-		data = self.dataset 
-		#-ParseCountries-#
-		if countries == 'exporter':
-			idx = ['year', 'exporter','sitc4']
-		elif countries == 'importer':
-			idx = ['year', 'importer', 'sitc4']
-		else:
-			idx = ['year', 'sitc4']
-		#-Core-#													
-		table_sitc4 = data[idx].drop_duplicates()
-		table_sitc4['attr'] = 1 																							
-		table_sitc4 = table_sitc4.set_index(idx).unstack(level='year')
-		table_sitc4.columns = table_sitc4.columns.droplevel()  								#Drop TopLevel Name 'attr' in Columns MultiIndex
-		#-Add Coverage Stats-# 																#Note this isn't classified as meta
-		total_coverage = len(table_sitc4.columns)
-		table_sitc4['Coverage'] = table_sitc4.sum(axis=1)
-		table_sitc4['%Coverage'] = table_sitc4['Coverage'] / total_coverage				
-		#-Add in Meta for ProductCodes-#
-		if meta:
-			#-SITCR2-#
-			pidx = table_sitc4.index.names
-			table_sitc4 = table_sitc4.reset_index()
-			sitc = SITC(revision=2, source_institution=source_institution)
-			codes = sitc.get_codes(level=4)
-			table_sitc4['SITCR2'] = table_sitc4['sitc4'].apply(lambda x: 1 if x in codes else 0)
-			table_sitc4 = table_sitc4.set_index(pidx + ['SITCR2'])
-		return table_sitc4
-
-	def intertemporal_productcode_valuecompositions(self, level=3, countries='None', verbose=False):
+	def intertemporal_productcode_valuecompositions(self, level=-1, countries='None', verbose=False):
 		"""
 		Produce Value Composition Tables for Looking at SITC4 relative to some other level of aggregation
+
+		level 	: 	Aggregation Level to compute compositions for.
+		countries : 	Allow for Tables to be generated for exporter, level or importer, level or just level 
 
 		Note
 		----
 		[1] Write Tests
+		[2] This could be a dataframe.py utility
 		"""
 		#-DATASET-#
 		data = self.dataset
-		#-ParseLevel-#
+		#-Aggregation Level Option-#
+		if level == -1:
+			level = self.level - 1
+		sitcld = 'sitc%s'% self.level
 		sitcl = 'sitc%s' % level
 		#-ParseCountries-#
 		if countries == 'exporter':
-			idx = ['year', 'sitc4', 'exporter', 'value'] 			#base
-			gidx = ['exporter', 'sitc4', 'year'] 					#groupby base idx
+			idx = ['year', sitcld, 'exporter', 'value'] 			#base
+			gidx = ['exporter', sitcld, 'year'] 					#groupby base idx
 			lidx = ['year', sitcl, 'exporter', 'value']				#level idx
 			glidx = ['year', sitcl, 'exporter'] 					#groupby level idx
-			midx = ['year', 'sitc4', sitcl.upper(), 'exporter'] 	#merge idx
-			msidx = ['exporter', 'year', 'sitc4']
+			midx = ['year', sitcld, sitcl.upper(), 'exporter'] 	#merge idx
+			msidx = ['exporter', 'year', sitcld]
 		elif countries == 'importer':
-			idx = ['year', 'sitc4', 'importer', 'value']
-			gidx = ['importer', 'sitc4', 'year']
+			idx = ['year', sitcld, 'importer', 'value']
+			gidx = ['importer', sitcld, 'year']
 			lidx = ['year', sitcl, 'importer', 'value']
 			glidx = ['year', sitcl, 'importer']
-			midx = ['year', 'sitc4', sitcl.upper(), 'importer']
-			msidx = ['importer', 'year', 'sitc4']
+			midx = ['year', sitcld, sitcl.upper(), 'importer']
+			msidx = ['importer', 'year', sitcld]
 		else:
-			idx = ['year', 'sitc4', 'value']
-			gidx = ['sitc4', 'year']
+			idx = ['year', sitcld, 'value']
+			gidx = [sitcld, 'year']
 			lidx = ['year', sitcl, 'value']
 			glidx = ['year', sitcl]
-			midx = ['year', 'sitc4', sitcl.upper()]
-			msidx = ['year', 'sitc4']
+			midx = ['year', sitcld, sitcl.upper()]
+			msidx = ['year', sitcld]
 		#-Core-#
 		#-SITC4-#
-		table_sitc4 = data[idx].groupby(gidx).sum().reset_index()
-		table_sitc4[sitcl] = table_sitc4['sitc4'].apply(lambda x: str(x)[:level])
+		table_sitc = data[idx].groupby(gidx).sum().reset_index()
+		table_sitc[sitcl] = table_sitc[sitcld].apply(lambda x: str(x)[:level])
 		#-SITCL-#
 		table_sitcl = data[idx].groupby(gidx).sum().reset_index()
-		table_sitcl[sitcl] = table_sitcl['sitc4'].apply(lambda x: str(x)[:level])
+		table_sitcl[sitcl] = table_sitcl[sitcld].apply(lambda x: str(x)[:level])
 		table_sitcl = table_sitcl[lidx].groupby(glidx).sum().reset_index()
 		#-Construct Table-#
-		table = table_sitc4.merge(table_sitcl, on=glidx)
+		table = table_sitc.merge(table_sitcl, on=glidx)
 		table[sitcl.upper()] = table['value_x'] / table['value_y'] * 100
 		table = table[midx]
 		table = table.set_index(msidx)
@@ -1917,14 +1950,13 @@ class NBERFeenstraWTFConstructor(object):
 		table.columns = table.columns.droplevel()
 		return table 
 
+
 	def intertemporal_productcode_adjustments_table(self, force=False, verbose=False):
 		"""
-		Documents and Produces the Adjustments Table for Meta Data Reference 
+		[STATUS: EXPERIMENTAL] Documents and Produces the Adjustments Table for Meta Data Reference 
 		
 		force 	: 	True/False - Check if Complete Dataset 
 					[Default: False]
-
-		STATUS: IN-WORK
 
 		Looking at SITCL3 GROUPS
 		------------------------
@@ -1994,9 +2026,10 @@ class NBERFeenstraWTFConstructor(object):
 		r = r.set_index(list(idxnames))
 		return r
 
+
 	def compute_cases_intertemporal_sitc4_3digits(self, force=False, verbose=False):
 		"""
-		Compute a Cases Table for SITC4 Intertemporal ProductCodes at the 3 Digit Level
+		[STATUS: EXPERIMENTAL] Compute a Cases Table for SITC4 Intertemporal ProductCodes at the 3 Digit Level
 
 		STATUS: IN-WORK
 
@@ -2045,33 +2078,6 @@ class NBERFeenstraWTFConstructor(object):
 			r = r.append(df[list(idxnames)+list(colnames)+['CASE1', 'CASE2']])
 		r = r.set_index(list(idxnames))
 		return r
-
-
-	def write_metadata(self, target_dir='./meta', verbose=True):
-		"""
-		Write Basic Files for ./meta in Excel Format for inclusion into the REPO
-
-		Files
-		-----
-		[1] intertemporal_iiso3n.xlsx
-		[2] intertemporal_eiso3n.xlsx
-		[3] intertemporal_sitc4.xlsx
-
-		Notes
-		-----
-		[1] Excel is currently used as an easy way to inspect the data
-		[2] Not using local package location as mostly want to check output prior to entry through repo.
-		"""
-		#-Parse Directory-#
-		target_dir = check_directory(target_dir)
-		if verbose: print "Writing Meta Data Files to: %s" % target_dir
-		#-Compute Intertemporal Tables of iiso3n and eiso3n-#
-		table_iiso3n, table_eiso3n = self.intertemporal_countrycodes(verbose=verbose)
-		table_iiso3n.to_excel(target_dir + 'intertemporal_iiso3n.xlsx')
-		table_eiso3n.to_excel(target_dir + 'intertemporal_eiso3n.xlsx')
-		#-Compute Intertemporal ProductCodes-#
-		table_sitc4 = self.intertemporal_productcodes(verbose=verbose)
-		table_sitc4.to_excel(target_dir + 'intertemporal_sitc4.xlsx')
 
 
 	# -------------- #
@@ -2191,7 +2197,7 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		Product Tests Data to check: construct_dynamically_consistent_dataset
 		"""
-
+		pass
 
 
 	#--------------#
