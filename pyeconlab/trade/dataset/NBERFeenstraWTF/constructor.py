@@ -410,9 +410,15 @@ class NBERFeenstraWTFConstructor(object):
 			self._dataset = self.__raw_data.copy(deep=True)
 			return self._dataset
 
+	def reset_dataset(self, verbose=True):
+		""" Reset Dataset to raw_data """
+		if verbose: print "[INFO] Reseting Dataset to Raw Data"
+		if type(self.__raw_data) != pd.DataFrame:
+			raise ValueError("RAW DATA is not a DataFrame! Most likely it has been deleted")
+		self._dataset = self.__raw_data.copy(deep=True)
+		self.operations = ''
 
-
-	def set_dataset(self, df, force=False, reset_operations=False):
+	def set_dataset(self, df, force=False, reset_operations=True):
 		""" 
 		Check if Dataset Exists Prior to Assignment
 		Q: Is this ever going to be used?
@@ -421,7 +427,7 @@ class NBERFeenstraWTFConstructor(object):
 			if force == False:
 				print "[WARNING] The dataset attribute has previously been set. To force the replacement use 'force'=True"
 				return None
-		self._dataset =  df 	#Should this make a copy?
+		self._dataset =  df 							#Should this make a copy?
 		if reset_operations:
 			print "[INFO] Reseting operations attribute"
 			self.operations = ''
@@ -1202,6 +1208,7 @@ class NBERFeenstraWTFConstructor(object):
 				cols.remove('unit')
 			except:
 				pass 																#Not 'quantity' in dataset
+			cols.remove('dot') 														#dot columns contains 'np.nan' values which makes unique comparisons fail for 'World' etc.
 			#-Ensure 'value' is last-#
 			cols.remove('value')
 			subidx = list(cols) + ['value'] 										#Is this really necessary? just remove value?
