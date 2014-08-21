@@ -42,7 +42,7 @@ import countrycode as cc
 
 from .dataset import NBERFeenstraWTF 
 from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
-							countryname_concordance, concord_data, random_sample, find_row
+							countryname_concordance, concord_data, random_sample, find_row, assert_merged_series_items_equal
 from pyeconlab.trade.classification import SITC
 
 # - Data in data/ - #
@@ -397,7 +397,7 @@ class NBERFeenstraWTFConstructor(object):
 		""" Return a List of Items Available in Supplementary Data """
 		items = []
 		for key in self._supp_data.keys():
-			if self._supp_data[key] != None:
+			if type(self._supp_data[key]) == pd.DataFrame:
 				items.append(key)
 		return sorted(items)
 
@@ -441,6 +441,58 @@ class NBERFeenstraWTFConstructor(object):
 		if self.raw_data['quantity'].sum() != 10302685608925.896:
 			return False
 		return True
+
+
+	def stats(self, dataset=True, basic=False, extended=False, dlimit=10):
+		""" Print Some Basic Statistics about the Dataset or RAW DATA """
+		if dataset:
+			df = self.dataset
+			msg = "Dataset (%s) Statistics\n-------------------------------\n" % self._name
+		else:
+			df = self.raw_data
+			msg = "Raw Data (%s) Statistics\n-------------------------------\n" % self._name
+		msg += "Years: %s\n" % self.years
+		msg += "Observations: %s; Variables: %s\n" % (df.shape[0], df.shape[1])
+		if basic:
+			print msg
+			return None
+		for col in df.columns:
+			if col in ['value', 'quantity']:
+				continue
+			uniq = list(df[col].unique())
+			msg += "Column: '%s' has %s Unique Entries\n" % (col, len(uniq))
+			if extended:
+					if len(uniq) >= dlimit:
+						msg += "Items => %s ... %s\n" % (uniq[:int(dlimit/2)], uniq[-int(dlimit/2):])
+					else:
+						msg += "Items => %s\n" % uniq
+		print msg 
+
+	def exporter_total_values(self, data, key='exporter', year=False):
+		""" 
+		Return Exporter Total Values DataFrame by Year
+
+		dataset : 	property (a.raw_data or a.dataset)
+		key 	: 	'exporter' or 'ecode'
+		year 	: 	Include 'year' [True/False]
+
+		"""
+		if year:
+			return data.groupby(['year', key]).sum()['value']
+		return data.groupby([key]).sum()['value']
+
+	def importer_total_values(self, data, key='importer', year=False):
+		""" 
+		Return Exporter Total Values DataFrame
+
+		dataset : 	property (a.raw_data or a.dataset)
+		key 	: 	'importer' or 'icode'
+		year 	: 	Include 'year' [True/False]
+
+		"""
+		if year:
+			return data.groupby(by=['year', key]).sum()['value']
+		return data.groupby(by=[key]).sum()['value']
 
 	# ------ #
 	# - IO - #
@@ -495,6 +547,7 @@ class NBERFeenstraWTFConstructor(object):
 			 key = self._name
 		self.dataset.to_hdf(flname, mode='w', complevel=9, complib='zlib', format='table')
 
+	# ---------------------- #
 	# - Supplementary Data - #
 	# ---------------------- #
 
@@ -596,6 +649,7 @@ class NBERFeenstraWTFConstructor(object):
 			# - Assign Data to supp_data - #
 			self._supp_data[key] = data
 			return self._supp_data[key]
+
 
 	# -------------------------- #
 	# - Operations on Dataset  - #
@@ -1076,7 +1130,7 @@ class NBERFeenstraWTFConstructor(object):
 	# - Operations on Product Codes - #
  	# ------------------------------- #	
 
-	def collapse_to_valuesonly(self, verbose=False):
+	def collapse_to_valuesonly(self, subidx=None, return_duplicates=False, verbose=False):
 		"""
 		Adjust Dataset For Export Values that are defined multiple times due to Quantity Unit Codes ('unit')
 		Note: This will remove 'quantity', 'unit' ('dot'?)
@@ -1087,25 +1141,36 @@ class NBERFeenstraWTFConstructor(object):
 		2. Write Tests
 
 		"""
+		#-Find Appropriate idx-#
+		if type(subidx) != list:
+			subidx = set(self.dataset.columns)
+			for item in ['quantity', 'unit', 'dot']: 	#Cannot Aggregate These Items
+				try:
+					subidx.remove(item)
+				except:
+					pass
+			subidx.remove('value')						#Remove to Aggregate in groupby
+			subidx = list(subidx) 						
 		#-Check if Operation has been conducted-#
-		op_string = u"(collapse_to_valuesonly)"
+		op_string = u"(collapse_to_valuesonly[%s])" % subidx
 		if check_operations(self, op_string): return None
-		idx = ['year', 'icode',	'importer',	'ecode', 'exporter', 'sitc4']	
 		# - Conduct Duplicate Analysis - #
-		dup = self._dataset.duplicated(subset=idx)  
+		dup = self._dataset.duplicated(subset=subidx)  
 		if verbose:
 			print "[INFO] Current Dataset Length: %s" % self._dataset.shape[0]
 			print "[INFO] Current Number of Duplicate Entry's: %s" % len(dup[dup==True])
-			print "[INFO] Deleting 'quantity', 'unit' as cannot aggregate quantity data in different units"
-		del self._dataset['quantity']
-		del self._dataset['unit']
+			print "[INFO] Deleted 'quantity', 'unit' as cannot aggregate quantity data in different units and 'dot' due to the existence of np.nan"
+		if return_duplicates: 			#Return Duplicate Rows
+			dup = self.dataset[dup]
 		#-Collapse/Sum Duplicates-#
-		self._dataset = self._dataset.groupby(by=idx).sum()
-		self._dataset = self._dataset.reset_index() 			#Remove IDX For Later Data Operations
+		self._dataset = self.dataset[subidx+['value']].groupby(by=subidx).sum()
+		self._dataset = self.dataset.reset_index() 									#Remove IDX For Later Data Operations
 		if verbose:
 			print "[INFO] New Dataset Length: %s" % self._dataset.shape[0]
 		#- Add Operation to df attribute -#
 		update_operations(self, op_string)
+		if return_duplicates:
+			return dup
 
 	def change_value_units(self, verbose=False):
 		""" 
@@ -1456,11 +1521,74 @@ class NBERFeenstraWTFConstructor(object):
 	# - Construct Datasets  - #
 	# ----------------------- #
 
-	def construct_dynamically_consistent_dataset(self, verbose=True):
+	def construct_dataset(dataset='default-dynamic', verbose=False):
+		""" 
+		Construct Datasets
+		------------------
+		'default-dynamic' 	: 	[Default] Intertemporally Consistent Dataset in both the Country and the Product Dimension
+		"""
+		if dataset == 'default-dynamic':
+			return self.construct_default_dynamic(verbose=verbose)
+		else:
+			raise ValueError('Specified dataset (%s) is not Implemented Yet' % dataset) 
+
+	def construct_default_dynamic(self, checks=True, verbose=True):
 		"""
 		Constructs DEFAULT Dynamically Consistent Dataset for ProductCodes and CountryCodes
 
-		IN-WORK
+		Operations
+		----------
+		Option A
+		---------
+		[1] Reduce Information to Minimum Indexation Required 
+			Note: This overcomes some inadvertent errors in indexation in subsequent groupby operations
+			['year', 'ecode', 'icode', 'sitc4', 'value']
+		[2] Collapse to Values Only
+		[1] Alter Country Codes to be Intertemporally Consistent Units of Analysis (i.e. SUN = Soviet Union)
+		[2] Collapse Values to SITCL3 Data
+		[3] Remove Problematic Codes
+
+
+		Option B:
+		--------
+		[1] Collapse to SITCL3 Codes  	[Dimensional Reduction]
+		[2] 
+
+		Future Work
+		-----------
+		[1] Work through these steps to ensure operations are on dataset and they flow from one to another
+		[2] Write Tests for these methods as a priority
+		"""
+		if self.complete_dataset != True:
+			raise ValueError("Dataset must be a complete dataset!")
+		#-ProductCode Adjustments-#
+		#-------------------------#
+		a.reduce
+
+		#-Reduction/Collapse-#
+		if checks: 
+			s1 = self.exporter_total_values(self.raw_data)
+		self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
+		if checks:
+			s2 = self.exporter_total_values(self.dataset)
+			assert_merged_series_items_equal(s1,s2)
+		#-Merge @ SITC4 LEVEL-#
+		self.china_hongkongdata(years=self.years, verbose=verbose) 			#Bring in China/HongKong Adjustments to supp_data
+		self.adjust_china_hongkongdata(verbose=verbose)
+		#-Collapse to SITCL3-#
+		self.collapse_to_productcode_level(level=3, verbose=verbose) 		#Collapse to SITCL3 Level
+		self.change_value_units(verbose=verbose) 							#Change Units to $'s
+		self.add_sitcr2_official_marker(level=3, verbose=verbose) 			#Build SITCR2 Marker
+		#-CountryCode Adjustments-#
+		#-------------------------#
+		self.intertemporal_country_adjustments(level=3, verbose=verbose)
+		return self.dataset
+
+	def construct_dynamically_consistent_dataset(self, verbose=True):
+		"""
+		Constructs Dynamically Consistent Dataset for ProductCodes and CountryCodes
+
+		**IN-WORK**
 
 		Operations
 		----------

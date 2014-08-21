@@ -422,7 +422,7 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 
 	def setUp(self):
 		""" Reset Dataset to Raw Data Before each tests """
-		self.obj.set_dataset(self.obj.raw_data, force=True)
+		self.obj.reset_dataset()
 
 	def test_world_exports(self):
 		""" Test World Exports """
@@ -449,6 +449,21 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 		obj.collapse_to_valuesonly()
 		assert_rows_in_df(df=obj.dataset, rows=rs)
 		assert_unique_rows_in_df(df=obj.dataset, rows=rs)
+
+	def test_collapse_to_valuesonly_2(self):
+		""" Test collapse_to_valuesonly() for adaptable indexing """
+		obj = self.obj 
+		#-Route1-#
+		obj.collapse_to_valuesonly(verbose=True)						#Main Round of Reductions
+		obj.reduce_to(['year', 'icode', 'ecode', 'sitc4', 'value'])
+		obj.collapse_to_valuesonly(verbose=True) 						#Extra Reductions Due to Yemen Names
+		l1 = obj.dataset.shape[0]
+		#-Route2-#
+		obj.reset_dataset()
+		obj.reduce_to(['year', 'icode', 'ecode', 'sitc4', 'value'])
+		obj.collapse_to_valuesonly(verbose=True)
+		l2 = obj.dataset.shape[0]
+		assert l1 == l2, "The Number of Observations differ (%s != %s) When they should be the same" % (l1, l2)
 
 TestConstructorAgainstKnownSolutionsAllYears.slow = True
 

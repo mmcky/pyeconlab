@@ -25,6 +25,8 @@ import pandas as pd
 import numpy as np
 from itertools import chain, repeat
 
+from pandas.util.testing import assert_series_equal
+
 # ------------------- #
 # - Index Functions - #
 # ------------------- #
@@ -307,9 +309,9 @@ def check_operations_df(df, op_string, verbose=False):
 
 
 
-# ------------------ #
+# -------------------- #
 # - Assert Functions - #
-# ------------------ #
+# -------------------- #
 
 def assert_unique_row_in_df(df, row):
 	"""
@@ -337,6 +339,31 @@ def assert_rows_in_df(df, rows):
 	for idx, row in rows.iterrows():
 		assert_row_in_df(df, row)
 
+def assert_merged_series_items_equal(s1, s2):
+	"""
+	Assert the Inner Join of Two Series Are Equal
+	Note: This joins based on index
+	"""
+	s1 = s1.copy() 										#Don't Alter incoming Series
+	s1.name = 's1'
+	s2 = s2.copy()
+	s2.name = 's2'
+	merged = pd.concat([s1, s2], axis=1, join='inner') 	#Get Inner Mapping
+	assert_series_equal(merged['s1'], merged['s2'])
+	
+def check_merged_series_items_equal(s1, s2):
+	"""
+	Assert the Inner Join of Two Series Are Equal
+	Note: This joins based on index
+	"""
+	try:
+		assert_merged_series_items_equal(s1,s2)
+		return True
+	except:
+		return False	
+
+
+# ------------------------------------------- #
 # - Examples of Different Ways to Impliment - #
 # ------------------------------------------- #
 
