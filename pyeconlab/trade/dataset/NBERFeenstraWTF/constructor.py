@@ -412,9 +412,10 @@ class NBERFeenstraWTFConstructor(object):
 
 	def reset_dataset(self, verbose=True):
 		""" Reset Dataset to raw_data """
-		if verbose: print "[INFO] Reseting Dataset to Raw Data"
 		if type(self.__raw_data) != pd.DataFrame:
 			raise ValueError("RAW DATA is not a DataFrame! Most likely it has been deleted")
+		if verbose: print "[INFO] Reseting Dataset to Raw Data"
+		del self._dataset 																			#Clean-up old dataset
 		self._dataset = self.__raw_data.copy(deep=True)
 		self.operations = ''
 
@@ -879,7 +880,8 @@ class NBERFeenstraWTFConstructor(object):
 		data = self.dataset
 		#-Check if Operation has been conducted-#
 		op_string = u"(split_countrycodes)"
-		if check_operations(self, op_string): return None
+		if check_operations(self, op_string): 
+			return None
 		# - Importers - #
 		if verbose: print "Spliting icode into (iregion, iiso3n, imod)"
 		data['iregion'] = data['icode'].apply(lambda x: int(x[:2]))
@@ -892,7 +894,7 @@ class NBERFeenstraWTFConstructor(object):
 		data['emod'] 	= data['ecode'].apply(lambda x: int(x[-1]))
 		#-Apply Custom Fixes-#
 		if apply_fixes:
-			self.apply_iso3n_custom_fixes(merge_on='countrycode', verbose=verbose)
+			self.apply_iso3n_custom_fixes(match_on='countrycode', verbose=verbose)
 		#- Add Operation to df attribute -#
 		update_operations(self, op_string)
 
@@ -905,12 +907,17 @@ class NBERFeenstraWTFConstructor(object):
 		Note
 		----
 		[1] Currently uses attribute fix_countryname_to_iso3n, fix_icode_to_iso3n, fix_ecode_to_iso3n (will move to meta)
+
+		Future Work 
+		-----------
+		[1] Write Tests
 		"""
 		#-Op String-#
 		op_string = u"(apply_iso3n_custom_fixes)"
-		if check_operations(self, op_string): return None
-		if not check_operations(self, "(split_countrycodes)"):
-			self.split_countrycodes(verbose=verbose)
+		if check_operations(self, op_string): 
+			return None
+		if not check_operations(self, u"(split_countrycodes)"): 		#ensure iiso3n, eiso3n are constructed
+			self.split_countrycodes(apply_fixes=False, verbose=verbose)
 		#-Core-#
 		if match_on == 'countryname':
 			fix_countryname_to_iso3n = self.fix_countryname_to_iso3n
@@ -927,7 +934,7 @@ class NBERFeenstraWTFConstructor(object):
 				df.loc[df.ecode == key, 'eiso3n'] = fix_ecode_to_iso3n[key]
 			fix_icode_to_iso3n = self.fix_icode_to_iso3n 														#Will be moved to Meta
 			for key in sorted(fix_icode_to_iso3n.keys()):
-				if verbose: print "For ecode %s updating eiso3n codes to %s" % (key, fix_icode_to_iso3n[key])
+				if verbose: print "For icode %s updating iiso3n codes to %s" % (key, fix_icode_to_iso3n[key])
 				df = self._dataset
 				df.loc[df.icode == key, 'iiso3n'] = fix_icode_to_iso3n[key]
 		else:
