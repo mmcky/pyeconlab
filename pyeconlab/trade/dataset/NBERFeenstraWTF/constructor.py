@@ -1086,6 +1086,7 @@ class NBERFeenstraWTFConstructor(object):
 		Future Work
 		-----------
 		[1] Write Tests
+		[2] Make the Reporting More Informative
 		"""
 		from pyeconlab.trade.dataset.NBERFeenstraWTF.meta import iso3c_recodes_for_1962_2000
 		from pyeconlab.util import concord_data
@@ -1110,9 +1111,6 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset = self._dataset[self._dataset['eiso3c'] != '.']
 		#-Collapse Constructed Duplicates-#
 		if verbose: print "[INFO] Collapsing Dataset to SUM duplicate entries"
-		# sitcl = 'sitc%s' % level
-		# self.reduce_to(to=['year', 'iiso3c', 'eiso3c', sitcl, 'value'])  								#Collapsing here makes the groupby logic more coherent
-		# self._dataset = self._dataset.groupby(['year', 'iiso3c', 'eiso3c', sitcl]).sum()
 		subidx = set(self.dataset.columns)
 		subidx.remove('value')
 		for item in ['quantity', 'unit', 'dot']:
@@ -1122,6 +1120,7 @@ class NBERFeenstraWTFConstructor(object):
 				pass
 		self._dataset = self._dataset.groupby(list(subidx)).sum()
 		self._dataset = self._dataset.reset_index() 													#Return Flat File															
+		del self._dataset['index']
 		#-OpString-#	
 		update_operations(self, op_string)
 
