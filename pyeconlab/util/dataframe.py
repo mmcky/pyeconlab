@@ -166,7 +166,8 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 		return conflicts
 
 	#-Write Report-#
-	report = 	u"MERGE Report [Rule: %s, LEFT: %s, RIGHT: %s]\n" % (dominant, left_col, right_col) + \
+	report = 	u"---------------------------------\n" 									+ \
+				u"MERGE Report [Rule: %s, LEFT: %s, RIGHT: %s]\n" % (dominant, left_col, right_col) + \
 				u"------------\n" 														+ \
 				u"# of Left Observations: \t%s\n" % (num_ldf) 							+ \
 				u"# of Right Observations: \t%s\n" % (num_rdf) 							+ \
@@ -184,7 +185,8 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 				u"\n" 																	+ \
 				u"# of Left values EQUAL to Right values [No Change]: \t%s\n" % (num_equal_left_right) + \
 				u"\n" 																	+ \
-				u"Total Number of FINAL Observations: \t%s\n" % (len(outer)) 					
+				u"Total Number of FINAL Observations: \t%s\n" % (len(outer)) 		  	+\
+				u"---------------------------------\n" 											
 	
 	#-Output Type-#
 	if output == 'final':

@@ -30,3 +30,8 @@ from .iso3c_to_countryname 	import 	iso3c_to_countryname
 
 from .recodes import intertemporal
 iso3c_recodes_for_1962_2000 = intertemporal.iso3c_for_1962_2000
+
+# -------------------- #
+# - Deletion Objects - #
+# -------------------- #
+from .deletions import sitc4_deletions

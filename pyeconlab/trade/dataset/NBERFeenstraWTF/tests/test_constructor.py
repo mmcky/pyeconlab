@@ -29,7 +29,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from pyeconlab.util import package_folder, expand_homepath, check_directory
-from pyeconlab.util import find_row, assert_rows_in_df, assert_unique_rows_in_df
+from pyeconlab.util import find_row, assert_rows_in_df, assert_unique_rows_in_df, assert_merged_series_items_equal
 from ..constructor import NBERFeenstraWTFConstructor
 
 #-DATA Paths-#
@@ -451,6 +451,20 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 		assert_unique_rows_in_df(df=obj.dataset, rows=rs)
 
 	def test_collapse_to_valuesonly_2(self):
+		""" Test Collapse to values only - before and after sum of exporter and importer values should be the same """
+		obj = self.obj
+		#-Exporter-#
+		s1 = obj.exporter_total_values(self.dataset)
+		obj.collapse_to_valuesonly(subidx=['year', 'icode', 'ecode', 'sitc4'], verbose=verbose) 			#This will remove unit, quantity, dot, exporter and importer
+		s2 = obj.exporter_total_values(self.dataset)
+		assert_merged_series_items_equal(s1,s2)
+		#-Importer-#
+		s1 = obj.importer_total_values(self.dataset)
+		obj.collapse_to_valuesonly(subidx=['year', 'icode', 'ecode', 'sitc4'], verbose=verbose) 			#This will remove unit, quantity, dot, exporter and importer
+		s2 = obj.importer_total_values(self.dataset)
+		assert_merged_series_items_equal(s1,s2)
+
+	def test_collapse_to_valuesonly_3(self):
 		""" Test collapse_to_valuesonly() for adaptable indexing """
 		obj = self.obj 
 		#-Route1-#

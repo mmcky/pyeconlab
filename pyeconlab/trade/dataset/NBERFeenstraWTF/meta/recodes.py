@@ -8,6 +8,12 @@ Notes
 -----
 [1] Many of these concordances are HAND constructed by looking at supporting meta data contained in ``xlsx`` etc.
 
+Future Work 
+-----------
+[1] Should these use smaller codes such as: 
+		SP1, SP2 for Special 1 ... 
+	with a lookup definition dictionary for more details. 
+[2] Countries with '.' should they remain in the dataset under the assumption that years with no reports indicate 0 trade?
 """
 
 
@@ -74,7 +80,7 @@ class intertemporal(object):
 			'ZWE' 	: '.', 														#INTERPOLATE?
 	}
 
-	#-SAME AS ABOVE except countryname to SPECIAL CODES Required to Make 1962 to 2000 Dynamically Consistent-#
+	#-SAME AS ABOVE except "countryname" to SPECIAL CODES Required to Make 1962 to 2000 Dynamically Consistent-#
 	countryname_for_1962_2000 = { 
 		
 		# - WORKING HERE - # 

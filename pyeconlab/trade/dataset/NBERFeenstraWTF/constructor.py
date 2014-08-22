@@ -551,7 +551,7 @@ class NBERFeenstraWTFConstructor(object):
 	# - Supplementary Data - #
 	# ---------------------- #
 
-	def china_hongkongdata(self, years=[], return_dataset=False, verbose=True):
+	def load_china_hongkongdata(self, years=[], return_dataset=False, verbose=True):
 		"""
 		Load China Kong Kong Adjustment Data into Supplementary Data with key ['chn_hk_adjust']
 		
@@ -579,13 +579,11 @@ class NBERFeenstraWTFConstructor(object):
 		fn_postfix 	= u'.dta'
 		available_years = xrange(1988, 2000 + 1)
 		key 		= u'chn_hk_adjust'
-		
 		#- Parse Year Filter - #
 		if years == []:
 			years = list(set([int(x) for x in self.years]).intersection(set(available_years))) 		#This will load the intersection of self.years and years available for adjustment
 		else:
 			years = list(set(years).intersection(set(available_years))) 	# Make sure years is supported by available data
-
 		# - Import Data - #
 		try: 
 			self._supp_data[key]
@@ -655,7 +653,7 @@ class NBERFeenstraWTFConstructor(object):
 	# - Operations on Dataset  - #
 	# -------------------------- #
 
-	def reduce_to(self, to=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'], rtrn=False):
+	def reduce_to(self, to=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'], rtrn=False, verbose=False):
 		"""
 		Reduce a dataset to a specified list of columns
 
@@ -664,52 +662,60 @@ class NBERFeenstraWTFConstructor(object):
 		[1] This is an idea candidate for a constructor superclass so that it is inherited
 		"""
 		opstring = u"(reduce_to(to=%s))" % to
-		self._dataset = self._dataset[to]
+		if verbose: print "[INFO] Reducing Dataset from %s to %s" % (list(self.dataset.columns), to)
+		self._dataset = self.dataset[to]
 		self.operations += opstring
 		if rtrn:
-			return self._dataset
+			return self.dataset
 
 	def adjust_china_hongkongdata(self, verbose=False):
 		"""
 		Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
-		This will merge in the Hong Kong / China Adjustments provided with the dataset for the years 1988 to 2000. 
+		This will merge in the Hong Kong / China Adjustments provided with the dataset for the years 1988 to 2000.
+
+		Note
+		----
+		[1] This method requires no operations to have been done previously on the dataset.  
 		"""
 		op_string = u'(adjust_raw_china_hongkongdata)'
-		
-		#-Check if Operation has been conducted-#
-		if check_operations(self, op_string):
+		if check_operations(self, op_string): 							#Check if Operation has been conducted
 				return None
-
 		#-Merge Settings-#
-		if check_operations(self, u"collapse_to_valuesonly", verbose=False):
-			on 			= 	[u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'dot']
+		if self.operations != '':
+			raise ValueError("This method requires no previous operations to have been performed on the dataset!")
 		else:
-		 	on 			= 	[u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']
+		 	on 			= 	[u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot'] 				#Merge on the Full complement of Items in the Original Dataset
 		
 		#-Note: Current merge_columns utility merges one column set at a time-#
-		
 		#-Values-#
-		raw_value = self._dataset[on+['value']].rename(columns={'value' : 'value_raw'})
+		raw_value = self.dataset[on+['value']].rename(columns={'value' : 'value_raw'})
 		try:
 			supp_value = self._supp_data[u'chn_hk_adjust'][on+['value_adj']]
 		except:
 			raise ValueError("[ERROR] China/Hong Kong Data has not been loaded!")
 		value = merge_columns(raw_value, supp_value, on, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
 
+		# Note: Imposing the requirement that this be merged on complete matching information (i.e. no previous operations on the dataset, this section could be removed from try,except)
 		#'Quantity' May not be available if collapse_to_valuesonly has been done etc.
 		try:  															 
 			#-Quantity-#
 			raw_quantity = self._dataset[on+['quantity']]
 			supp_quantity = self._supp_data[u'chn_hk_adjust'][on+['quantity']]
-			quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='rights', output='final', verbose=verbose)
+			quantity = merge_columns(raw_quantity, supp_quantity, on, collapse_columns=('quantity_x', 'quantity_y', 'quantity'), dominant='right', output='final', verbose=verbose)
 			#-Join Values and Quantity-#
+			if verbose: 
+				print "[INFO] Merging Value Adjusted and Quantity Adjusted Series"
+				print "[INFO] Value Adjusted Number of Observations: \t%s (Variables: %s)" % (value.shape[0], value.shape[1])
+				print "[INFO] Quantity Adjusted Number of Observations: %s (Variables: %s)" % (quantity.shape[0], quantity.shape[1])
 			updated_raw_values = value.merge(quantity, how='outer', on=on)
+			if verbose:
+				print "[INFO] Merged Number of Observations: \t\t%s (Variables: %s)" % (updated_raw_values.shape[0], updated_raw_values.shape[1])
 		except:
 			if verbose: print "[INFO] Quantity Information is not available in the current dataset\n"
 			updated_raw_values = value 	#-Quantity Not Available-#
 
-		report = 	u"# of Observations in Original Raw Dataset: \t%s\n" % (len(self._dataset)) +\
-					u"# of Observations in Updated Dataset: \t\t%s\n" % (len(updated_raw_values))
+		report = 	u"[INFO] # of Observations in Original Dataset: %s\n" % (len(self._dataset)) +\
+					u"[INFO] # of Observations in Updated Dataset: \t%s\n" % (len(updated_raw_values))
 		if verbose: print report
 
 		#-Cleanup of Temporary Objects-#
@@ -772,6 +778,20 @@ class NBERFeenstraWTFConstructor(object):
 									'USA' 		: 842,
 								}
 
+	fix_ecode_to_iso3n = 		{ 										
+									'450000' 	: 896,
+									'533800'	: 381,
+									'555780' 	: 579,
+									'557560' 	: 757,
+									'728882'	: 882,
+									'458960'	: 158,
+									'218400' 	: 842,
+								}
+	# Checked With: 
+	# df = a.raw_data
+	# df.loc[df.exporter==<item from fix_exporter_to_iso3n>].ecode.unique()
+
+
 	fix_exporter_to_iso3c = 	{
 									'Asia NES' 	: '.',
 									'Italy' 	: 'ITL',
@@ -793,6 +813,19 @@ class NBERFeenstraWTFConstructor(object):
 									'Taiwan'	: 158,
 									'USA' 		: 842,
 								}
+
+	fix_icode_to_iso3n = 		{ 
+									'450000' 	: 896,
+									'533800'	: 381,
+									'555780' 	: 579,
+									'728882'	: 882,
+									'557560' 	: 757,
+									'458960'	: 158,
+									'218400' 	: 842,
+								}
+	# Checked With: 
+	# df = a.raw_data
+	# df.loc[df.importer==<item from fix_importer_to_iso3n>].icode.unique()
 
 	fix_importer_to_iso3c = 	{
 									'Asia NES' 	: '.',
@@ -859,29 +892,47 @@ class NBERFeenstraWTFConstructor(object):
 		data['emod'] 	= data['ecode'].apply(lambda x: int(x[-1]))
 		#-Apply Custom Fixes-#
 		if apply_fixes:
-			self.apply_iso3n_custom_fixes(verbose=verbose)
+			self.apply_iso3n_custom_fixes(merge_on='countrycode', verbose=verbose)
 		#- Add Operation to df attribute -#
 		update_operations(self, op_string)
 
-	def apply_iso3n_custom_fixes(self, verbose=True):
+	def apply_iso3n_custom_fixes(self, match_on='countrycode', verbose=True):
 		""" 
 		Apply Custom Fixes for ISO3N Numbers
 		
+		match_on 	: allows matching on 'countryname' (i.e. exporter, importer) or 'countrycode' (i.e. ecode, icode)
+
 		Note
 		----
-		[1] This uses attribute fix_countryname_to_iso3n
+		[1] Currently uses attribute fix_countryname_to_iso3n, fix_icode_to_iso3n, fix_ecode_to_iso3n (will move to meta)
 		"""
 		#-Op String-#
 		op_string = u"(apply_iso3n_custom_fixes)"
 		if check_operations(self, op_string): return None
+		if not check_operations(self, "(split_countrycodes)"):
+			self.split_countrycodes(verbose=verbose)
 		#-Core-#
-		fix_countryname_to_iso3n = self.fix_countryname_to_iso3n
-		for key in sorted(fix_countryname_to_iso3n.keys()):
-			if verbose: print "For countryname %s updating iiso3n and eiso3n codes to %s" % (key, fix_countryname_to_iso3n[key])
-			df = self._dataset
-			df.loc[df.importer == key, 'iiso3n'] = fix_countryname_to_iso3n[key]
-			df.loc[df.exporter == key, 'eiso3n'] = fix_countryname_to_iso3n[key]
-		#- Add Operation to cls attribute -#
+		if match_on == 'countryname':
+			fix_countryname_to_iso3n = self.fix_countryname_to_iso3n
+			for key in sorted(fix_countryname_to_iso3n.keys()):
+				if verbose: print "For countryname %s updating iiso3n and eiso3n codes to %s" % (key, fix_countryname_to_iso3n[key])
+				df = self._dataset
+				df.loc[df.importer == key, 'iiso3n'] = fix_countryname_to_iso3n[key]
+				df.loc[df.exporter == key, 'eiso3n'] = fix_countryname_to_iso3n[key]
+		elif match_on == 'countrycode':
+			fix_ecode_to_iso3n = self.fix_ecode_to_iso3n 														#Will be moved to Meta
+			for key in sorted(fix_ecode_to_iso3n.keys()):
+				if verbose: print "For ecode %s updating eiso3n codes to %s" % (key, fix_ecode_to_iso3n[key])
+				df = self._dataset
+				df.loc[df.ecode == key, 'eiso3n'] = fix_ecode_to_iso3n[key]
+			fix_icode_to_iso3n = self.fix_icode_to_iso3n 														#Will be moved to Meta
+			for key in sorted(fix_icode_to_iso3n.keys()):
+				if verbose: print "For ecode %s updating eiso3n codes to %s" % (key, fix_icode_to_iso3n[key])
+				df = self._dataset
+				df.loc[df.icode == key, 'iiso3n'] = fix_icode_to_iso3n[key]
+		else:
+			raise ValueError("match_on must be either 'countryname' or 'countrycode'")
+		#- Add Operation to class attribute -#
 		update_operations(self, op_string)
 
 	def add_iso3c(self, verbose=False):
@@ -1021,7 +1072,7 @@ class NBERFeenstraWTFConstructor(object):
 			return self.dataset
 
 
-	def intertemporal_country_adjustments(self, level=4, force=False, verbose=True):
+	def adjust_countrycodes_intertemporal(self, level=4, force=False, verbose=True):
 		"""
 		Adjust Country Codes to be Inter-temporally Consistent
 
@@ -1037,7 +1088,7 @@ class NBERFeenstraWTFConstructor(object):
 			if force == False:
 				raise ValueError("This is not a complete Dataset! ... use force=True if you want to proceed.")
 		#-OpString-#
-		op_string = u"(intertemporal_country_adjustments)"
+		op_string = u"(adjust_countrycodes_intertemporal)"
 		if check_operations(self, op_string): return self.dataset 	#Already been computed
 		#-Checks-#
 		if not check_operations(self, u"(countries_only)"): 	   	#Adds iso3c	
@@ -1057,11 +1108,11 @@ class NBERFeenstraWTFConstructor(object):
 		# self._dataset = self._dataset.groupby(['year', 'iiso3c', 'eiso3c', sitcl]).sum()
 		subidx = set(self.dataset.columns)
 		subidx.remove('value')
-		try:
-			subidx.remove('quantity')
-			subidx.remove('unit')
-		except:
-			pass
+		for item in ['quantity', 'unit', 'dot']:
+			try:
+				subidx.remove(item)
+			except:
+				pass
 		self._dataset = self._dataset.groupby(list(subidx)).sum()
 		self._dataset = self._dataset.reset_index() 													#Return Flat File															
 		#-OpString-#	
@@ -1267,13 +1318,11 @@ class NBERFeenstraWTFConstructor(object):
 			raise ValueError("Level must be 1,2, or 3 for SITC4 Data")
 		if subidx == 'default':
 			cols = set(self.dataset.columns)
-			try:
-				#-Remove Quantity-#
-				cols.remove('quantity')
-				cols.remove('unit')
-			except:
-				pass 																#Not 'quantity' in dataset
-			cols.remove('dot') 														#dot columns contains 'np.nan' values which makes unique comparisons fail for 'World' etc.
+			for item in ['quantity', 'unit', 'dot']:
+				try:
+					cols.remove(item)
+				except:
+					pass 																#Item not in dataset, report?
 			#-Ensure 'value' is last-#
 			cols.remove('value')
 			subidx = list(cols) + ['value'] 										#Is this really necessary? just remove value?
@@ -1294,42 +1343,28 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		This method deletes any known issues with the raw_data associated with productcodes
 
-		Required Columns: 'sitc4'
+		Requirements
+		------------
+		self.level == 4
 
-		Deletions
-		---------
-		The following values only appear in 1962 to 1966 and are not found to be sitcr2 codes
-		Their combined value is also relatively small. Further information has been requested. 
-			0021 	[Associated only with Malta]
-			0023 	[Various Eastern European Countries and Austria]
-			0024
-			0025
-			0031
-			0035
-			0039
-			2829
+		Notes
+		-----
+		[1] SITC4 Deletions is Documented in meta subpackage
 
-		Note
-		----
-		[1] This needs to be done before any aggregations as it will only operate on 'sitc4'
-		[2] Write a Required Columns Utility?
 		"""
-		self.sitc4_deletions = [ 
-								'0021',	
-								'0023',	
-								'0024',
-								'0025',
-								'0031',
-								'0035',
-								'0039',
-								'2829',
-		]
-		for item in self.sitc4_deletions:
-			if verbose: print "[INFO] Deleting sitc4 productcode: %s" % item
+		from .meta import sitc4_deletions
+		self.sitc4_deletions = sitc4_deletions 									#Add as an Attribute
+		#-Parse Requirement-#
+		if self.level != 4:
+			raise ValueError("The Dataset must be using SITC level 4 Data")
+		#-Core-#
+		sobs = self.dataset.shape[0]
+		if verbose: print "[INFO] Starting Dataset has %s observations" % sobs
+		for item in self.sitc4_deletions + ['','.']: 															#Delete Error Items '.' and empty items ''
+			sgobs = self.dataset[self.dataset['sitc4'] == item].shape[0]
+			if verbose: print "[INFO] Deleting sitc4 productcode: %s [Dropping %s observations]" % (item, sgobs)
 			self._dataset = self.dataset[self.dataset['sitc4'] != item]
-		#-Delete '.' ProductCodes-#
-		if verbose: print "[INFO] Deleting sitc4 productcodes == '.'"
-		self._dataset = self.dataset[self.dataset['sitc4'] != '.']
+		if verbose: print "[INFO] Dataset now has %s observations [%s Deleted]" % (self.dataset.shape[0], sobs - self.dataset.shape[0])
 
  	def identify_alpha_productcodes(self, verbose=False):
 		"""
@@ -1539,49 +1574,39 @@ class NBERFeenstraWTFConstructor(object):
 		Operations
 		----------
 		Option A
-		---------
-		[1] Reduce Information to Minimum Indexation Required 
-			Note: This overcomes some inadvertent errors in indexation in subsequent groupby operations
-			['year', 'ecode', 'icode', 'sitc4', 'value']
-		[2] Collapse to Values Only
+		--------- 
+		[1] Merge in Data at Raw Data Stage (China/HK Adjustments) & Delete sitc4 code issues
+		[2] Collapse to Values Only (Keeping only ['year', 'icode', 'ecode', 'sitc4']) removes the Quantity Disaggregation
 		[1] Alter Country Codes to be Intertemporally Consistent Units of Analysis (i.e. SUN = Soviet Union)
 		[2] Collapse Values to SITCL3 Data
 		[3] Remove Problematic Codes
-
-
-		Option B:
-		--------
-		[1] Collapse to SITCL3 Codes  	[Dimensional Reduction]
-		[2] 
 
 		Future Work
 		-----------
 		[1] Work through these steps to ensure operations are on dataset and they flow from one to another
 		[2] Write Tests for these methods as a priority
+			[A] adjust_china_hongkongdata
+			[B] collapse_to_valuesonly
 		"""
 		if self.complete_dataset != True:
 			raise ValueError("Dataset must be a complete dataset!")
-		#-ProductCode Adjustments-#
-		#-------------------------#
-		a.reduce
-
-		#-Reduction/Collapse-#
-		if checks: 
-			s1 = self.exporter_total_values(self.raw_data)
-		self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
-		if checks:
-			s2 = self.exporter_total_values(self.dataset)
-			assert_merged_series_items_equal(s1,s2)
-		#-Merge @ SITC4 LEVEL-#
-		self.china_hongkongdata(years=self.years, verbose=verbose) 			#Bring in China/HongKong Adjustments to supp_data
+		
+		#-Merges at RAW DATA Phase-#
+		self.delete_sitc4_issues_with_raw_data(verbose=verbose)
+		self.load_china_hongkongdata(years=self.years, verbose=verbose) 									#Bring in China/HongKong Adjustments to supp_data
 		self.adjust_china_hongkongdata(verbose=verbose)
-		#-Collapse to SITCL3-#
+		
+		#-Reduction/Collapse-#
+		self.collapse_to_valuesonly(subidx=['year', 'icode', 'ecode', 'sitc4'], verbose=verbose) 			#This will remove unit, quantity, dot, exporter and importer
+		#--Collapse to SITCL3--#
 		self.collapse_to_productcode_level(level=3, verbose=verbose) 		#Collapse to SITCL3 Level
+		#--Intertemporal CountryCode Adjustments--# 
+		self.adjust_countrycodes_intertemporal(level=3, verbose=verbose)  	#Adds in iiso3c, eiso3c	etc
+
+		#-Addition/Corrections to Dataset-#
 		self.change_value_units(verbose=verbose) 							#Change Units to $'s
-		self.add_sitcr2_official_marker(level=3, verbose=verbose) 			#Build SITCR2 Marker
-		#-CountryCode Adjustments-#
-		#-------------------------#
-		self.intertemporal_country_adjustments(level=3, verbose=verbose)
+		self.add_sitcr2_official_marker(level=3, verbose=verbose) 			#Build SITCR2 Marker	
+		
 		return self.dataset
 
 	def construct_dynamically_consistent_dataset(self, verbose=True):
@@ -1606,7 +1631,7 @@ class NBERFeenstraWTFConstructor(object):
 		#-Reduction/Collapse-#
 		self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
 		#-Merge @ SITC4 LEVEL-#
-		self.china_hongkongdata(years=self.years, verbose=verbose) 				#Bring in China/HongKong Adjustments
+		self.load_china_hongkongdata(years=self.years, verbose=verbose) 				#Bring in China/HongKong Adjustments
 		self.adjust_china_hongkongdata(verbose=verbose)
 		#-Collapse to SITCL3-#
 		self.collapse_to_productcode_level(level=3, verbose=verbose) 		#Collapse to SITCL3 Level
@@ -1614,7 +1639,7 @@ class NBERFeenstraWTFConstructor(object):
 		self.add_sitcr2_official_marker(level=3, verbose=verbose) 			#Build SITCR2 Marker
 		#-CountryCode Adjustments-#
 		#-------------------------#
-		self.intertemporal_country_adjustments(level=3, verbose=verbose)
+		self.adjust_countrycodes_intertemporal(level=3, verbose=verbose)
 		return self.dataset
 
 	def to_exports(self, dataset=False, verbose=True):
