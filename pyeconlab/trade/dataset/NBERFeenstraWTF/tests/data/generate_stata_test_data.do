@@ -184,3 +184,50 @@ restore
 **-----------------------**
 
 
+
+**---------------------------**
+**SITC3 Digit Level Test Data**
+**---------------------------**
+
+use "$dir/wtf62.dta", clear
+foreach year of num 63(1)99 {
+	append using "$dir/wtf`year'.dta"
+}
+append using "$dir/wtf00.dta"
+//save "$dir/wtf.dta", replace
+
+format value %12.0f
+
+keep year importer exporter sitc4 value
+
+**Split Codes to THREE DIGIT
+gen sitc3 = substr(sitc4,1,3)
+drop sitc4
+collapse (sum) value, by(year importer exporter sitc3)
+
+**-------------------------------**
+**Country Product Level Test Data**
+**-------------------------------**
+
+** Test Set#4
+** Country x Product Exports over Time
+** Filename: stata_wtf62-00_???_sitc3_####_total_export.csv
+**
+
+preserve
+keep if exporter == "Denmark"
+keep if importer == "World"
+keep if sitc3 == "062"
+collapse (sum) value, by(year)
+gen eiso3c = "DNK"
+outsheet using "stata_wtf62-00_DNK_sitc3_062_total.csv", comma nolabel replace
+restore
+
+preserve
+keep if exporter == "Spain"
+keep if importer == "World"
+keep if sitc3 == "897"
+collapse (sum) value, by(year)
+gen eiso3c = "ESP"
+outsheet using "stata_wtf62-00_ESP_sitc3_897_total.csv", comma nolabel replace
+restore

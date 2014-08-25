@@ -442,6 +442,26 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 			for year in self.obj.years:
 				assert vs[year] == sol[year], "Cntry (%s) Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (cntry, year, sol[year], vs[year])
 
+	def test_product_exports(self):
+		""" Test Product Exports from a Selection of Countries """
+		from pyeconlab.trade.dataset.NBERFeenstraWTF import iso3c_to_countryname
+		df = self.obj.dataset
+		for prod in ['6540', '6517', '7431', '8924', '0421']: 												
+			sol = pd.read_csv(TEST_DATA_DIR + 'stata_wtf62-00_sitc4_%s_total.csv' % prod, index_col=['year'])['value']
+			vs = df.loc[(df.sitc4 == prod)].groupby(['year']).sum()['value']
+			for year in self.obj.years:
+				assert vs[year] == sol[year], "Product (%s) Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (prod, year, sol[year], vs[year])
+
+	def test_country_product_exports(self):
+		""" Test Country x Product Exports from a Selection of Countries """
+		from pyeconlab.trade.dataset.NBERFeenstraWTF import iso3c_to_countryname
+		df = self.obj.dataset
+		for cntry, prod in [('ESP', '8973'), ('DNK', '0620')]: 												
+			sol = pd.read_csv(TEST_DATA_DIR + 'stata_wtf62-00_%s_sitc4_%s_total.csv' % (cntry, prod), index_col=['year'])['value']
+			vs = df.loc[(df.exporter == iso3c_to_countryname[cntry]) & (df.sitc4 == prod)].groupby(['year']).sum()['value']
+			for year in self.obj.years:
+				assert vs[year] == sol[year], "Country (%s) Product (%s) Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (cntry, prod, year, sol[year], vs[year])
+
 	def test_collapse_to_valuesonly(self):
 		""" Test the Collapse to Export Values Only (collapse_to_valuesonly()) Against Some Random Test Cases Across ALL Years """
 		rs = convert_import_excel_to_statatypes(TEST_DATA_DIR+'testdata_collapse_to_valuesonly_2_result.xlsx')
