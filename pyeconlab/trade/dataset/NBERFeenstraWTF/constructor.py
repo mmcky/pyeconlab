@@ -1066,6 +1066,20 @@ class NBERFeenstraWTFConstructor(object):
 		del self._dataset['index'] 											#This Removes old index number.
 		
 
+	def drop_world_observations(self, verbose=True):
+		"""
+		Drop Observations that contain 'World' in either exporter or importer
+		"""
+		#-OpString-#
+		op_string = u"(drop_world_observations)"
+		if check_operations(self, op_string): 
+			return None 			#Already been computed
+		#-Core-#
+		if verbose: print "[INFO] Dropping Observations that include `World` in importer or exporter attribute"
+		df = self.dataset
+		df = df.loc[(df.importer != "World") & (df.exporter != "World")]
+		self._dataset = df
+
 
 	def world_only(self, error_code='.', rtrn=False, verbose=True):
 		"""

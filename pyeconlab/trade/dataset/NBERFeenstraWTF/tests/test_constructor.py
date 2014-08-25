@@ -433,8 +433,11 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 			assert vs[year] == sol[year], "Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (year, sol[year], vs[year])
 
 	def test_total_cntry_exports(self):
-		""" Test Total Exports from a selection of countries"""
+		"""
+		Test Total Exports from a selection of countries
+		"""
 		from pyeconlab.trade.dataset.NBERFeenstraWTF import iso3c_to_countryname
+		self.obj.drop_world_observations()
 		df = self.obj.dataset
 		for cntry in ['GBR', 'ISR', 'TWN', 'USA']: 																	#'CHE'
 			sol = pd.read_csv(TEST_DATA_DIR + 'stata_wtf62-00_%s_total_export.csv' % cntry, index_col=['year'])['value']
@@ -443,8 +446,11 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 				assert vs[year] == sol[year], "Cntry (%s) Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (cntry, year, sol[year], vs[year])
 
 	def test_product_exports(self):
-		""" Test Product Exports from a Selection of Countries """
+		""" 
+		Test Product Exports from a Selection of Countries
+		"""
 		from pyeconlab.trade.dataset.NBERFeenstraWTF import iso3c_to_countryname
+		self.obj.drop_world_observations()
 		df = self.obj.dataset
 		for prod in ['6540', '6517', '7431', '8924', '0421']: 												
 			sol = pd.read_csv(TEST_DATA_DIR + 'stata_wtf62-00_sitc4_%s_total.csv' % prod, index_col=['year'])['value']
@@ -453,8 +459,11 @@ class TestConstructorAgainstKnownSolutionsAllYears():
 				assert vs[year] == sol[year], "Product (%s) Year (%s) Totals (stata: %s != %s) do not match Stata Derived Tests Data" % (prod, year, sol[year], vs[year])
 
 	def test_country_product_exports(self):
-		""" Test Country x Product Exports from a Selection of Countries """
+		""" 
+		Test Country x Product Exports from a Selection of Countries
+		"""
 		from pyeconlab.trade.dataset.NBERFeenstraWTF import iso3c_to_countryname
+		self.obj.drop_world_observations()
 		df = self.obj.dataset
 		for cntry, prod in [('ESP', '8973'), ('DNK', '0620')]: 												
 			sol = pd.read_csv(TEST_DATA_DIR + 'stata_wtf62-00_%s_sitc4_%s_total.csv' % (cntry, prod), index_col=['year'])['value']
