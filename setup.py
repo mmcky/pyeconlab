@@ -19,6 +19,7 @@ setup(
                'pyeconlab.trade.dataset.NBERFeenstraWTF.meta',    #Really?
                'pyeconlab.trade.classification',
                'pyeconlab.trade.concordance',
+               'pyeconlab.trade.systems',
   			       'pyeconlab.wdi',
   			  ], 
   package_data =  { 'pyeconlab.country' : ['data/*.xls'],
