@@ -226,7 +226,29 @@ def find_row(df, row):
 	return df
 
 
+# --------------------- #
+# - Duplicates Report - #
+# --------------------- #
 
+def mark_duplicates(df, on=None, level=None):
+	"""
+	Add a Duplicate Marker
+	
+	column 	 	: specify columns to check for duplicates 
+	level 		: specify levels to check for duplicates
+	"""
+	if type(on) == list:
+		#-Duplicates by Columns-#
+		counts = df.groupby(on).size()
+		counts = pd.DataFrame(counts, columns = ['duplicates'])
+		df = df.set_index(keys=on).join(counts, how='outer').reset_index()
+		return df
+	elif type(level) == list:
+		#-Duplicates by Levels-#
+		raise NotImplementedError
+	else:
+		#-Duplicates over default-#
+		raise NotImplementedError
 
 
 # ---------------------- #

@@ -1135,7 +1135,7 @@ class NBERFeenstraWTFConstructor(object):
 			except:
 				pass
 		if verbose: print "[INFO] Collapsing Dataset to SUM duplicate entries on %s" % list(subidx)
-		self._dataset = self.dataset.groupby(list(subidx)).sum()
+		self._dataset = self.dataset.groupby(list(['year', 'iiso3c', 'eiso3c', 'sitc3'])).sum()
 		# self._dataset = self.dataset.sort(columns=['year', 'iiso3c', 'eiso3c', 'sitc%s' % self.level])
 		self._dataset = self.dataset.reset_index() 													#Return Flat File															
 		#-OpString-#	
@@ -1255,7 +1255,7 @@ class NBERFeenstraWTFConstructor(object):
 		if check_operations(self, op_string): return None
 		#-Core-#
 		if verbose: print "[INFO] Setting Values to be in $'s not %s$'s" % (self._raw_units)
-		self._dataset['value'] = self._dataset['value'] * self._raw_units
+		self._dataset['value'] = self.dataset['value'] * self._raw_units
 		#-OpString-#
 		update_operations(self, op_string)
 
@@ -1272,7 +1272,7 @@ class NBERFeenstraWTFConstructor(object):
 		sitc = SITC(revision=2, source_institution=source_institution)
 		codes = sitc.get_codes(level=level)
 		sitcl = 'sitc%s' % level
-		self._dataset['SITCR2'] = self._dataset[sitcl].apply(lambda x: 1 if x in codes else 0)
+		self._dataset['SITCR2'] = self.dataset[sitcl].apply(lambda x: 1 if x in codes else 0)
 		#-OpString-#
 		update_operations(self, op_string)
 
@@ -1618,9 +1618,9 @@ class NBERFeenstraWTFConstructor(object):
 		self.delete_sitc4_issues_with_raw_data(verbose=verbose)
 		self.load_china_hongkongdata(years=self.years, verbose=verbose) 									#Bring in China/HongKong Adjustments to supp_data
 		self.adjust_china_hongkongdata(verbose=verbose)
-		
 		#-Reduction/Collapse-#
 		self.collapse_to_valuesonly(subidx=['year', 'icode', 'ecode', 'sitc4'], verbose=verbose) 			#This will remove unit, quantity, dot, exporter and importer
+		
 		#--Collapse to SITCL3--#
 		self.collapse_to_productcode_level(level=3, verbose=verbose) 		#Collapse to SITCL3 Level
 		#--Intertemporal CountryCode Adjustments--# 
@@ -1631,6 +1631,8 @@ class NBERFeenstraWTFConstructor(object):
 		self.change_value_units(verbose=verbose) 							#Change Units to $'s
 		self.add_sitcr2_official_marker(level=3, verbose=verbose) 			#Build SITCR2 Marker	
 		
+		self._dataset = self.dataset.set_index(keys=['year', 'eiso3c', 'iiso3c', 'sitc3'])
+
 		return self.dataset
 
 	def construct_dynamically_consistent_dataset(self, verbose=True):
