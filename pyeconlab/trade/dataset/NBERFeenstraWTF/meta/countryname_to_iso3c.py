@@ -248,3 +248,9 @@ countryname_to_iso3c = {
 				'Zambia' 		: 'ZMB',
 				'Zimbabwe' 		: 'ZWE',
 }
+
+#-Script for Converting Dictionary to CSV-#
+
+if __name__ == '__main__':
+	from pyeconlab.util import from_dict_to_csv
+	from_dict_to_csv(countryname_to_iso3c, fl='countryname_to_iso3c.csv', target_dir='csv/', header=['countryname', 'iso3c'])

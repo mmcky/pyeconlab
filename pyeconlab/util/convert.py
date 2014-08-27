@@ -3,7 +3,28 @@ Construct Python Files from Pandas Objects
 Should These be in files.py?
 """
 
+import csv
 import pandas as pd
+
+
+# ------------ #
+# - CSV Files - #
+# ------------ #
+
+def from_dict_to_csv(dictionary, fl, header=['key', 'value'], target_dir='csv/'):
+	"""
+	Write a Python Dictionary to CSV
+	"""
+	fl = open(target_dir + fl, 'wb')
+	writer = csv.writer(fl)
+	writer.writerow(header)
+	for key, value in dictionary.items():
+		writer.writerow([key, value])
+	fl.close()
+
+# ------------ #
+# - Py Files - #
+# ------------ #
 
 def from_series_to_pyfile(series, target_dir='data/', fl=None, docstring=None):
 	"""
@@ -91,4 +112,3 @@ def from_idxseries_to_pydict(series, target_dir='data/', fl=None, docstring=None
 		f.close()
 	else:
 		return doc	
-		
