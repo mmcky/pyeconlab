@@ -24,7 +24,7 @@ Benin,BEN
 Bermuda,BMU
 Bolivia,BOL
 Bosnia Herzg,BIH
-Br.Antr.Terr,.
+Br.Antr.Terr,ATB
 Brazil,BRA
 Bulgaria,BGR
 Burkina Faso,BFA
@@ -50,11 +50,11 @@ Croatia,HRV
 Cuba,CUB
 Cyprus,CYP
 Czech Rep,CZE
-Czechoslovak,.
+Czechoslovak,CSK
 Dem.Rp.Congo,COD
 Denmark,DNK
 Djibouti,DJI
-Dominican Rp,.
+Dominican Rp,DOM
 E Europe NES,.
 EEC NES,.
 Ecuador,ECU
@@ -68,8 +68,8 @@ Eur.Other NE,.
 Falkland Is,FLK
 Fiji,FJI
 Finland,FIN
-Fm German DR,.
-Fm German FR,.
+Fm German DR,DDR
+Fm German FR,DEU
 Fm USSR,RUS
 Fm Yemen AR,YEM
 Fm Yemen Ar,YEM
@@ -142,7 +142,7 @@ Nicaragua,NIC
 Niger,NER
 Nigeria,NGA
 Norway,NOR
-Occ.Pal.Terr,.
+Occ.Pal.Terr,OPT
 Oman,OMN
 Oth.Oceania,.
 Pakistan,PAK
@@ -176,7 +176,7 @@ St.Pierre Mq,SPM
 Sudan,SDN
 Suriname,SUR
 Sweden,SWE
-Switz.Liecht,.
+Switz.Liecht,CHE
 Syria,SYR
 TFYR Macedna,MKD
 Taiwan,TWN

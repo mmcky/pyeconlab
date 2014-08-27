@@ -5,7 +5,7 @@ Years: xrange(1962, 2001)
 Complete Dataset: True
 Source Last Checked: 2014-07-04
 
-Manual Check: 	05/08/2014
+Manual Check: 	27/08/2014
 
 Updates
 -------
@@ -20,40 +20,40 @@ Updates
 [9] 'New Calednia' : '.'  	=> 'New Calednia' : 'NCL'
 [10] 'St.Kt-Nev-An' : '.' 	=> 'St.Kt-Nev-An' : 'KNA'
 [11] 'St.Pierre Mq' : '.'	=> 'St.Pierre Mq' : 'SPM'
-[12] 'TFYR Macedna' : '.'	=> 'TFYR Macedna' : 'MKD' 		#Check
+[12] 'TFYR Macedna' : '.'	=> 'TFYR Macedna' : 'MKD' 		
 [13] 'Untd Arab Em' : '.'	=> 'Untd Arab Em' : 'ARE'
 [14] 'Yugoslavia'	: '.'	=> 'Yugoslavia'	  : 'YUG'
 
-Check
------
-[1] 'Br.Antr.Terr'		
-[2] 'China SC'
-[3] 'Czechoslovak'
-[4] 'Dominican Rp'
-[7] 'Occ.Pal.Terr' => PCE? 
-[8] 'Russian Fed'
-[9] 'Switz.Liecht'
 
 Resolved
 --------
 [1] 'Fm Yemen Dm'  => ISO3C: 'YMD' Source: http://en.wikipedia.org/wiki/South_Yemen (ISO3N: 720) http://en.wikipedia.org/wiki/ISO_3166-1_numeric
-[1] 'Fm Yemen Ar'  => ISO3C: 'YEM' Source: http://en.wikipedia.org/wiki/North_Yemen (ISO3N: 886) http://en.wikipedia.org/wiki/ISO_3166-1_numeric
-[2] 'Fm Yemen AR'  => ISO3C: 'YEM' Source: http://en.wikipedia.org/wiki/North_Yemen (ISO3N: 886) http://en.wikipedia.org/wiki/ISO_3166-1_numeric
+[2] 'Fm Yemen Ar'  => ISO3C: 'YEM' Source: http://en.wikipedia.org/wiki/North_Yemen (ISO3N: 886) http://en.wikipedia.org/wiki/ISO_3166-1_numeric
+[3] 'Fm Yemen AR'  => ISO3C: 'YEM' Source: http://en.wikipedia.org/wiki/North_Yemen (ISO3N: 886) http://en.wikipedia.org/wiki/ISO_3166-1_numeric
+[4] 'China SC' 	   => ISO3C: 'CHN' 
+[5] 'Br.Antr.Terr' => ISO3C: 'ATB' Source: http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
+[6] 'Czechoslovak' => ISO3C: 'CSK' Source: http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
+[7] 'Dominican Rp' => ISO3C: 'DOM' Source: http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
+[8] 'Occ.Pal.Terr' => ISO3C: 'OPT' Source: http://en.wikipedia.org/wiki/Palestinian_territories
+[9] 'Russian Fed'  => ISO3C: 'RUS' Source: http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
+[10] 'Switz.Liecht' => ISO3C: 'CHE'
+[11] 'Fm German DR' => ISO3C: 'DDR'
+[12] 'Fm German FR' => ISO3C: 'DEU'
 
 """
 
 countryname_to_iso3c = {
 				'Afghanistan' 	: 'AFG',
-				'Afr.Other NS' 	: '.',
-				'Africa N.NES' 	: '.',
+				'Afr.Other NS' 	: '.', 		#Drop
+				'Africa N.NES' 	: '.', 		#Drop
 				'Albania' 		: 'ALB',
 				'Algeria' 		: 'DZA',
 				'Angola' 		: 'AGO',
-				'Areas NES' 	: '.',
+				'Areas NES' 	: '.', 		#Drop
 				'Argentina' 	: 'ARG',
 				'Armenia' 		: 'ARM',
-				'Asia NES' 		: '.',
-				'Asia West NS' 	: '.',
+				'Asia NES' 		: '.', 		#Drop
+				'Asia West NS' 	: '.', 		#Drop
 				'Australia' 	: 'AUS',
 				'Austria' 		: 'AUT',
 				'Azerbaijan' 	: 'AZE',
@@ -68,16 +68,16 @@ countryname_to_iso3c = {
 				'Bermuda' 		: 'BMU',
 				'Bolivia' 		: 'BOL',
 				'Bosnia Herzg' 	: 'BIH',
-				'Br.Antr.Terr' 	: '.', 		#ATB? Check
+				'Br.Antr.Terr' 	: 'ATB', 
 				'Brazil' 		: 'BRA',
 				'Bulgaria' 		: 'BGR',
 				'Burkina Faso' 	: 'BFA',
 				'Burundi' 		: 'BDI',
-				'CACM NES' 		: '.',
+				'CACM NES' 		: '.', 		#Drop
 				'Cambodia' 		: 'KHM',
 				'Cameroon' 		: 'CMR',
 				'Canada' 		: 'CAN',
-				'Carib. NES' 	: '.',
+				'Carib. NES' 	: '.',		#Drop
 				'Cent.Afr.Rep' 	: 'CAF',
 				'Chad' 			: 'TCD',
 				'Chile' 		: 'CHL',
@@ -85,7 +85,7 @@ countryname_to_iso3c = {
 				'China FTZ' 	: 'CHN',
 				'China HK SAR' 	: 'HKG',
 				'China MC SAR' 	: 'MAC',
-				'China SC' 		: 'CHN', 	#Check
+				'China SC' 		: 'CHN', 	
 				'Colombia' 		: 'COL',
 				'Congo' 		: 'COG',
 				'Costa Rica' 	: 'CRI',
@@ -94,32 +94,32 @@ countryname_to_iso3c = {
 				'Cuba' 			: 'CUB',
 				'Cyprus' 		: 'CYP',
 				'Czech Rep' 	: 'CZE',
-				'Czechoslovak' 	: '.', 		#Check
+				'Czechoslovak' 	: 'CSK', 		
 				'Dem.Rp.Congo' 	: 'COD',
 				'Denmark' 		: 'DNK',
 				'Djibouti' 		: 'DJI',
-				'Dominican Rp' 	: '.', 		#Check
-				'E Europe NES' 	: '.',
-				'EEC NES' 		: '.',
+				'Dominican Rp' 	: 'DOM', 		
+				'E Europe NES' 	: '.', 		#Drop
+				'EEC NES' 		: '.', 		#Drop
 				'Ecuador' 		: 'ECU',
 				'Egypt' 		: 'EGY',
 				'El Salvador' 	: 'SLV',
 				'Eq.Guinea' 	: 'GNQ',
 				'Estonia' 		: 'EST',
 				'Ethiopia' 		: 'ETH',
-				'Eur. EFTA NS' 	: '.',
-				'Eur.Other NE' 	: '.',
+				'Eur. EFTA NS' 	: '.', 		#Drop
+				'Eur.Other NE' 	: '.', 		#Drop
 				'Falkland Is' 	: 'FLK',
 				'Fiji' 			: 'FJI',
 				'Finland' 		: 'FIN',
-				'Fm German DR' 	: '.',
-				'Fm German FR' 	: '.',
+				'Fm German DR' 	: 'DDR',
+				'Fm German FR' 	: 'DEU',
 				'Fm USSR' 		: 'RUS',
 				'Fm Yemen AR' 	: 'YEM', 	
 				'Fm Yemen Ar' 	: 'YEM',	
 				'Fm Yemen Dm' 	: 'YDYE',
 				'Fm Yugoslav' 	: 'YUG',
-				'Fr Ind O' 		: '.',
+				'Fr Ind O' 		: '.', 		#Check
 				'Fr.Guiana' 	: 'GUF',
 				'France,Monac' 	: 'MCO',
 				'Gabon' 		: 'GAB',
@@ -141,7 +141,7 @@ countryname_to_iso3c = {
 				'Iceland' 		: 'ISL',
 				'India' 		: 'IND',
 				'Indonesia' 	: 'IDN',
-				'Int Org' 		: '.',
+				'Int Org' 		: '.', 		#Drop
 				'Iran' 			: 'IRN',
 				'Iraq' 			: 'IRQ',
 				'Ireland' 		: 'IRL',
@@ -157,7 +157,7 @@ countryname_to_iso3c = {
 				'Korea Rep.' 	: 'KOR',
 				'Kuwait' 		: 'KWT',
 				'Kyrgyzstan' 	: 'KGZ',
-				'LAIA NES' 		: '.',
+				'LAIA NES' 		: '.', 		#Drop
 				'Lao P.Dem.R' 	: 'LAO',
 				'Latvia' 		: 'LVA',
 				'Lebanon' 		: 'LBN',
@@ -179,16 +179,16 @@ countryname_to_iso3c = {
 				'Nepal' 		: 'NPL',
 				'Neth.Ant.Aru' 	: 'ANT',
 				'Netherlands' 	: 'NLD',
-				'Neutral Zone' 	: '.',
+				'Neutral Zone' 	: '.', 		#Drop
 				'New Calednia' 	: 'NCL',
 				'New Zealand' 	: 'NZL',
 				'Nicaragua' 	: 'NIC',
 				'Niger' 		: 'NER',
 				'Nigeria' 		: 'NGA',
 				'Norway' 		: 'NOR',
-				'Occ.Pal.Terr' 	: '.',			#Check
+				'Occ.Pal.Terr' 	: 'OPT',
 				'Oman' 			: 'OMN',
-				'Oth.Oceania' 	: '.',
+				'Oth.Oceania' 	: '.', 		#Drop
 				'Pakistan' 		: 'PAK',
 				'Panama' 		: 'PAN',
 				'Papua N.Guin' 	: 'PNG',
@@ -200,7 +200,7 @@ countryname_to_iso3c = {
 				'Qatar' 		: 'QAT',
 				'Rep Moldova'	: 'MDA',
 				'Romania' 		: 'ROU',
-				'Russian Fed' 	: 'RUS', 		#Check
+				'Russian Fed' 	: 'RUS', 		
 				'Rwanda' 		: 'RWA',
 				'Samoa' 		: 'WSM',
 				'Saudi Arabia' 	: 'SAU',
@@ -220,7 +220,7 @@ countryname_to_iso3c = {
 				'Sudan' 		: 'SDN',
 				'Suriname' 		: 'SUR',
 				'Sweden' 		: 'SWE',
-				'Switz.Liecht' 	: '.', 			#Check
+				'Switz.Liecht' 	: 'CHE', 			#Check
 				'Syria' 		: 'SYR',
 				'TFYR Macedna' 	: 'MKD',
 				'Taiwan' 		: 'TWN',
@@ -233,7 +233,7 @@ countryname_to_iso3c = {
 				'Turkey' 		: 'TUR',
 				'Turkmenistan' 	: 'TKM',
 				'UK' 			: 'GBR',
-				'US NES' 		: '.',
+				'US NES' 		: '.', 		#Drop
 				'USA' 			: 'USA',
 				'Uganda' 		: 'UGA',
 				'Ukraine' 		: 'UKR',
@@ -242,7 +242,7 @@ countryname_to_iso3c = {
 				'Uzbekistan' 	: 'UZB',
 				'Venezuela' 	: 'VEN',
 				'Viet Nam' 		: 'VNM',
-				'World' 		: '.', 		#Should this be WLD?
+				'World' 		: '.', 		#Should this be WLD? Current Decision is to Drop so it is dropped in country matches
 				'Yemen' 		: 'YEM',
 				'Yugoslavia'	: 'YUG',
 				'Zambia' 		: 'ZMB',
