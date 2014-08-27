@@ -308,7 +308,7 @@ class NBERFeenstraWTFConstructor(object):
 	def raw_data(self):
 		""" Raw Data Property to Return Private Attribute """ 
 		try:
-			return self.__raw_data 
+			return self.__raw_data.copy(deep=True)  							#Always Return a Copy
 		except: 																#Load from h5 file
 			self.load_raw_from_hdf(years=self.years, verbose=False)
 			return self.__raw_data
@@ -1634,20 +1634,110 @@ class NBERFeenstraWTFConstructor(object):
 	# - Construct Datasets  - #
 	# ----------------------- #
 
+	dataset_description 	= { 
+		'CNTRY_SR2L3_Y62to00_A'  	:  'DescriptionHere'
+	}
+
 	def construct_dataset(dataset='default-dynamic', verbose=False):
 		""" 
 		Construct Datasets
 		------------------
 		'default-dynamic' 	: 	[Default] Intertemporally Consistent Dataset in both the Country and the Product Dimension
+		'simple-sitc3' 		: 	IN-WORK
+
+		Future Work
+		-----------
+		[1] Construct a Dictionary of methods to dataset name
 		"""
 		if dataset == 'default-dynamic':
 			return self.construct_default_dynamic(verbose=verbose)
 		else:
-			raise ValueError('Specified dataset (%s) is not Implemented Yet' % dataset) 
+			raise ValueError('Specified dataset (%s) is not Implemented' % dataset) 
+
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, dropAX=True, sitcr2=False, report=True, verbose=True):
+		"""
+		Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Level 3
+		Note: SC Reduce the Need to Debug many other routines for the time being. The other methods are however useful to diagnose issues and to understand properties of the dataset
+
+		STATUS: VALIDATE WITH STATA
+
+		dropAX 	: 	Drop AX Codes 
+		sitcr2 	: 	Add SITCR2 Indicator
+		report 	: 	Print Report
+
+		Operations:
+		-----------
+		[1] Drop SITC4 to SITC3 Level (for greater intertemporal consistency)
+		[2] Import ISO3C Codes as Country Codes
+		[3] Drop Errors in SITC3 codes
+			Optional:
+			---------
+			[A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
+
+		Notes
+		-----
+		[1] This makes use of countryname_to_iso3c in the meta data subpackage
+		[2] This method can be tested using /do/basic_sic3_country_data.do
+
+		Future Work
+		-----------
+		[1] Check SITC Revision 2 Official Codes
+		[2] Write Tests Using STATA DATA and Do Files
+		"""
+		from .meta import countryname_to_iso3c
+		self.dataset_name = 'CNTRY_SR2L3_Y62to00_A'
+		#-Checks-#
+		if self.operations != "":
+			raise ValueError("This Method requires a complete RAW dataset")
+		if sum(self.years) != 77259: 																		#IS there a better way than this hack!
+			raise ValueError("This Dataset must contain the full range of years to be constructed")
+		#-Set Data-#
+		df = self.dataset 
+		df = df[['year', 'exporter', 'importer', 'sitc4', 'value']]
+		#-SITC3-#
+		df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
+		df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
+		#-Country Adjustment-#
+		df = df.loc[(df.exporter != "World") & (df.importer != "World")] 
+		df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
+		df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
+		df = df.loc[(df.iiso3c != '.') & (df.eiso3c != '.')]
+		df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
+		#-Errors in Dataset-#
+		df = df.loc[(df.sitc3 != "")]
+		#-dropAX-#
+		if dropAX:
+			df['AX'] = df.sitc3.apply(lambda x: 1 if re.search("[AX]", x) else 0)
+			df = df.loc[df.AX != 1]
+			del df['AX']
+		#-sitcr2-#
+		if sitcr2:
+			from pyeconlab.trade.classification import SITC
+			sitc = SITC(revision=2, source_institution=source_institution)
+			codes = sitc.get_codes(level=level)
+			df['sitcr2'] = df['sitc3'].apply(lambda x: 1 if x in codes else 0)
+		#-Report-#
+		if report:
+			rdf = self.raw_data
+			rdf = rdf.loc[(rdf.importer=="World") & (rdf.exporter == "World")]
+			#-Year Values-#
+			rdfy = rdf.groupby(['year']).sum()['value'].reset_index()
+			dfy = df.groupby(['year']).sum()['value'].reset_index()
+			y = rdfy.merge(dfy, how="outer", on=['year']).set_index(['year'])
+			y['%'] = y['value_y'] / y['value_x'] * 100
+			report = 	"Report construct_default_simple_sitc3(options)\n" + \
+						"---------------------------------------\n"
+			for year in self.years:
+				report += "This dataset in year: %s captures %s percent of Total 'World' Values\n" % (year, int(y.ix[year]['%']))
+			print report
+		self._dataset = df
+		return self.dataset
 
 	def construct_default_dynamic(self, no_index=True, verbose=True):
 		"""
 		Constructs DEFAULT Dynamically Consistent Dataset for ProductCodes and CountryCodes
+
+		STATUS: IN WORK
 
 		Operations
 		----------
@@ -1696,11 +1786,6 @@ class NBERFeenstraWTFConstructor(object):
 			self._dataset = self.dataset.reset_index()
 		return self.dataset
 
-	def construct_default_simple_dynamic(self, verbose=True):
-		"""
-		Construct Direct Action Simple Default Dynamic Dataset
-		"""
-		raise NotImplementedError
 
 	def construct_dynamically_consistent_dataset(self, verbose=True):
 		"""

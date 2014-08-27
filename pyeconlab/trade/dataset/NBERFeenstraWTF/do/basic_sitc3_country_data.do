@@ -30,7 +30,7 @@ log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 ** Settings **
 
 global dropAX 	= 1
-global cleanup 	= 0
+global cleanup 	= 1
  
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
 
@@ -83,12 +83,14 @@ drop if exporter == "World"
 merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
 list if _merge == 1
 list if _merge == 2
+keep if _merge == 3 	//Keep Only Matched Items
 drop _merge
 //drop exporter
 drop if eiso3c == "."
 merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
 list if _merge == 1
 list if _merge == 2
+keep if _merge == 3 	//Keep Only Matched Items
 drop _merge
 //drop importer
 drop if iiso3c == "."
@@ -101,6 +103,7 @@ if $dropAX == 1{
 	drop marker
 }
 
+order year eiso3c iiso3c sitc3 value
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta", replace
 
 
@@ -136,6 +139,7 @@ drop importer
 merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
 list if _merge == 1
 list if _merge == 2
+keep if _merge == 3 	//Keep Only Matched Items
 drop _merge
 //drop exporter
 drop if eiso3c == "." //Drops NES
@@ -176,6 +180,7 @@ drop if importer == "World"
 merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
 list if _merge == 1
 list if _merge == 2
+keep if _merge == 3 	//Keep Only Matched Items
 drop _merge
 //drop exporter
 drop if eiso3c == "."
@@ -204,6 +209,7 @@ list if diff != 0
 
 use "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta", clear
 rename value_m1 value
+order year eiso3c sitc3 value
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta", replace
 
 if $cleanup == 1{
@@ -243,6 +249,7 @@ drop exporter
 merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
 list if _merge == 1
 list if _merge == 2
+keep if _merge == 3 	//Keep Only Matched Items
 drop _merge
 //drop exporter
 drop if iiso3c == "." //Drops NES
@@ -283,6 +290,7 @@ drop if importer == "World"
 merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
 list if _merge == 1
 list if _merge == 2
+keep if _merge == 3 	//Keep Only Matched Items
 drop _merge
 //drop exporter
 drop if iiso3c == "."
@@ -302,7 +310,7 @@ save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method2.dta", replace
 ** Compare Methods
 **
 
-merge 1:1 year sitc3 eiso3c using "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta"
+merge 1:1 year sitc3 iiso3c using "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta"
 gen diff = value_m1 - value_m2
 codebook diff
 list if diff != 0
@@ -311,6 +319,7 @@ list if diff != 0
 
 use "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", clear
 rename value_m1 value
+order year iiso3c sitc3 value
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta", replace
 
 if $cleanup == 1{
