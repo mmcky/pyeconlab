@@ -1714,7 +1714,7 @@ class NBERFeenstraWTFConstructor(object):
 		if sitcr2:
 			from pyeconlab.trade.classification import SITC
 			sitc = SITC(revision=2, source_institution=source_institution)
-			codes = sitc.get_codes(level=level)
+			codes = sitc.get_codes(level=3)
 			df['sitcr2'] = df['sitc3'].apply(lambda x: 1 if x in codes else 0)
 		#-Report-#
 		if report:
