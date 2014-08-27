@@ -1696,6 +1696,12 @@ class NBERFeenstraWTFConstructor(object):
 			self._dataset = self.dataset.reset_index()
 		return self.dataset
 
+	def construct_default_simple_dynamic(self, verbose=True):
+		"""
+		Construct Direct Action Simple Default Dynamic Dataset
+		"""
+		raise NotImplementedError
+
 	def construct_dynamically_consistent_dataset(self, verbose=True):
 		"""
 		Constructs Dynamically Consistent Dataset for ProductCodes and CountryCodes

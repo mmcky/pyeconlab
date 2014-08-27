@@ -1,12 +1,14 @@
-*** 
-*** Generate Basic SITC3 Country Datasets for PyEconLab ***
-*** [1] nberfeenstrawtf_do_stata_basic_country_data_bilateral.dta
-*** [2] nberfeenstrawtf_do_stata_basic_country_data_exports.dta
-*** [3] nberfeenstrawtf_do_stata_basic_country_data_imports.dta
-***
+*** ----------------------------------------------------------------***
+*** Generate Basic SITC3 Country Datasets for PyEconLab 			***
+*** --------------------------------------------------- 			***
+*** [1] nberfeenstrawtf_do_stata_basic_country_data_bilateral.dta	***
+*** [2] nberfeenstrawtf_do_stata_basic_country_data_exports.dta		***
+*** [3] nberfeenstrawtf_do_stata_basic_country_data_imports.dta		***
+
 *** Notes
 *** -----
 *** [1] Currently this requires MANUAL adjustment for directories based on REPO Locations etc
+***
 
 
 if c(os) == "MacOSX" {
@@ -27,9 +29,10 @@ log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 
 ** Settings **
 
-global dropAX = 1
+global dropAX 	= 1
+global cleanup 	= 0
  
-*** ------------------------------------------------------ **
+*** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
 
 ** ------------------ ** 
 ** Write Concordances **
@@ -40,7 +43,6 @@ global dropAX = 1
 **Copied: 27-08-2014
 **Note: This is not intertemporally consistent
 
-preserve
 insheet using "$metadir/csv/countryname_to_iso3c.csv", clear names
 gen exporter = countryname
 drop countryname
@@ -51,10 +53,9 @@ gen importer = countryname
 drop countryname
 rename iso3c iiso3c
 save "importer_to_iiso3c.dta", replace
-restore
 
 
-*** ------------------------------------------------------ **
+*** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
  
  
 **************************************************************
@@ -83,13 +84,13 @@ merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
 list if _merge == 1
 list if _merge == 2
 drop _merge
-drop exporter
+//drop exporter
 drop if eiso3c == "."
 merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
 list if _merge == 1
 list if _merge == 2
 drop _merge
-drop importer
+//drop importer
 drop if iiso3c == "."
 
 collapse (sum) value, by(year eiso3c iiso3c sitc3)
@@ -103,7 +104,7 @@ if $dropAX == 1{
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta", replace
 
 
-*** ------------------------------------------------------ **
+*** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
 
 
 ************************************ 						
@@ -136,7 +137,7 @@ merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
 list if _merge == 1
 list if _merge == 2
 drop _merge
-drop exporter
+//drop exporter
 drop if eiso3c == "." //Drops NES
 
 collapse (sum) value, by(year eiso3c sitc3)
@@ -176,7 +177,7 @@ merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
 list if _merge == 1
 list if _merge == 2
 drop _merge
-drop exporter
+//drop exporter
 drop if eiso3c == "."
 
 collapse (sum) value, by(year eiso3c sitc3)
@@ -202,6 +203,119 @@ list if diff != 0
 **Note: These Methods are Equivalent
 
 use "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta", clear
+rename value_m1 value
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta", replace
+
+if $cleanup == 1{
+	rm "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta"
+	rm "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method2.dta"
+}
+
+*** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
+
+
+************************************ 						
+**Dataset #3: Country Import Data **
+************************************ 
+
+**---------------------------------**
+**Method#1: Keep Country => "World"**
+**---------------------------------**
+
+use "$dir/wtf62.dta", clear
+foreach year of num 63(1)99 {
+	append using "$dir/wtf`year'.dta"
+}
+append using "$dir/wtf00.dta"
+//save "$dir/wtf.dta", replace
+
+format value %12.0f
+
+**Split Codes to THREE DIGIT**
+gen sitc3 = substr(sitc4,1,3)
+drop sitc4
+collapse (sum) value, by(year importer exporter sitc3)
+
+keep if exporter == "World"
+drop if importer == "World"
+drop exporter
+
+merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
+list if _merge == 1
+list if _merge == 2
+drop _merge
+//drop exporter
+drop if iiso3c == "." //Drops NES
+
+collapse (sum) value, by(year iiso3c sitc3)
+rename value value_m1
+
+if $dropAX == 1{
+	gen marker = regexm(sitc3, "[AX]")
+	drop if marker == 1
+	drop marker
+}
+
+save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", replace
+
+
+**------------------------------------------**
+**Method#2: Keep Country Pairs and Aggregate**
+**------------------------------------------**
+
+use "$dir/wtf62.dta", clear
+foreach year of num 63(1)99 {
+	append using "$dir/wtf`year'.dta"
+}
+append using "$dir/wtf00.dta"
+//save "$dir/wtf.dta", replace
+
+format value %12.0f
+
+**Split Codes to THREE DIGIT**
+gen sitc3 = substr(sitc4,1,3)
+drop sitc4
+collapse (sum) value, by(year importer exporter sitc3)
+
+drop if exporter == "World"
+drop if importer == "World"
+
+merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
+list if _merge == 1
+list if _merge == 2
+drop _merge
+//drop exporter
+drop if iiso3c == "."
+
+collapse (sum) value, by(year iiso3c sitc3)
+rename value value_m2
+
+if $dropAX == 1{
+	gen marker = regexm(sitc3, "[AX]")
+	drop if marker == 1
+	drop marker
+}
+
+save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method2.dta", replace
+
+**
+** Compare Methods
+**
+
+merge 1:1 year sitc3 eiso3c using "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta"
+gen diff = value_m1 - value_m2
+codebook diff
+list if diff != 0
+
+**Note: These Methods are Equivalent
+
+use "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", clear
+rename value_m1 value
+save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta", replace
+
+if $cleanup == 1{
+	rm "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta"
+	rm "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method2.dta"
+}
 
 log close
