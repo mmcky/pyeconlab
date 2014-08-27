@@ -13,12 +13,16 @@ import pandas as pd
 
 def from_dict_to_csv(dictionary, fl, header=['key', 'value'], target_dir='csv/'):
 	"""
-	Write a Python Dictionary to CSV
+	Write a sorted Python Dictionary to CSV
 	"""
 	fl = open(target_dir + fl, 'wb')
 	writer = csv.writer(fl)
 	writer.writerow(header)
+	tmp = []
 	for key, value in dictionary.items():
+		tmp.append((key, value))
+	tmp = sorted(tmp)
+	for key, value in tmp:
 		writer.writerow([key, value])
 	fl.close()
 

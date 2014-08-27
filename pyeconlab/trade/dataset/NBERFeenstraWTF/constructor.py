@@ -539,15 +539,16 @@ class NBERFeenstraWTFConstructor(object):
 				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
 				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
 
-	def dataset_to_hdf(self, flname='default', key='default', verbose=True):
+	def dataset_to_hdf(self, flname='default', key='default', format='fixed', verbose=True):
 		"""
 		Save a dataset to HDF File
 		"""
 		if flname == 'default':
-			flname = self._name+'%s - %s'%(self.years[0], self.years[-1])+'SITC-L%s'%(self.level)+'-dataset.h5'
+			flname = self._name+'_%s-%s'%(self.years[0], self.years[-1])+'_SITC-L%s'%(self.level)+'_dataset.h5'
 		if key == 'default':
 			key = self._name
-		self.dataset.to_hdf(flname, mode='w', complevel=9, complib='zlib', format='table')
+		if verbose: print "[INFO] Saving dataset to: %s" % flname
+		self.dataset.to_hdf(flname, key='dataset', mode='w', complevel=9, complib='zlib', format=format)
 
 	# ---------------------- #
 	# - Supplementary Data - #

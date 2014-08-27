@@ -231,3 +231,5 @@ collapse (sum) value, by(year)
 gen eiso3c = "ESP"
 outsheet using "stata_wtf62-00_ESP_sitc3_897_total.csv", comma nolabel replace
 restore
+
+
