@@ -177,7 +177,25 @@ class SITC(object):
 			data = self.get_level(level)
 			return data[['Code', 'Description']].set_index(['Code'])['Description'].to_dict()
 		return self.data[['Code', 'Description']].set_index(['Code'])['Description'].to_dict()
-		
+
+	#--------------#
+	#-File Methods-#
+	#--------------#
+
+	def codes_to_file(self, level, fltype='csv', verbose=True):
+		"""
+		Write Codes to a File (i.e. Stata, CSV)
+		"""
+		l = self.get_codes(level=level)
+		l = pd.DataFrame(l, columns=['sitc%s'%level])
+		l['marker'] = 1
+		if fltype == 'stata':
+			l.to_stata('SITC-R%s-L%s-codes.dta'%(self.revision, level), write_index=False)
+		elif fltype == 'csv':
+			l.to_csv('SITC-R%s-L%s-codes.csv'%(self.revision, level), columns=['sitc%s'%level, 'marker'], index=False)
+		else:
+			raise NotImplementedError("%s is not yet implimented" % fltype)
+
 
 #----------#
 #-Revision-#

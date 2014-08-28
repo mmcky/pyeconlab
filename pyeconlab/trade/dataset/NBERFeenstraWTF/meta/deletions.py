@@ -34,3 +34,8 @@ sitc4_deletions = 	[
 					'0039',
 					#'2829', 	 #Investigate
 					]
+
+sitc3_deletions = 	[
+					'002'
+					'003'
+ 					]

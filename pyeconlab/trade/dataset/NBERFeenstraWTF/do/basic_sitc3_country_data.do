@@ -5,6 +5,12 @@
 *** [2] nberfeenstrawtf_do_stata_basic_country_data_exports.dta		***
 *** [3] nberfeenstrawtf_do_stata_basic_country_data_imports.dta		***
 
+** Datasets 
+** --------
+** Note: Manually Set the Following for Correspondence with Pyeconlab Datasets
+** [A] global dropAX = 0, global dropNonSITCR2 = 0
+** [B] global dropAX = 1, global dropNonSITCR2 = 1
+
 *** Notes
 *** -----
 *** [1] Currently this requires MANUAL adjustment for directories based on REPO Locations etc
@@ -19,6 +25,7 @@ if c(os) == "MacOSX" {
 if c(os) == "Windows" {
 	global dir="E:\work-data\x_datasets\36a376e5a01385782112519bddfac85e"
 	global metadir = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\dataset\NBERFeenstraWTF\meta\" 		//Hard Coded For Now
+	global metaclass = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\classification\meta\" 				//Hard Coded For Now
 	global mac=0
 }
 
@@ -28,8 +35,10 @@ capture log close
 log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 
 ** Settings **
-
 global dropAX 	= 1
+global dropNonSITCR2 = 1
+
+//Cleanup of Method1,Method2 Files
 global cleanup 	= 1
  
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
@@ -41,7 +50,7 @@ global cleanup 	= 1
 **Concord to ISO3C**
 **/meta/csv/countrycodes_to_iso3c.csv contains this listing**
 **Copied: 27-08-2014
-**Note: This is not intertemporally consistent
+**Note: This is not intertemporally consistent**
 
 insheet using "$metadir/csv/countryname_to_iso3c.csv", clear names
 gen exporter = countryname
@@ -54,6 +63,12 @@ drop countryname
 rename iso3c iiso3c
 save "importer_to_iiso3c.dta", replace
 
+**Concord to SITC Revision 2 Level 2 Codes**
+**classification/meta/SITC-R2-L3-codes.csv contains this listing**
+**Copied: 28-08-2014
+
+infix using "$metaclass/SITC-R2-L3-codes.dct", using("$metaclass/SITC-R2-L3-codes.csv") clear
+save "SITC-R2-L3-codes.dta", replace
 
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
  
@@ -71,6 +86,12 @@ append using "$dir/wtf00.dta"
 //save "$dir/wtf.dta", replace
 
 format value %12.0f
+
+**Record Total Value by Year in Log**
+preserve
+collapse (sum) value, by(year)
+list
+restore
 
 **Split Codes to THREE DIGIT**
 gen sitc3 = substr(sitc4,1,3)
@@ -101,6 +122,21 @@ if $dropAX == 1{
 	gen marker = regexm(sitc3, "[AX]")
 	drop if marker == 1
 	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $dropNonSITCR2 == 1{
+	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
+	drop _merge
+	keep if marker == 1
+	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
 }
 
 order year eiso3c iiso3c sitc3 value
@@ -151,6 +187,21 @@ if $dropAX == 1{
 	gen marker = regexm(sitc3, "[AX]")
 	drop if marker == 1
 	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $dropNonSITCR2 == 1{
+	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
+	drop _merge
+	keep if marker == 1
+	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
 }
 
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta", replace
@@ -192,6 +243,21 @@ if $dropAX == 1{
 	gen marker = regexm(sitc3, "[AX]")
 	drop if marker == 1
 	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $dropNonSITCR2 == 1{
+	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
+	drop _merge
+	keep if marker == 1
+	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
 }
 
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method2.dta", replace
@@ -261,6 +327,21 @@ if $dropAX == 1{
 	gen marker = regexm(sitc3, "[AX]")
 	drop if marker == 1
 	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $dropNonSITCR2 == 1{
+	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
+	drop _merge
+	keep if marker == 1
+	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
 }
 
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", replace
@@ -302,6 +383,21 @@ if $dropAX == 1{
 	gen marker = regexm(sitc3, "[AX]")
 	drop if marker == 1
 	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $dropNonSITCR2 == 1{
+	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
+	drop _merge
+	keep if marker == 1
+	drop marker
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
 }
 
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method2.dta", replace

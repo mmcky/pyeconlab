@@ -1654,25 +1654,33 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			raise ValueError('Specified dataset (%s) is not Implemented' % dataset) 
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, dropAX=True, sitcr2=False, report=True, source_institution='un', verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, dropAX=True, sitcr2=True, drop_nonsitcr2=True, report=True, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Level 3
 		Note: SC Reduce the Need to Debug many other routines for the time being. The other methods are however useful to diagnose issues and to understand properties of the dataset
 
 		STATUS: VALIDATE WITH STATA
 
-		dropAX 	: 	Drop AX Codes 
-		sitcr2 	: 	Add SITCR2 Indicator
-		report 	: 	Print Report
+		dropAX 			: 	Drop AX Codes 
+		sitcr2 			: 	Add SITCR2 Indicator
+		drop_nonsitcr2 	: 	Drop non-standard SITC2 Codes
+		report 			: 	Print Report
+		source_institution : which institutions SITC classification to use
 
 		Operations:
 		-----------
 		[1] Drop SITC4 to SITC3 Level (for greater intertemporal consistency)
 		[2] Import ISO3C Codes as Country Codes
-		[3] Drop Errors in SITC3 codes
+		[3] Drop Errors in SITC3 codes ["" Codes]
 			Optional:
 			---------
 			[A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
+			[B] Drop Non-Standard SITC3 Codes [i.e. Aren't in the Classification]
+
+		Datasets
+		--------
+		[_A] dropAX=False, sitcr2=False, drop_nonsitcr2=False
+		[_B] dropAX=True, sitcr2=True, drop_nonsitcr2=True	
 
 		Notes
 		-----
@@ -1683,6 +1691,7 @@ class NBERFeenstraWTFConstructor(object):
 		-----------
 		[1] Check SITC Revision 2 Official Codes
 		[2] Write Tests Using STATA DATA and Do Files
+		[3] DropAX + Drop NonStandard SITC Rev 2 Codes still contains ~94-96% of the data found in the raw data
 		"""
 		from .meta import countryname_to_iso3c
 		self.dataset_name = 'CNTRY_SR2L3_Y62to00_A'
@@ -1697,6 +1706,7 @@ class NBERFeenstraWTFConstructor(object):
 		#-SITC3-#
 		df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
 		df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
+		self.level = 3
 		#-Country Adjustment-#
 		df = df.loc[(df.exporter != "World") & (df.importer != "World")] 
 		df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
@@ -1707,15 +1717,21 @@ class NBERFeenstraWTFConstructor(object):
 		df = df.loc[(df.sitc3 != "")]
 		#-dropAX-#
 		if dropAX:
+			if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
 			df['AX'] = df.sitc3.apply(lambda x: 1 if re.search("[AX]", x) else 0)
 			df = df.loc[df.AX != 1]
 			del df['AX']
 		#-sitcr2-#
 		if sitcr2:
+			if verbose: print "[INFO] Adding SITCR2 Indicator"
 			from pyeconlab.trade.classification import SITC
 			sitc = SITC(revision=2, source_institution=source_institution)
 			codes = sitc.get_codes(level=3)
 			df['sitcr2'] = df['sitc3'].apply(lambda x: 1 if x in codes else 0)
+			if drop_nonsitcr2:
+				if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
+				df = df.loc[(df.sitcr2 == 1)]
+				del df['sitcr2'] 				#No Longer Needed
 		#-Report-#
 		if report:
 			rdf = self.raw_data
@@ -1732,6 +1748,20 @@ class NBERFeenstraWTFConstructor(object):
 			print report
 		self._dataset = df
 		return self.dataset
+
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self):
+		"""
+		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()
+		A => dropAX=False, sitcr2=False, drop_nonsitcr2=False
+		"""
+		return self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=False, sitcr2=False, drop_nonsitcr2=False)
+
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self):
+		"""
+		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()
+		B => dropAX=True, sitcr2=True, drop_nonsitcr2=True
+		"""
+		return self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=True, sitcr2=True, drop_nonsitcr2=True)
 
 	def construct_default_dynamic(self, no_index=True, verbose=True):
 		"""

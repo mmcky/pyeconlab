@@ -34,4 +34,4 @@ iso3c_recodes_for_1962_2000 = intertemporal.iso3c_for_1962_2000
 # -------------------- #
 # - Deletion Objects - #
 # -------------------- #
-from .deletions import sitc4_deletions
+from .deletions import sitc4_deletions, sitc3_deletions
