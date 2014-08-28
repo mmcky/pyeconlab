@@ -49,30 +49,30 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 	
 	@classmethod
 	def setUpClass(cls):
-		cls.a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
+		cls.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
 
 	def setUp(self):
-		self.a.reset_dataset()
+		self.obj.reset_dataset()
 
 	def test_bilateral_data_A(self):
 		#-pyeconlab-#
-		self.a.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A()
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A()
 		#-stata-#
 		self.A = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta')
 		self.A = self.A.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
 		self.A = self.A.reset_index()
 		del self.A['index']
-		assert_allclose(self.a.dataset['value'].values, self.A['value'].values)
+		assert_allclose(self.obj.dataset['value'].values, self.A['value'].values)
 
 	def test_bilateral_data_B(self):
 		#-pyeconlab-#
-		self.b.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B()
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B()
 		#-stata-#
 		self.B = pd.read_stata(TEST_DATA_DIR + 'B-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta')
 		self.B = self.B.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
 		self.B = self.B.reset_index()
 		del self.B['index']
-		assert_allclose(self.b.dataset['value'].values, self.B['value'].values)
+		assert_allclose(self.obj.dataset['value'].values, self.B['value'].values)
 
 		
 
