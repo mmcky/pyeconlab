@@ -1654,16 +1654,20 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			raise ValueError('Specified dataset (%s) is not Implemented' % dataset) 
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, dropAX=True, sitcr2=True, drop_nonsitcr2=True, report=True, source_institution='un', verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Level 3
 		Note: SC Reduce the Need to Debug many other routines for the time being. The other methods are however useful to diagnose issues and to understand properties of the dataset
 
 		STATUS: VALIDATE WITH STATA
 
+		#-Data Settings-#
 		dropAX 			: 	Drop AX Codes 
 		sitcr2 			: 	Add SITCR2 Indicator
 		drop_nonsitcr2 	: 	Drop non-standard SITC2 Codes
+		intertemp_cntrycode : Generate Intertemporal Consistent Country Units (meta)
+		drop_incp_cntrycode : Drop Incomplete Country Codes (meta)
+		#-Other Settings-#
 		report 			: 	Print Report
 		source_institution : which institutions SITC classification to use
 
@@ -1676,11 +1680,15 @@ class NBERFeenstraWTFConstructor(object):
 			---------
 			[A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
 			[B] Drop Non-Standard SITC3 Codes [i.e. Aren't in the Classification]
+			[C] Adjust iiso3c, eiso3c country codes to be intertemporally consistent
+			[D] Drop countries with incomplete data across 1962 to 2000 (strict measure)
 
 		Datasets
 		--------
-		[_A] dropAX=False, sitcr2=False, drop_nonsitcr2=False
-		[_B] dropAX=True, sitcr2=True, drop_nonsitcr2=True	
+		[_A] dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+		[_B] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+		[_C] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False	
+		[_D] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True	
 
 		Notes
 		-----
@@ -1732,6 +1740,27 @@ class NBERFeenstraWTFConstructor(object):
 				if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
 				df = df.loc[(df.sitcr2 == 1)]
 				del df['sitcr2'] 				#No Longer Needed
+		#-intertemp_cntrycode-#
+		if intertemp_cntrycode:
+			if verbose: print "[INFO] Imposing dynamically consistent iiso3c and eiso3c recodes across 1962-2000"
+			from pyeconlab.util import concord_data
+			from .meta import iso3c_recodes_for_1962_2000
+			df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+			df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+			df = df[df['iiso3c'] != '.']
+			df = df[df['eiso3c'] != '.']
+			df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum().reset_index()
+		#-drop_incp_cntrycode-#
+		if drop_incp_cntrycode:
+			if verbose: print "[INFO] Dropping countries with incomplete data across 1962-2000"
+			from pyeconlab.util import concord_data
+			from .meta import incomplete_iso3c_for_1962_2000
+			df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+			df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+			df = df[df['iiso3c'] != '.']
+			df = df[df['eiso3c'] != '.']
+			df = df.reset_index()
+			del df['index']
 		#-Report-#
 		if report:
 			rdf = self.raw_data
@@ -1749,19 +1778,65 @@ class NBERFeenstraWTFConstructor(object):
 		self._dataset = df
 		return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data='trade', verbose=True):
 		"""
-		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()
-		A => dropAX=False, sitcr2=False, drop_nonsitcr2=False
-		"""
-		return self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=False, sitcr2=False, drop_nonsitcr2=False)
+		Complete Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset A]
+		A => dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self):
+		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+
 		"""
-		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()
-		B => dropAX=True, sitcr2=True, drop_nonsitcr2=True
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		if data == 'export' or data == 'exports':
+			self._dataset = self.dataset.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
+		elif data == 'import' or data == 'imports':
+			self._dataset = self.dataset.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+		return self.dataset
+
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data='trade', verbose=True):
 		"""
-		return self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=True, sitcr2=True, drop_nonsitcr2=True)
+		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()	[Dataset B]
+		B => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+
+		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+
+		"""
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		if data == 'export' or data == 'exports':
+			self._dataset = self.dataset.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
+		elif data == 'import' or data == 'imports':
+			self._dataset = self.dataset.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+		return self.dataset
+
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data='trade', verbose=True):
+		"""
+		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset C]
+		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
+
+		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+
+		"""
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		if data == 'export' or data == 'exports':
+			self._dataset = self.dataset.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
+		elif data == 'import' or data == 'imports':
+			self._dataset = self.dataset.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+		return self.dataset
+
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data='trade', verbose=True):
+		"""
+		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset D]
+		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
+
+		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+
+		"""
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
+		if data == 'export' or data == 'exports':
+			self._dataset = self.dataset.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
+		elif data == 'import' or data == 'imports':
+			self._dataset = self.dataset.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+		return self.dataset
 
 	def construct_default_dynamic(self, no_index=True, verbose=True):
 		"""
