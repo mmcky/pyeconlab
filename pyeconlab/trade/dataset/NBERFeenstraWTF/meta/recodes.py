@@ -15,6 +15,7 @@ Future Work
 
 """
 
+from pyeconlab.util import from_dict_to_csv
 
 #-----------------------#
 #-Intertemporal Recodes-#
@@ -64,6 +65,7 @@ class intertemporal(object):
 			'SCG' 	: 'SP3',
 	}
 
+
 	iso3c_for_1962_2000_definitions = {
 			#-Splits-#
 			'SP1' 	: 	('SUN', ['ARM', 'AZE', 'BLR', 'EST', 'GEO', 'KAZ', 'KGZ', 'LVA', 'LTU', 'MDA', 'RUS', 'TJK', 'TKM', 'UKR', 'UZB']),
@@ -90,7 +92,17 @@ class intertemporal(object):
 			'ZWE' 	: '.', 		#INTERPOLATE?
 	}
 
+	def iso3c_for_1962_2000_csv(self, fl='intertemporal_iso3c_for_1962_2000.csv', target_dir='csv/'):
+		"""
+		Simple Utility for writing iso3c_for_1962_2000 to csv file
+		"""
+		from_dict_to_csv(self.iso3c_for_1962_2000, header=['iso3c', '_recode_'], fl=fl, target_dir=target_dir)
 
+	def incomplete_iso3c_for_1962_2000_csv(self, fl='incomplete_iso3c_for_1962_2000.csv', target_dir='csv/'):
+		"""
+		Simple Utility for writing incomplete_iso3c_for_1962_2000 to csv file
+		"""
+		from_dict_to_csv(self.incomplete_iso3c_for_1962_2000, header=['iso3c', '_recode_'], fl=fl, target_dir=target_dir)
 
 	#----INWORK----#
 

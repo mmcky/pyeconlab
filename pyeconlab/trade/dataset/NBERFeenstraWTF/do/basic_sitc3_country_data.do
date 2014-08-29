@@ -37,6 +37,8 @@ log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 ** Settings **
 global dropAX 	= 1
 global dropNonSITCR2 = 1 
+global intertemporal_cntry_recode = 0
+global incomplete_cntry_recode = 0
 
 //Cleanup of Method1,Method2 Files
 global cleanup 	= 1
@@ -66,9 +68,30 @@ save "importer_to_iiso3c.dta", replace
 **Concord to SITC Revision 2 Level 2 Codes**
 **classification/meta/SITC-R2-L3-codes.csv contains this listing**
 **Copied: 28-08-2014
-
 infix using "$metaclass/SITC-R2-L3-codes.dct", using("$metaclass/SITC-R2-L3-codes.csv") clear
 save "SITC-R2-L3-codes.dta", replace
+
+**Concordance for Intertemporal Country Adjustments for 1962 to 2000**
+**A concordance to AGGREGATE country groups to be consistent over time between 1962 to 2000**
+**/meta/csv/intertemporal_iso3c_for_1962_2000.csv contains this listing**
+**Copied: 29-08-2014
+insheet using "$metadir/csv/intertemporal_iso3c_for_1962_2000.csv", clear names
+rename iso3c eiso3c
+save "eiso3c_intertemporal_recodes.dta", replace
+insheet using "$metadir/csv/intertemporal_iso3c_for_1962_2000.csv", clear names
+rename iso3c iiso3c
+save "iiso3c_intertemporal_recodes.dta", replace
+
+**Concordance for Incomplete ISO3c for 1962 to 2000**
+**A concordance of countries to DROP from the dataset due to being intertemporally incomplete**
+**/meta/csv/intertemporal_iso3c_for_1962_2000.csv contains this listing**
+**Copied: 29-08-2014
+insheet using "$metadir/csv/incomplete_iso3c_for_1962_2000.csv", clear names
+rename iso3c eiso3c
+save "eiso3c_incomplete_recodes.dta", replace
+insheet using "$metadir/csv/incomplete_iso3c_for_1962_2000.csv", clear names
+rename iso3c iiso3c
+save "iiso3c_incomplete_recodes.dta", replace
 
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
  
@@ -87,6 +110,7 @@ append using "$dir/wtf00.dta"
 
 format value %12.0f
 
+//Log Check
 **Record Total Value by Year in Log**
 preserve
 collapse (sum) value, by(year)
@@ -123,6 +147,7 @@ if $dropAX == 1{
 	gen marker = regexm(sitc3, "[AX]")
 	drop if marker == 1
 	drop marker
+	//Log Check
 	preserve
 	collapse (sum) value, by(year)
 	list
@@ -134,6 +159,36 @@ if $dropNonSITCR2 == 1{
 	drop _merge
 	keep if marker == 1
 	drop marker
+	//Log Check
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $intertemporal_cntry_recode == 1{
+	merge m:1 eiso3c using "eiso3c_intertemporal_recodes.dta"
+	replace eiso3c = _recode_ if _merge == 3
+	drop _merge _recode_
+	merge m:1 iiso3c using "iiso3c_intertemporal_recodes.dta"
+	replace iiso3c = _recode_ if _merge == 3
+	drop _merge _recode_
+	collapse (sum) value, by(year eiso3c iiso3c sitc3)
+	//Log Check
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $incomplete_cntry_recode == 1{
+	merge m:1 eiso3c using "eiso3c_incomplete_recodes.dta"
+	drop if _merge == 3 	//Drop Matching Countries
+	drop _merge _recode_
+	merge m:1 iiso3c using "iiso3c_incomplete_recodes.dta"
+	drop if _merge == 3 	//Drop Matching Countries
+	drop _merge _recode_
+	//Log Check
 	preserve
 	collapse (sum) value, by(year)
 	list
@@ -186,27 +241,6 @@ drop if eiso3c == "." //Drops NES
 collapse (sum) value, by(year eiso3c sitc3)
 rename value value_m1
 
-if $dropAX == 1{
-	gen marker = regexm(sitc3, "[AX]")
-	drop if marker == 1
-	drop marker
-	preserve
-	collapse (sum) value, by(year)
-	list
-	restore
-}
-
-if $dropNonSITCR2 == 1{
-	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
-	drop _merge
-	keep if marker == 1
-	drop marker
-	preserve
-	collapse (sum) value, by(year)
-	list
-	restore
-}
-
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta", replace
 
 
@@ -243,27 +277,6 @@ drop if eiso3c == "."
 collapse (sum) value, by(year eiso3c sitc3)
 rename value value_m2
 
-if $dropAX == 1{
-	gen marker = regexm(sitc3, "[AX]")
-	drop if marker == 1
-	drop marker
-	preserve
-	collapse (sum) value, by(year)
-	list
-	restore
-}
-
-if $dropNonSITCR2 == 1{
-	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
-	drop _merge
-	keep if marker == 1
-	drop marker
-	preserve
-	collapse (sum) value, by(year)
-	list
-	restore
-}
-
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method2.dta", replace
 
 **
@@ -275,10 +288,59 @@ gen diff = value_m1 - value_m2
 codebook diff
 list if diff != 0
 
-**Note: These Methods are Equivalent
+**Note: Check These Methods are Equivalent**
 
 use "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta", clear
 rename value_m1 value
+
+**Parse Options for Export Files**
+
+if $dropAX == 1{
+	gen marker = regexm(sitc3, "[AX]")
+	drop if marker == 1
+	drop marker
+	//Log Check
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $dropNonSITCR2 == 1{
+	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
+	drop _merge
+	keep if marker == 1
+	drop marker
+	//Log Check
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $intertemporal_cntry_recode == 1{
+	merge m:1 eiso3c using "eiso3c_intertemporal_recodes.dta"
+	replace eiso3c = _recode_ if _merge == 3
+	drop _merge _recode_
+	collapse (sum) value, by(year eiso3c sitc3)
+	//Log Check
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
+if $incomplete_cntry_recode == 1{
+	merge m:1 eiso3c using "eiso3c_incomplete_recodes.dta"
+	drop if _merge == 3 	//Drop Matching Countries
+	drop _merge _recode_
+	//Log Check
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
+
 order year eiso3c sitc3 value
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta", replace
 
@@ -328,27 +390,6 @@ drop if iiso3c == "." //Drops NES
 collapse (sum) value, by(year iiso3c sitc3)
 rename value value_m1
 
-if $dropAX == 1{
-	gen marker = regexm(sitc3, "[AX]")
-	drop if marker == 1
-	drop marker
-	preserve
-	collapse (sum) value, by(year)
-	list
-	restore
-}
-
-if $dropNonSITCR2 == 1{
-	merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
-	drop _merge
-	keep if marker == 1
-	drop marker
-	preserve
-	collapse (sum) value, by(year)
-	list
-	restore
-}
-
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", replace
 
 
@@ -385,6 +426,21 @@ drop if iiso3c == "."
 collapse (sum) value, by(year iiso3c sitc3)
 rename value value_m2
 
+save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method2.dta", replace
+
+**
+** Compare Methods
+**
+
+merge 1:1 year sitc3 iiso3c using "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta"
+gen diff = value_m1 - value_m2
+codebook diff
+list if diff != 0
+
+**Note: Check These Methods are Equivalent
+
+**Parse Options**
+
 if $dropAX == 1{
 	gen marker = regexm(sitc3, "[AX]")
 	drop if marker == 1
@@ -406,18 +462,28 @@ if $dropNonSITCR2 == 1{
 	restore
 }
 
-save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method2.dta", replace
+if $intertemporal_cntry_recode == 1{
+	merge m:1 iiso3c using "iiso3c_intertemporal_recodes.dta"
+	replace iiso3c = _recode_ if _merge == 3
+	drop _merge _recode_
+	collapse (sum) value, by(year iiso3c sitc3)
+	//Log Check
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
 
-**
-** Compare Methods
-**
-
-merge 1:1 year sitc3 iiso3c using "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta"
-gen diff = value_m1 - value_m2
-codebook diff
-list if diff != 0
-
-**Note: These Methods are Equivalent
+if $incomplete_cntry_recode == 1{
+	merge m:1 iiso3c using "iiso3c_incomplete_recodes.dta"
+	drop if _merge == 3 	//Drop Matching Countries
+	drop _merge _recode_
+	//Log Check
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+}
 
 use "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", clear
 rename value_m1 value
