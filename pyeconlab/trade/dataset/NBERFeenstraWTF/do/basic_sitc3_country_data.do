@@ -36,7 +36,7 @@ log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 
 ** Settings **
 global dropAX 	= 1
-global dropNonSITCR2 = 1
+global dropNonSITCR2 = 1 
 
 //Cleanup of Method1,Method2 Files
 global cleanup 	= 1
@@ -97,6 +97,7 @@ restore
 gen sitc3 = substr(sitc4,1,3)
 drop sitc4
 collapse (sum) value, by(year importer exporter sitc3)
+drop if sitc3 == "" 			//Bad Data
 
 drop if importer == "World"
 drop if exporter == "World"
@@ -167,6 +168,7 @@ format value %12.0f
 gen sitc3 = substr(sitc4,1,3)
 drop sitc4
 collapse (sum) value, by(year importer exporter sitc3)
+drop if sitc3 == "" 			//Bad Data
 
 drop if exporter == "World"
 keep if importer == "World"
@@ -224,6 +226,7 @@ format value %12.0f
 gen sitc3 = substr(sitc4,1,3)
 drop sitc4
 collapse (sum) value, by(year importer exporter sitc3)
+drop if sitc3 == "" 			//Bad Data
 
 drop if exporter == "World"
 drop if importer == "World"
@@ -307,6 +310,7 @@ format value %12.0f
 gen sitc3 = substr(sitc4,1,3)
 drop sitc4
 collapse (sum) value, by(year importer exporter sitc3)
+drop if sitc3 == "" 			//Bad Data
 
 keep if exporter == "World"
 drop if importer == "World"
@@ -364,6 +368,7 @@ format value %12.0f
 gen sitc3 = substr(sitc4,1,3)
 drop sitc4
 collapse (sum) value, by(year importer exporter sitc3)
+drop if sitc3 == "" 			//Bad Data
 
 drop if exporter == "World"
 drop if importer == "World"
