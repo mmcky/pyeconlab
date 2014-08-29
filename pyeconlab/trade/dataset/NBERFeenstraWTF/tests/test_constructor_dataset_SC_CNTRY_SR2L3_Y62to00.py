@@ -81,8 +81,8 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A()
 		#-stata-#
 		self.A = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta')
-		self.A = self.A.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
-		self.A = self.A.reset_index()
+		self.A.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'], inplace=True)
+		self.A.reset_index(inplace=True)
 		del self.A['index']
 		assert_allclose(self.obj.dataset['value'].values, self.A['value'].values)
 
@@ -91,8 +91,8 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data='export') 											#a to_export would be more efficient here
 		#-stata-#
 		self.A = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta')
-		self.A = self.A.sort(['year', 'eiso3c', 'sitc3'])
-		self.A = self.A.reset_index()
+		self.A.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
+		self.A.reset_index(inplace=True)
 		del self.A['index']
 		assert_allclose(self.obj.dataset['value'].values, self.A['value'].values)
 
@@ -101,8 +101,8 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data='import')
 		#-stata-#
 		self.A = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta')
-		self.A = self.A.sort(['year', 'iiso3c', 'sitc3'])
-		self.A = self.A.reset_index()
+		self.A.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
+		self.A.reset_index(inplace=True)
 		del self.A['index']
 		assert_allclose(self.obj.dataset['value'].values, self.A['value'].values)
 
@@ -113,8 +113,8 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B()
 		#-stata-#
 		self.B = pd.read_stata(TEST_DATA_DIR + 'B-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta')
-		self.B = self.B.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
-		self.B = self.B.reset_index()
+		self.B.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'], inplace=True)
+		self.B.reset_index(inplace=True)
 		del self.B['index']
 		assert_allclose(self.obj.dataset['value'].values, self.B['value'].values)
 
@@ -123,8 +123,8 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data='export') 											#a to_export would be more efficient here
 		#-stata-#
 		self.B = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta')
-		self.B = self.B.sort(['year', 'eiso3c', 'sitc3'])
-		self.B = self.B.reset_index()
+		self.B.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
+		self.B.reset_index(inplace=True)
 		del self.B['index']
 		assert_allclose(self.obj.dataset['value'].values, self.B['value'].values)
 
@@ -133,8 +133,8 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data='import')
 		#-stata-#
 		self.B = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta')
-		self.B = self.B.sort(['year', 'iiso3c', 'sitc3'])
-		self.B = self.B.reset_index()
+		self.B.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
+		self.B.reset_index(inplace=True)
 		del self.B['index']
 		assert_allclose(self.obj.dataset['value'].values, self.B['value'].values) 
 

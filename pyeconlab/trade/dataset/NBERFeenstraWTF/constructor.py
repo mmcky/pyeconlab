@@ -1654,12 +1654,16 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			raise ValueError('Specified dataset (%s) is not Implemented' % dataset) 
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
+
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Level 3
-		Note: SC Reduce the Need to Debug many other routines for the time being. The other methods are however useful to diagnose issues and to understand properties of the dataset
+		Note: SC Reduce the Need to Debug many other routines for the time being. 
+		The other methods are however useful to diagnose issues and to understand properties of the dataset
 
 		STATUS: VALIDATE WITH STATA
+
+		data 			: 	'trade', 'export', 'import'
 
 		#-Data Settings-#
 		dropAX 			: 	Drop AX Codes 
@@ -1700,6 +1704,7 @@ class NBERFeenstraWTFConstructor(object):
 		[1] Check SITC Revision 2 Official Codes
 		[2] Write Tests Using STATA DATA and Do Files
 		[3] DropAX + Drop NonStandard SITC Rev 2 Codes still contains ~94-96% of the data found in the raw data
+		[4] Should this be split into a header function with specific trade, export, and import methods?
 		"""
 		from .meta import countryname_to_iso3c
 		self.dataset_name = 'CNTRY_SR2L3_Y62to00_A'
@@ -1716,13 +1721,25 @@ class NBERFeenstraWTFConstructor(object):
 		df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
 		self.level = 3
 		#-Country Adjustment-#
-		df = df.loc[(df.exporter != "World") & (df.importer != "World")] 
-		df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
-		df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
-		df = df.loc[(df.iiso3c != '.') & (df.eiso3c != '.')]
-		df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
-		#-Errors in Dataset-#
-		df = df.loc[(df.sitc3 != "")]
+		df = df.loc[(df.exporter != "World") & (df.importer != "World")]
+			#-Exports (can include NES on importer side)-#
+		if data == 'export' or data == 'exports':
+			df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
+			df = df.loc[(df.eiso3c != '.')]
+			df = df.groupby(['year', 'eiso3c', 'sitc3']).sum()['value'].reset_index()
+			#-Imports (can include NES on importer side)-#
+		elif data == 'import' or data == 'imports':
+			df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
+			df = df.loc[(df.iiso3c != '.')]
+			df = df.groupby(['year','iiso3c', 'sitc3']).sum()['value'].reset_index()
+			#-Trade-#
+		else: 
+			df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
+			df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
+			df = df.loc[(df.iiso3c != '.') & (df.eiso3c != '.')]
+			df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
+		#-Product Code Errors in Dataset-#
+		df = df.loc[(df.sitc3 != "")] 																	#Does this need a reset_index?
 		#-dropAX-#
 		if dropAX:
 			if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
@@ -1745,20 +1762,42 @@ class NBERFeenstraWTFConstructor(object):
 			if verbose: print "[INFO] Imposing dynamically consistent iiso3c and eiso3c recodes across 1962-2000"
 			from pyeconlab.util import concord_data
 			from .meta import iso3c_recodes_for_1962_2000
-			df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
-			df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
-			df = df[df['iiso3c'] != '.']
-			df = df[df['eiso3c'] != '.']
-			df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum().reset_index()
+			#-Export-#
+			if data == 'export' or data == 'exports':
+				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+				df = df[df['eiso3c'] != '.']
+				df = df.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
+			#-Import-#
+			elif data == 'import' or data == 'imports':
+				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+				df = df[df['iiso3c'] != '.']
+				df = df.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+			#-Trade-#
+			else:
+				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+				df = df[df['iiso3c'] != '.']
+				df = df[df['eiso3c'] != '.']
+				df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum().reset_index()
 		#-drop_incp_cntrycode-#
 		if drop_incp_cntrycode:
 			if verbose: print "[INFO] Dropping countries with incomplete data across 1962-2000"
 			from pyeconlab.util import concord_data
 			from .meta import incomplete_iso3c_for_1962_2000
-			df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
-			df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
-			df = df[df['iiso3c'] != '.']
-			df = df[df['eiso3c'] != '.']
+			#-Export-#
+			if data == 'export' or data == 'exports':
+				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+				df = df[df['eiso3c'] != '.']
+			#-Import-#
+			elif data == 'import' or data == 'imports':
+				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+				df = df[df['iiso3c'] != '.']
+			#-Trade-#
+			else:
+				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
+				df = df[df['iiso3c'] != '.']
+				df = df[df['eiso3c'] != '.']
 			df = df.reset_index()
 			del df['index']
 		#-Report-#
@@ -1776,66 +1815,64 @@ class NBERFeenstraWTFConstructor(object):
 				report += "This dataset in year: %s captures %s percent of Total 'World' Values\n" % (year, int(y.ix[year]['%']))
 			print report
 		self._dataset = df
-		return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data='trade', verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data, verbose=True):
 		"""
 		Complete Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset A]
 		A => dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
 		data 	: 	'trade', 'export', 'import' [Default: 'trade']
 
+		Note
+		---- 
+		[1] For Export/Import Aggregations should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data='export'/'import') as can aggregate with NES which is dropped in the cleaned trade database
+
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
-		if data == 'export' or data == 'exports':
-			self._dataset = self.dataset.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
-		elif data == 'import' or data == 'imports':
-			self._dataset = self.dataset.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data='trade', verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()	[Dataset B]
 		B => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
 		data 	: 	'trade', 'export', 'import' [Default: 'trade']
 
+		Note
+		---- 
+		[1] For Export/Import Aggregations should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data='export'/'import') as can aggregate with NES which is dropped in the cleaned trade database
+
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
-		if data == 'export' or data == 'exports':
-			self._dataset = self.dataset.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
-		elif data == 'import' or data == 'imports':
-			self._dataset = self.dataset.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data='trade', verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset C]
 		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
 
 		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+		Note
+		---- 
+		[1] For Export/Import Aggregations should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data='export'/'import') as can aggregate with NES which is dropped in the cleaned trade database
 
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
-		if data == 'export' or data == 'exports':
-			self._dataset = self.dataset.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
-		elif data == 'import' or data == 'imports':
-			self._dataset = self.dataset.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data='trade', verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset D]
 		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
 
 		data 	: 	'trade', 'export', 'import' [Default: 'trade']
 
+		Note
+		---- 
+		[1] For Export/Import Aggregations should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data='export'/'import') as can aggregate with NES which is dropped in the cleaned trade database
+
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
-		if data == 'export' or data == 'exports':
-			self._dataset = self.dataset.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
-		elif data == 'import' or data == 'imports':
-			self._dataset = self.dataset.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
 		return self.dataset
 
 	def construct_default_dynamic(self, no_index=True, verbose=True):

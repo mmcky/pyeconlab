@@ -153,6 +153,7 @@ save "nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta", replace
 
 **---------------------------------**
 **Method#1: Keep Country => "World"**
+**Note: these aggregations will capture NES as they are exports to the world **
 **---------------------------------**
 
 use "$dir/wtf62.dta", clear
