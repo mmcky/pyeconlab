@@ -5,16 +5,10 @@
 *** [2] nberfeenstrawtf_do_stata_basic_country_data_exports.dta		***
 *** [3] nberfeenstrawtf_do_stata_basic_country_data_imports.dta		***
 
-** Datasets 
-** --------
-** Note: Manually Set the Following for Correspondence with Pyeconlab Datasets
-** [A] global dropAX = 0, global dropNonSITCR2 = 0
-** [B] global dropAX = 1, global dropNonSITCR2 = 1
-
 *** Notes
 *** -----
 *** [1] Currently this requires MANUAL adjustment for directories based on REPO Locations etc
-***
+*** [2] Manually set the appropriate flags to produce Datasets A - B
 
 
 if c(os) == "MacOSX" {
@@ -34,16 +28,24 @@ cd $dir
 capture log close
 log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 
+** Datasets 
+** --------
+** Note: MANUALLY Set the Following for Correspondence with Pyeconlab Datasets
+** [_A] dropAX=False, 	sitcr2=False, 	drop_nonsitcr2=False, 	intertemp_cntrycode=False, 	drop_incp_cntrycode=False
+** [_B] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	intertemp_cntrycode=False, 	drop_incp_cntrycode=False
+** [_C] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	intertemp_cntrycode=True, 	drop_incp_cntrycode=False	
+** [_D] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	intertemp_cntrycode=True, 	drop_incp_cntrycode=True
+
 ** Settings **
 global dropAX 	= 1
 global dropNonSITCR2 = 1 
-global intertemporal_cntry_recode = 1
-global incomplete_cntry_recode = 1
+global intertemporal_cntry_recode = 0
+global incomplete_cntry_recode = 0
 
 //Cleanup of Method1,Method2 Files
 global cleanup 	= 1
  
-*** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
+** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
 
 ** ------------------ ** 
 ** Write Concordances **

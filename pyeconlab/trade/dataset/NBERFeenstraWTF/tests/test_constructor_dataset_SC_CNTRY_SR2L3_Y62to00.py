@@ -56,16 +56,16 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 	B-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta 		[OK]
 
 	#-C-#
-	C-nberfeenstra_do_stata_sitc3_country_data.log
-	C-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta
-	C-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta
-	C-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta
+	C-nberfeenstra_do_stata_sitc3_country_data.log 					
+	C-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta 	[OK]
+	C-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta 		[OK]
+	C-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta 		[OK]
 
 	#-D-#
-	D-nberfeenstra_do_stata_sitc3_country_data.log
-	D-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta
-	D-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta
-	D-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta
+	D-nberfeenstra_do_stata_sitc3_country_data.log 					
+	D-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta 	[OK]
+	D-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta 		[OK]
+	D-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta 		[OK]
 	"""
 	
 	@classmethod
