@@ -37,8 +37,8 @@ log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 ** Settings **
 global dropAX 	= 1
 global dropNonSITCR2 = 1 
-global intertemporal_cntry_recode = 0
-global incomplete_cntry_recode = 0
+global intertemporal_cntry_recode = 1
+global incomplete_cntry_recode = 1
 
 //Cleanup of Method1,Method2 Files
 global cleanup 	= 1
@@ -168,9 +168,13 @@ if $dropNonSITCR2 == 1{
 
 if $intertemporal_cntry_recode == 1{
 	merge m:1 eiso3c using "eiso3c_intertemporal_recodes.dta"
+	list if _merge == 2 	
+	drop if _merge == 2 										//Drop unmatched from recodes file
 	replace eiso3c = _recode_ if _merge == 3
 	drop _merge _recode_
 	merge m:1 iiso3c using "iiso3c_intertemporal_recodes.dta"
+	list if _merge == 2 	
+	drop if _merge == 2 										//Drop unmatched from recodes file
 	replace iiso3c = _recode_ if _merge == 3
 	drop _merge _recode_
 	collapse (sum) value, by(year eiso3c iiso3c sitc3)
@@ -183,9 +187,13 @@ if $intertemporal_cntry_recode == 1{
 
 if $incomplete_cntry_recode == 1{
 	merge m:1 eiso3c using "eiso3c_incomplete_recodes.dta"
+	list if _merge == 2
+	drop if _merge == 2  	//Drop unmatched from recodes file
 	drop if _merge == 3 	//Drop Matching Countries
 	drop _merge _recode_
 	merge m:1 iiso3c using "iiso3c_incomplete_recodes.dta"
+	list if _merge == 2
+	drop if _merge == 2 	//Drop unmatched from recodes file
 	drop if _merge == 3 	//Drop Matching Countries
 	drop _merge _recode_
 	//Log Check
@@ -320,6 +328,8 @@ if $dropNonSITCR2 == 1{
 
 if $intertemporal_cntry_recode == 1{
 	merge m:1 eiso3c using "eiso3c_intertemporal_recodes.dta"
+	list if _merge == 2
+	drop if _merge == 2 	//Drop unmatched from recodes file
 	replace eiso3c = _recode_ if _merge == 3
 	drop _merge _recode_
 	collapse (sum) value, by(year eiso3c sitc3)
@@ -332,6 +342,8 @@ if $intertemporal_cntry_recode == 1{
 
 if $incomplete_cntry_recode == 1{
 	merge m:1 eiso3c using "eiso3c_incomplete_recodes.dta"
+	list if _merge == 2
+	drop if _merge == 2 	//Drop unmatched from recodes file
 	drop if _merge == 3 	//Drop Matching Countries
 	drop _merge _recode_
 	//Log Check
@@ -439,6 +451,9 @@ list if diff != 0
 
 **Note: Check These Methods are Equivalent
 
+use "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", clear
+rename value_m1 value
+
 **Parse Options**
 
 if $dropAX == 1{
@@ -464,6 +479,8 @@ if $dropNonSITCR2 == 1{
 
 if $intertemporal_cntry_recode == 1{
 	merge m:1 iiso3c using "iiso3c_intertemporal_recodes.dta"
+	list if _merge == 2
+	drop if _merge == 2		//Drop unmatched from recodes file
 	replace iiso3c = _recode_ if _merge == 3
 	drop _merge _recode_
 	collapse (sum) value, by(year iiso3c sitc3)
@@ -476,6 +493,8 @@ if $intertemporal_cntry_recode == 1{
 
 if $incomplete_cntry_recode == 1{
 	merge m:1 iiso3c using "iiso3c_incomplete_recodes.dta"
+	list if _merge == 2
+	drop if _merge == 2		//Drop unmatched from recodes file
 	drop if _merge == 3 	//Drop Matching Countries
 	drop _merge _recode_
 	//Log Check
@@ -485,8 +504,6 @@ if $incomplete_cntry_recode == 1{
 	restore
 }
 
-use "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", clear
-rename value_m1 value
 order year iiso3c sitc3 value
 save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta", replace
 
