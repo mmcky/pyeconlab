@@ -1,51 +1,51 @@
 # -*- coding: utf-8 -*-
-'''
-	Project: 	PyEconLab
-	Class: 		ProductLevelExportSystem - Cross Section [Pandas Core Data Structure]
-	Author: 	Matthew McKay <mamckay@gmail.com> 	
+"""
+Project: 	PyEconLab
+Class: 		ProductLevelExportSystem - Cross Section [Pandas Core Data Structure]
+Author: 	Matthew McKay <mamckay@gmail.com> 	
 
-	**Status**: 	IN-WORK
+**Status**: 	IN-WORK
 
-	Current Work
-	------------
-	[1] Convert to PyEconLab
+Current Work
+------------
+[1] Convert to PyEconLab
+	[A] Convert Country, Product, and Classification to Work with the Package Structure
 
-	Purpose: 
-	--------
-		[1] Delivers a class suited for analysis of Product Level Exported Data.
-		[2] Stores Product Level Data in a Structured Manner
+Purpose: 
+--------
+	[1] Delivers a class suited for analysis of Product Level Exported Data.
+	[2] Stores Product Level Data in a Structured Manner
 
-	Internal Data Structures:
-	------------------------
-		[1] **Default** => Data is stored in a pd.DataFrame with index (<country>, <productcode>), <export>
-		[2] Other Data Structures => 'BiPartiteGraph', 'MultiPartiteGraph'
+Internal Data Structures:
+------------------------
+	[1] **Default** => Data is stored in a pd.DataFrame with index (<country>, <productcode>), <export>
+	[2] Other Data Structures => 'BiPartiteGraph', 'MultiPartiteGraph'
 
-	Example:
-	--------
-		TBD
+Example:
+--------
+	TBD
 
-	Questions:
-	----------
-		[1] How should I handle conversion to other trade data classification (HS) etc? Converter Class / Internal Methods?
-		[2] How should I handle different data containers as some algorithms are much easier to generate based on a pre-computed data structure
-			[Answer: So far, write algorithms based on the easiest computable underlying data structure]
-	*** [3] Should Data be stored in pd.DataFrames? as the Base Data Structure? [This might be a more intuitive choice!] => However this won't be as memory efficient as data is stored twice! ***
-	
-			To reduce duplicity of data, allow functions to preserve current contents of self.data in the self.preserve dict
-				[1] Check if current object exists in preserve and if it does then check if object is the same, if not raise Error!
-				[2] def fill_obj_from_preserve()
+Questions:
+----------
+	[1] How should I handle conversion to other trade data classification (HS) etc? Converter Class / Internal Methods?
+	[2] How should I handle different data containers as some algorithms are much easier to generate based on a pre-computed data structure
+		[Answer: So far, write algorithms based on the easiest computable underlying data structure]
+*** [3] Should Data be stored in pd.DataFrames? as the Base Data Structure? [This might be a more intuitive choice!] => However this won't be as memory efficient as data is stored twice! ***
 
-			Q: How can I ensure that the data is the same in all the different 'formats'
-				All data in an Instance is generated from self.data. Therefore, data integrity should be maintained unless users assign different data to self.data etc. 
-				Should make internal objects immutable from external functions. 
-'''
+		To reduce duplicity of data, allow functions to preserve current contents of self.data in the self.preserve dict
+			[1] Check if current object exists in preserve and if it does then check if object is the same, if not raise Error!
+			[2] def fill_obj_from_preserve()
+
+		Q: How can I ensure that the data is the same in all the different 'formats'
+			All data in an Instance is generated from self.data. Therefore, data integrity should be maintained unless users assign different data to self.data etc. 
+			Should make internal objects immutable from external functions. 
+"""
 
 ### --- Standard Library Imports --- ###
 
 from __future__ import division
 
 import sys
-import TradeSystem
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -65,10 +65,10 @@ from numbapro import double
 from numbapro.decorators import jit, autojit
 
 ### -- Project Imports --- ###
-import WDI as wdi
-from Countries import Country, Countries
-from Products import Product
-from Classification import WITSSITCR2L4
+import pyeconlab.wdi as wdi 								#Should this be relative?
+from Countries import Country, Countries 					#Migrate these to Country Subpackage
+from Products import Product 								#Migrate these to Trade.Products Subpackage
+from Classification import WITSSITCR2L4 					#Migrate these to Trade.Classification Package
 
 ### --- ProductLevelExport System --- ###
 
@@ -3219,7 +3219,7 @@ class ProductLevelExportSystem(object):
 ###
 ### DynProductLevelExportSystem moved to a new file {Imported to Use .from_csv()}
 ###
-from DynProductLevelExportSystem import *
+from DynamicProductLevelExportSystem import *
 
 
 ### -- Main For Library File: ProductLevelExportSystem --- ###

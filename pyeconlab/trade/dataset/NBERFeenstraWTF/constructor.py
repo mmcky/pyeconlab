@@ -1638,22 +1638,57 @@ class NBERFeenstraWTFConstructor(object):
 		'CNTRY_SR2L3_Y62to00_A'  	:  'DescriptionHere'
 	}
 
-	def construct_dataset(dataset='default-dynamic', verbose=False):
+	def construct_dataset(self, dataset, verbose=False):
 		""" 
 		Construct Datasets
-		------------------
-		'default-dynamic' 	: 	[Default] Intertemporally Consistent Dataset in both the Country and the Product Dimension
-		'simple-sitc3' 		: 	IN-WORK
+		==================
+		
+		SITCL4 Datasets
+		===============
+
+		IN-WORK
+
+		SITCL3 Datasets
+		===============
+		Basic Cleaned Datasets 
+		---------------------
+		Trade
+		~~~~~ 
+		[BaTr_SITC3_A] data='trade', dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+		[BaTr_SITC3_B] data='trade', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+		
+		Exports
+		~~~~~~~ 
+		[BaEx_SITC3_A] data='export', dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+		[BaEx__SITC3_B] data='export', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+		
+		Imports
+		~~~~~~~
+		[BaIm_SITC3_A] data='import', dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+		[BaIm_SITC3_B] data='import', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+
+		Dynamic Consistent Datasets
+		---------------------------
+		Trade 
+		~~~~~
+		[DynTr_SITC3_C] data='trade', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False	
+		[DynTr_SITC3_D] data='trade', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
+
+		Exports
+		~~~~~~~
+		[DynEx_SITC3_C] data='export', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False	
+		[DynEx_SITC3_D] data='export', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
+
+		Imports 
+		~~~~~~~
+		[DynIm_SITC3_C] data='import', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False	
+		[DynIm_SITC3_D] data='import', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
 
 		Future Work
-		-----------
+		===========
 		[1] Construct a Dictionary of methods to dataset name
 		"""
-		if dataset == 'default-dynamic':
-			return self.construct_default_dynamic(verbose=verbose)
-		else:
-			raise ValueError('Specified dataset (%s) is not Implemented' % dataset) 
-
+		raise NotImplementedError
 
 	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
 		"""
@@ -1970,7 +2005,7 @@ class NBERFeenstraWTFConstructor(object):
 		else:
 			data = self.raw_data.copy(deep=True)
 		subidx = set(data.columns)
-		for ritem in ['importer', 'icode', 'quantity', 'unit', 'iiso3c', 'iiso3n', 'iregion', 'imod']: 			#Add and Removal Lists to Dataset Object?
+		for ritem in ['importer', 'icode', 'quantity', 'unit', 'iiso3c', 'iiso3n', 'iregion', 'imod', 'dot']: 			#Add and Removal Lists to Dataset Object?
 			try:
 				subidx.remove(ritem)
 			except:
@@ -1980,6 +2015,9 @@ class NBERFeenstraWTFConstructor(object):
 		data = data[list(subidx)].groupby(list(gidx)).sum() 		#Aggregate 'value'
 		return data
 
+	#-----------------------------#
+	#-PyEconLab Object Interfaces-#
+	#-----------------------------#
 
 	def to_nberfeenstrawtf(self, verbose=True):
 		"""
@@ -2000,7 +2038,34 @@ class NBERFeenstraWTFConstructor(object):
 		obj.from_dataframe(df=self.dataset, years=self.years)
 		return obj
 
+	def to_dynamicproductleveltradesystem(self, verbose=True):
+		"""
+		Method to construct a ProductLevelTradeSystem from the dataset
+		"""
+		raise NotImplementedError
 
+	def to_dynamicproductlevelexportsystem(self, verbose=True):
+		"""
+		Method to construct a Product Level Export System from the dataset
+		Warning: This assumes the dataset contains the intended data
+		Note: This requires 'export' data
+		"""
+		print "[WARNING] This method assumes the data in .dataset is the intended data"
+		#-Prepare Names-#
+		self._dataset.rename(columns={'eiso3c' : 'country', 'sitc3' : 'productcode', 'value' : 'export'}, inplace=True)
+		self._dataset.set_index(['year'], inplace=True)
+		#-Construct Object-#
+		from pyeconlab.trade.systems import DynamicProductLevelExportSystem
+		system = DynamicProductLevelExportSystem()
+		system.from_df(df=self.dataset)
+		return system
+
+	def to_dynamicproductlevelimportsystem(self, verbose=True):
+		"""
+		Method to construct a Product Level Import System from the dataset
+		Note: This requires 'import' data
+		"""
+		raise NotImplementedError
 	
 	# ----------------------------- #
 	# - Supporting Functions 	  - #

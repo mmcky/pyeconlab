@@ -45,7 +45,6 @@
 from __future__ import division
 
 import sys
-import TradeSystem
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -65,7 +64,7 @@ from numbapro import double
 from numbapro.decorators import jit, autojit
 
 ### -- Project Imports --- ###
-import WDI as wdi
+import pyeconlab.wdi as wdi
 from Countries import Country, Countries
 from Products import Product
 from Classification import WITSSITCR2L4
@@ -3219,7 +3218,7 @@ class ProductLevelExportNetwork(object):
 ###
 ### DynProductLevelExportSystem moved to a new file {Imported to Use .from_csv()}
 ###
-from DynProductLevelExportSystem import *
+from DynamicProductLevelExportSystem import *
 
 
 ### -- Main For Library File: ProductLevelExportSystem --- ###

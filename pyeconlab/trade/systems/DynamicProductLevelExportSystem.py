@@ -1,36 +1,36 @@
-'''
-	Project: 	PyEconLab
-	Class: 		Dynamic ProductLevelExportSystem - Cross Section [Pandas Core Data Structure]
-	Author: 	Matthew McKay <mamckay@gmail.com> 
+"""
+Project: 	PyEconLab
+Class: 		Dynamic ProductLevelExportSystem - Cross Section [Pandas Core Data Structure]
+Author: 	Matthew McKay <mamckay@gmail.com> 
 
-	Dynamic Product Level Export Systems
-	
-	Current Work
-	------------
-	[1] Convert to PyEconLab
+Dynamic Product Level Export Systems
 
-	Dependancies:
-	------------
-		ProductLevelExportSystem
+Current Work
+------------
+[1] Convert to PyEconLab [IN-WORK]
 
-	Architecture Question:
-	---------------------
-		Should this have the following simplifing structure
-			DynProductLevelExportSystem {Contains Core Attributes and Methods of Objects}
-				Diffusion 				{Diffusion Analysis}
-				Plotting 
-				Animation 
-				Experimental			{Place for Random Ideas like network construct_cp_emergence_graph()}
+Dependancies:
+------------
+	ProductLevelExportSystem
 
-	Future Work:
-	-----------
-		[1] MultiCore Methods Deliver ~50 percent improvement compared to serial versions (over 4 cores). 
-			There must be large overheads in this relatively simply method of splitting the analysis. 
-	
-	Issues:
-	------
-		[1] Using this library from another project folder breaks multicore methods with an import error?	
-'''
+Architecture Question:
+---------------------
+	Should this have the following simplifing structure
+		DynProductLevelExportSystem {Contains Core Attributes and Methods of Objects}
+			Diffusion 				{Diffusion Analysis}
+			Plotting 
+			Animation 
+			Experimental			{Place for Random Ideas like network construct_cp_emergence_graph()}
+
+Future Work:
+-----------
+	[1] MultiCore Methods Deliver ~50 percent improvement compared to serial versions (over 4 cores). 
+		There must be large overheads in this relatively simply method of splitting the analysis. 
+
+Issues:
+------
+	[1] Using this library from another project folder breaks multicore methods with an import error?	
+"""
 
 ### --- Standard Library Imports --- ###
 
@@ -40,7 +40,6 @@ from __future__ import division
 
 import sys
 import re
-import TradeSystem
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -49,9 +48,9 @@ import matplotlib.pyplot as plt
 import cPickle as pickle
 
 ### -- Project Imports --- ###
-import WDI as wdi
-from Countries import Country, Countries
-from Products import Product
+import pyeconlab.wdi as wdi
+from Countries import Country, Countries 			#Move to Package Countries Subpackage
+from Products import Product 						#Move to Package Trade/Classifications?
 
 ### Remove After Refactor
 from ProductLevelExportSystem import *
