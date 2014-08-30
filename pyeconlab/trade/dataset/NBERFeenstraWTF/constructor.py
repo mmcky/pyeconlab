@@ -652,9 +652,9 @@ class NBERFeenstraWTFConstructor(object):
 			return self._supp_data[key]
 
 
-	# -------------------------- #
-	# - Operations on Dataset  - #
-	# -------------------------- #
+	# ---------------------------------- #
+	# - General Operations on Dataset  - #
+	# ---------------------------------- #
 
 	def reduce_to(self, to=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'], rtrn=False, verbose=False):
 		"""
@@ -752,6 +752,7 @@ class NBERFeenstraWTFConstructor(object):
 		Future Work
 		-----------
 		[1] Remove this and use subfunctions in __init__ to be more explicit?
+		[2] Is this needed? Delete?
 		"""
 		op_string = u"(standardise_data)"
 		#-Check if Operation has been conducted-#
@@ -765,7 +766,7 @@ class NBERFeenstraWTFConstructor(object):
 		update_operations(self, op_string)
 
 
-
+	# ------------------------------- #
 	# - Operations on Country Codes - #
 	# ------------------------------- #
 
@@ -1477,55 +1478,6 @@ class NBERFeenstraWTFConstructor(object):
 			del self._dataset['SITCA']
 			del self._dataset['SITCX']
 
-	def intertemporal_consistent_productcodes(self, verbose=False):
-		""" 
-		Construct a set of ProductCodes that are Inter-temporally Consistent based around SITC Revision 2
-
-		Full TimeFrames
-		===============
-
-		Dataset #1 [1962 to 2000]
-		-------------------------
-
-			The longest time horizon in the dataset. 
-			Need to aggregate a lot of Product Codes to Level 3 + 0 to allow for dynamic consistency
-		
-		Dataset #2 [1962 to 2000] [SITCR2L3]
-		-------------------------------------
-
-			Aggregate ALL Codes to SITCR2 Level 3 
-			This brings in the vast majority of data and Level4 'Corrections'
-			Easy to Construct
-
-			**Current Focus** [See meta data for reasons]
-
-		Subset TimeFrames
-		=================
-
-		Dataset #3 [1974 to 2000]
-		-------------------------
-
-			A lot of SITCR2 Codes get introduced into the dataset in 1974. 
-			Starting from 1974 would allow a greater diversity of products but removes 10 years of dynamics
-
-			TBD		
-
-		Dataset #4 [1984 to 2000]
-		-------------------------
-
-			A lot of SITCR2 Codes get introduced into the dataset in 1984. 
-			Starting from 1984 would allow a greater diversity of products but removes 10 years of dynamics
-
-			TBD	
-
-		"""
-		#-List of Codes to DROP-#
-		# See: .delete_sitc4_issues_with_raw_data()
-
-		### -- Working Here --- ###
-		
-		raise NotImplementedError
-
 	def compute_valAX_sitclevel(self, level=3):
 		""" 
 		Compute the Value of Codes that Contain AX and the percentage of that Groups Value based on an aggregated level
@@ -1613,9 +1565,57 @@ class NBERFeenstraWTFConstructor(object):
 			data.columns = pd.Index(['SITCR2', 'NOT-SITCR2'])
 			data['%Tot'] = data['NOT-SITCR2'].div(data['SITCR2'] + data['NOT-SITCR2']) * 100
 			data = data.stack.unstack(level='year')
-
 		return data
 
+
+	def intertemporal_consistent_productcodes(self, verbose=False):
+		""" 
+		Construct a set of ProductCodes that are Inter-temporally Consistent based around SITC Revision 2
+
+		Full TimeFrames
+		===============
+
+		Dataset #1 [1962 to 2000]
+		-------------------------
+
+			The longest time horizon in the dataset. 
+			Need to aggregate a lot of Product Codes to Level 3 + 0 to allow for dynamic consistency
+		
+		Dataset #2 [1962 to 2000] [SITCR2L3]
+		-------------------------------------
+
+			Aggregate ALL Codes to SITCR2 Level 3 
+			This brings in the vast majority of data and Level4 'Corrections'
+			Easy to Construct
+
+			**Current Focus** [See meta data for reasons]
+
+		Subset TimeFrames
+		=================
+
+		Dataset #3 [1974 to 2000]
+		-------------------------
+
+			A lot of SITCR2 Codes get introduced into the dataset in 1974. 
+			Starting from 1974 would allow a greater diversity of products but removes 10 years of dynamics
+
+			TBD		
+
+		Dataset #4 [1984 to 2000]
+		-------------------------
+
+			A lot of SITCR2 Codes get introduced into the dataset in 1984. 
+			Starting from 1984 would allow a greater diversity of products but removes 10 years of dynamics
+
+			TBD	
+
+		"""
+		#-List of Codes to DROP-#
+		# See: .delete_sitc4_issues_with_raw_data()
+
+		### -- Working Here --- ###
+		
+		raise NotImplementedError
 
 	def intertemporal_consistent_productcodes_concord(self, verbose=False):
 		"""
@@ -1643,6 +1643,8 @@ class NBERFeenstraWTFConstructor(object):
 		Construct Datasets
 		==================
 		
+		A Wrapper for Returning Predefined Datasets
+
 		SITCL4 Datasets
 		===============
 
@@ -1651,7 +1653,9 @@ class NBERFeenstraWTFConstructor(object):
 		SITCL3 Datasets
 		===============
 		Basic Cleaned Datasets 
-		---------------------
+		----------------------
+		Method: construct_dataset_SC_CNTRY_SR2L3_Y62to00_A to _D
+		
 		Trade
 		~~~~~ 
 		[BaTr_SITC3_A] data='trade', dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
@@ -1696,19 +1700,22 @@ class NBERFeenstraWTFConstructor(object):
 		Note: SC Reduce the Need to Debug many other routines for the time being. 
 		The other methods are however useful to diagnose issues and to understand properties of the dataset
 
-		STATUS: VALIDATE WITH STATA
+		STATUS: tests/test_constructor_SC_CNTRY_SR2L3_Y62to00.py
 
-		data 			: 	'trade', 'export', 'import'
+		data 				: 	'trade', 'export', 'import'
 
-		#-Data Settings-#
-		dropAX 			: 	Drop AX Codes 
-		sitcr2 			: 	Add SITCR2 Indicator
-		drop_nonsitcr2 	: 	Drop non-standard SITC2 Codes
+		Data Settings
+		-------------
+		dropAX 				: 	Drop AX Codes 
+		sitcr2 				: 	Add SITCR2 Indicator
+		drop_nonsitcr2 		: 	Drop non-standard SITC2 Codes
 		intertemp_cntrycode : Generate Intertemporal Consistent Country Units (meta)
 		drop_incp_cntrycode : Drop Incomplete Country Codes (meta)
-		#-Other Settings-#
-		report 			: 	Print Report
-		source_institution : which institutions SITC classification to use
+		
+		Other Settings
+		--------------
+		report 				: 	Print Report
+		source_institution 	: which institutions SITC classification to use
 
 		Operations:
 		-----------
@@ -1733,13 +1740,13 @@ class NBERFeenstraWTFConstructor(object):
 		-----
 		[1] This makes use of countryname_to_iso3c in the meta data subpackage
 		[2] This method can be tested using /do/basic_sic3_country_data.do
+		[3] DropAX + Drop NonStandard SITC Rev 2 Codes still contains ~94-96% of the data found in the raw data
 
 		Future Work
 		-----------
 		[1] Check SITC Revision 2 Official Codes
-		[2] Write Tests Using STATA DATA and Do Files
-		[3] DropAX + Drop NonStandard SITC Rev 2 Codes still contains ~94-96% of the data found in the raw data
-		[4] Should this be split into a header function with specific trade, export, and import methods?
+		[2] Should this be split into a header function with specific trade, export, and import methods?
+		[3] Add in Change Value Units to $'s (x 1000)
 		"""
 		from .meta import countryname_to_iso3c
 		self.dataset_name = 'CNTRY_SR2L3_Y62to00_A'
@@ -1910,9 +1917,12 @@ class NBERFeenstraWTFConstructor(object):
 		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
 		return self.dataset
 
-	def construct_default_dynamic(self, no_index=True, verbose=True):
+	#-Dataset Construction Using Internal Methods-#
+
+	def construct_dynamically_consistent_dataset(self, no_index=True, verbose=True):
 		"""
 		Constructs DEFAULT Dynamically Consistent Dataset for ProductCodes and CountryCodes
+		Note: This can make debugging more difficult, and may wish to use an _SC_ dataset method (Self Contained)
 
 		STATUS: IN WORK
 
@@ -1963,42 +1973,11 @@ class NBERFeenstraWTFConstructor(object):
 			self._dataset = self.dataset.reset_index()
 		return self.dataset
 
-
-	def construct_dynamically_consistent_dataset(self, verbose=True):
-		"""
-		Constructs Dynamically Consistent Dataset for ProductCodes and CountryCodes
-
-		**IN-WORK**
-
-		Operations
-		----------
-			[1] Alter Country Codes to be Intertemporally Consistent Units of Analysis (i.e. SUN = Soviet Union)
-			[2] Collapse Values to SITCL3 Data
-			[3] Remove Problematic Codes
-
-		Future Work
-		-----------
-		[1] Work through these steps to ensure operations are on dataset and they flow from one to another
-		[2] Write Tests
-		"""
-		#-ProductCode Adjustments-#
-		#-------------------------#
-		#-Reduction/Collapse-#
-		self.collapse_to_valuesonly(verbose=verbose) 						#This will remove unit, quantity
-		#-Merge @ SITC4 LEVEL-#
-		self.load_china_hongkongdata(years=self.years, verbose=verbose) 				#Bring in China/HongKong Adjustments
-		self.adjust_china_hongkongdata(verbose=verbose)
-		#-Collapse to SITCL3-#
-		self.collapse_to_productcode_level(level=3, verbose=verbose) 		#Collapse to SITCL3 Level
-		self.change_value_units(verbose=verbose) 							#Change Units to $'s
-		self.add_sitcr2_official_marker(level=3, verbose=verbose) 			#Build SITCR2 Marker
-		#-CountryCode Adjustments-#
-		#-------------------------#
-		self.adjust_countrycodes_intertemporal(verbose=verbose)
-		return self.dataset
-
 	def to_exports(self, dataset=False, verbose=True):
-		""" Collapse Data to Exporters """
+		""" 
+		Collapse Data to Exporters
+		Note: Care must be taken with idx construction
+		"""
 		if verbose: print "[INFO] Collapsing to Exports"
 		if dataset:
 			data = self.dataset.copy(deep=True)
@@ -2067,9 +2046,6 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		raise NotImplementedError
 	
-	# ----------------------------- #
-	# - Supporting Functions 	  - #
-	# ----------------------------- #
 
 	# --------------------------------------------------------------- #
 	# - META DATA FUNCTIONS 										- #
@@ -2841,7 +2817,7 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		Product Tests Data to check: construct_dynamically_consistent_dataset
 		"""
-		pass
+		raise NotImplementedError
 
 
 	#--------------#
