@@ -26,3 +26,7 @@
 # - Systems - #
 # from .ProductLevelExportSystem import ProductLevelExportSystem
 # from .ProductLevelExportNetwork import ProductLevelExportNetwork
+
+#-Datasets-#
+from .dataset.NBERFeenstraWTF import NBERFeenstraWTFConstructor
+from .dataset.NBERFeenstraWTF import NBERFeenstraWTF, NBERFeenstraWTFTrade, NBERFeenstraWTFExport, NBERFeenstraWTFImport

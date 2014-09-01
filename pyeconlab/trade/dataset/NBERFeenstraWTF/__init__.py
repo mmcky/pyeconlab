@@ -3,7 +3,7 @@ Dataset Package: NBERFeenstraWTF
 """
 
 from .constructor import NBERFeenstraWTFConstructor
-from .dataset import NBERFeenstraWTF
+from .dataset import NBERFeenstraWTF, NBERFeenstraWTFTrade, NBERFeenstraWTFExport, NBERFeenstraWTFImport
 
 #-Meta Data-#
 

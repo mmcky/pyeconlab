@@ -2,39 +2,35 @@
 NBERFeenstraWTF Dataset Object
 
 Supporting Constructor: NBERFeenstraConstructor
+
+Types
+=====
+[1] Trade Dataset (Bilateral Trade Flows)
+[2] Export Dataset (Export Trade Flows)
+[3] Import Dataset (Import Trade Flows)
+
+Future Work
+-----------
+[1] Can properties and attributes be generalised to the BASE Class NBERFeenstraWTF?
+
 """
 
 import pandas as pd
 
-#from .constructor import NBERFeenstraWTFConstructor
-
 class NBERFeenstraWTF(object):
 	"""
-	Data Object for Feenstra NBER World Trade Data
+	Parent Class for Trade, Export and Import Objects
 	
-	Attributes:
-	-----------
+	Source Dataset Attributes
+	-------------------------
 	Years: 			1962 to 2000
 	Classification: SITC R2 L4
 	Notes: 			Pre-1974 care is required for constructing intertemporally consistent data
 
-	Current Interfaces
-	------------------ 
-	['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value']
-
-	Notes
-	-----
-	[1] Attributes are repeated here as the NBERFeenstraWTFConstructor may not be the only entry point
-
-	Future Work:
-	-----------
-	[1] Update Pandas Stata to read older .dta files (then get wget directly from the website)
-	[2] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
-
 	"""
 
 	# - Attributes - #
-	name 			= 'Feenstra (NBER) World Trade Dataset'
+	name 			= u'Feenstra (NBER) World Trade Dataset'
 	years 			= []
 	available_years = xrange(1962, 2000, 1)
 	classification 	= 'SITC'
@@ -44,25 +40,45 @@ class NBERFeenstraWTF(object):
 	raw_units 		= 1000
 	raw_units_str 	= u'US$1000\'s'
 	interface 		= {
-						 'default' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
+						 'trade' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
+						 'export' : ['year', 'eiso3c', 'productcode', 'value'],
+						 'import' : ['year', 'iis3oc', 'productcode', 'value'],
 					  }
 
-	# - Internal Methods - #
+#-------#
+#-Trade-#
+#-------#
 
-	def __init__(self): 	
+class NBERFeenstraWTFTrade(NBERFeenstraWTF):
+	"""
+	Feenstra NBER Bilateral World TRADE Data
+	
+	Interfaces: ['year', 'eiso3c', 'iiso3c', 'productcode', 'value']
+
+	Future Work:
+	-----------
+	[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
+	"""
+
+	data = None
+
+	def __init__(self, data, years=[]): 	
 		""" 
-		Set Core Attributes of the Dataset
-		
-		To populate the object with data use:
-			[1] from_dataframe(**kwargs)
-			[2] from_constructor(**kwargs)
+		Fill Object with Data
+
+		Implimented Methods
+		-------------------
+		[1] from_dataframe(**kwargs)
 
 		Future Work
 		-----------
 		[1] from_pickle
 		[2] from_hd5py
 		"""
-		self.__data = None
+		if years == []:
+			years = list(self.data['year'].unique())
+		self.from_dataframe(data, years)
+		
 	
 	def __repr__(self):
 		""" Representation String Of Object """
@@ -74,38 +90,37 @@ class NBERFeenstraWTF(object):
 				 "Number of Trade Flows: %s\n" % (self.data.shape[0])
 		return string
 
-	# -------------- #
-	# - Properties - #
-	# -------------- #
+	#-Properties-#
 
 	@property 
 	def data(self):
-		try:
-			if self.__data == None:
-				print "[ERROR] Object Needs to be populated with data with the from_ methods"
-		except:
-			return self.__data
+		return self.data
 
 	@property 
 	def num_years(self):
-		return self.data.index.levshape[0]
+		""" Number of Years """
+		loc = self.data.index.names('year')
+		return self.data.index.levshape[loc]
 
 	@property 
 	def num_exporters(self):
-		return self.data.index.levshape[1]
+		""" Number of Exporters """
+		loc = self.data.index.names('eiso3c')
+		return self.data.index.levshape[loc]
 
 	@property 
 	def num_importers(self):
-		return self.data.index.levshape[2]
+		""" Number of Importers """
+		loc = self.data.index.names('iiso3c')
+		return self.data.index.levshape[loc]
 
 	@property 
 	def num_products(self):
-		return self.data.index.levshape[3]
-
-
-	# ----------------------- #
-	# - Data Import Methods - #
-	# ----------------------- #
+		""" Number of Products """
+		loc = self.data.index.names('productcode')
+		return self.data.index.levshape[loc]
+	
+	#-Data Import Methods-#
 
 	def from_dataframe(self, df, years):
 		"""
@@ -115,26 +130,15 @@ class NBERFeenstraWTF(object):
 		if type(df) == pd.DataFrame:
 			# - Check Incoming Data Conforms - #
 			columns = set(df.columns)
-			for item in self.interface['default']:
+			for item in self.interface['trade']:
 				if item not in columns: 
 					raise TypeError("Need %s to be specified in the incoming data" % item)
 			#-Set Attributes-#
-			self.__data = df.set_index(self.interface['default'][:-1]) 	#Index by all values except 'value'
+			self.data = df.set_index(self.interface['trade'][:-1]) 	#Index by all values except 'value'
 			self.years = years
 		else:
-			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface['default'])
+			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface['trade'])
 		return self
-
-
-	def from_constructor(self, source_dir, years=[], verbose=True):
-		"""
-		Construct Object From Constructor Class [Default Dataset ONLY][1]
-		
-		Notes
-		-----
-		[1] If wanting to create custom Dataset then use NBERFeenstraWTFConstructor Class
-		"""
-		return NBERFeenstraWTFConstructor(source_dir=source_dir, years=years, default_dataset=True, verbose=verbose)
 
 	def from_pickle(self, fl):
 		"""
@@ -142,15 +146,13 @@ class NBERFeenstraWTF(object):
 		"""
 		raise NotImplementedError
 
-	def from_hd5py(self, fl):
+	def from_hdf(self, fl):
 		"""
 		Populate Object from hd5py File
 		"""
 		raise NotImplementedError
 
-	# -------------------------------- #
-	# - Country / Aggregates Filters - #
-	# -------------------------------- #
+	#-Country / Aggregates Filters-#
 
 	def country_data(self):
 		pass
@@ -165,9 +167,7 @@ class NBERFeenstraWTF(object):
 		"""
 		pass 
 
-	# -------------------------- #
-	# - Exports / Imports Data - #
-	# -------------------------- #
+	#-Exports / Imports Data-#
 
 	def export_data(self):
 		"""
@@ -190,24 +190,128 @@ class NBERFeenstraWTF(object):
 		"""
 		pass
 
-
-
-
-
-
-
-## - In WORK - ##
-
-# - SubClasses of NBERFeenstraWTF - #
+#--------#
+#-Export-#
+#--------#
 
 class NBERFeenstraWTFExport(NBERFeenstraWTF):
 	"""
-	Export Data Class
+	NBER Feenstra EXPORT World Trade Data
+	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
-	pass
+
+	def __init__(self, data, years=[]): 	
+		""" 
+		Fill Object with Data
+
+		Implimented Methods
+		-------------------
+		[1] from_dataframe(**kwargs)
+
+		Future Work
+		-----------
+		[1] from_pickle
+		[2] from_hd5py
+		"""
+		if years == []:
+			years = list(self.data['year'].unique())
+		self.from_dataframe(data, years)
+		
+	
+	def __repr__(self):
+		""" Representation String Of Object """
+		string = "Class: %s\n" % (self.__class__) 							+ \
+				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.available_years)		+ \
+				 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
+				 "Number of Products: %s\n" % (self.num_products) 			+ \
+				 "Number of Export Flows: %s\n" % (self.data.shape[0])
+		return string
+
+
+	#-Data Import Methods-#
+
+	def from_dataframe(self, df, years):
+		"""
+		Populate Object from Pandas DataFrame
+		"""
+		#-Force Interface Variables-#
+		if type(df) == pd.DataFrame:
+			# - Check Incoming Data Conforms - #
+			columns = set(df.columns)
+			for item in self.interface['export']:
+				if item not in columns: 
+					raise TypeError("Need %s to be specified in the incoming data" % item)
+			#-Set Attributes-#
+			self.__data = df.set_index(self.interface['export'][:-1]) 	#Index by all values except 'value'
+			self.years = years
+		else:
+			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface['export'])
+		return self
+
+
+	#-Country / Aggregates Filters-#
+
+	def geo_aggregates(self, members):
+		"""
+		members = dict {'iso3c' : 'region'}
+		Subsitute Country Names for Regions and Collapse.sum()
+		"""
+		pass 
+
+	
+#--------#
+#-Import-#
+#--------#
 
 class NBERFeenstraWTFImport(NBERFeenstraWTF):
 	"""
-	Import Data Class
+	NBER Feenstra IMPORT World Trade Data
+	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
-	pass
+	def __init__(self, data, years=[]): 	
+		""" 
+		Fill Object with Data
+
+		Implimented Methods
+		-------------------
+		[1] from_dataframe(**kwargs)
+
+		Future Work
+		-----------
+		[1] from_pickle
+		[2] from_hd5py
+		"""
+		if years == []:
+			years = list(self.data['year'].unique())
+		self.from_dataframe(data, years)
+		
+	
+	def __repr__(self):
+		""" Representation String Of Object """
+		string = "Class: %s\n" % (self.__class__) 							+ \
+				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.available_years)		+ \
+				 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
+				 "Number of Products: %s\n" % (self.num_products) 			+ \
+				 "Number of Export Flows: %s\n" % (self.data.shape[0])
+		return string
+
+
+	#-Data Import Methods-#
+
+	def from_dataframe(self, df, years):
+		"""
+		Populate Object from Pandas DataFrame
+		"""
+		#-Force Interface Variables-#
+		if type(df) == pd.DataFrame:
+			# - Check Incoming Data Conforms - #
+			columns = set(df.columns)
+			for item in self.interface['import']:
+				if item not in columns: 
+					raise TypeError("Need %s to be specified in the incoming data" % item)
+			#-Set Attributes-#
+			self.__data = df.set_index(self.interface['import'][:-1]) 	#Index by all values except 'value'
+			self.years = years
+		else:
+			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface['import'])
+		return self

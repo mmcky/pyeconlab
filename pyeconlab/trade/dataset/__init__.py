@@ -20,5 +20,5 @@
 
 # NBER Feenstra World Trade Flows #
 from .NBERFeenstraWTF.constructor import NBERFeenstraWTFConstructor
-from .NBERFeenstraWTF.dataset import NBERFeenstraWTF
+from .NBERFeenstraWTF.dataset import NBERFeenstraWTF, NBERFeenstraWTFTrade, NBERFeenstraWTFExport, NBERFeenstraWTFImport
 

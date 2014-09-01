@@ -40,7 +40,7 @@ import pandas as pd
 import numpy as np
 import countrycode as cc
 
-from .dataset import NBERFeenstraWTF 
+from .dataset import NBERFeenstraWTFTrade, NBERFeenstraWTFExport, NBERFeenstraWTFImport 
 from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
 							countryname_concordance, concord_data, random_sample, find_row, assert_merged_series_items_equal
 from pyeconlab.trade.classification import SITC
@@ -495,6 +495,27 @@ class NBERFeenstraWTFConstructor(object):
 		if year:
 			return data.groupby(by=['year', key]).sum()['value']
 		return data.groupby(by=[key]).sum()['value']
+
+	def to_exports(self, dataset=False, verbose=True):
+		""" 
+		Collapse Data to Exporters
+		Note: Care must be taken with idx construction
+		"""
+		if verbose: print "[INFO] Collapsing to Exports"
+		if dataset:
+			data = self.dataset.copy(deep=True)
+		else:
+			data = self.raw_data.copy(deep=True)
+		subidx = set(data.columns)
+		for ritem in ['importer', 'icode', 'quantity', 'unit', 'iiso3c', 'iiso3n', 'iregion', 'imod', 'dot']: 			#Add and Removal Lists to Dataset Object?
+			try:
+				subidx.remove(ritem)
+			except:
+				pass
+		gidx = subidx.copy()
+		gidx.remove('value')
+		data = data[list(subidx)].groupby(list(gidx)).sum() 		#Aggregate 'value'
+		return data
 
 	# ------ #
 	# - IO - #
@@ -1858,7 +1879,7 @@ class NBERFeenstraWTFConstructor(object):
 			print report
 		self._dataset = df
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data, rtrn=False, verbose=True):
 		"""
 		Complete Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset A]
 		A => dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
@@ -1871,9 +1892,10 @@ class NBERFeenstraWTFConstructor(object):
 
 		"""
 		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
-		return self.dataset
+		if rtrn:
+			return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data, rtrn=False, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()	[Dataset B]
 		B => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
@@ -1886,9 +1908,10 @@ class NBERFeenstraWTFConstructor(object):
 
 		"""
 		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
-		return self.dataset
+		if rtrn:
+			return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data, rtrn=False, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset C]
 		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
@@ -1900,9 +1923,10 @@ class NBERFeenstraWTFConstructor(object):
 
 		"""
 		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
-		return self.dataset
+		if rtrn:
+			return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data, rtrn=False, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset D]
 		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
@@ -1915,7 +1939,8 @@ class NBERFeenstraWTFConstructor(object):
 
 		"""
 		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
-		return self.dataset
+		if rtrn:
+			return self.dataset
 
 	#-Dataset Construction Using Internal Methods-#
 
@@ -1924,7 +1949,7 @@ class NBERFeenstraWTFConstructor(object):
 		Constructs DEFAULT Dynamically Consistent Dataset for ProductCodes and CountryCodes
 		Note: This can make debugging more difficult, and may wish to use an _SC_ dataset method (Self Contained)
 
-		STATUS: IN WORK
+		STATUS: **IN WORK**
 
 		Operations
 		----------
@@ -1973,57 +1998,58 @@ class NBERFeenstraWTFConstructor(object):
 			self._dataset = self.dataset.reset_index()
 		return self.dataset
 
-	def to_exports(self, dataset=False, verbose=True):
-		""" 
-		Collapse Data to Exporters
-		Note: Care must be taken with idx construction
-		"""
-		if verbose: print "[INFO] Collapsing to Exports"
-		if dataset:
-			data = self.dataset.copy(deep=True)
-		else:
-			data = self.raw_data.copy(deep=True)
-		subidx = set(data.columns)
-		for ritem in ['importer', 'icode', 'quantity', 'unit', 'iiso3c', 'iiso3n', 'iregion', 'imod', 'dot']: 			#Add and Removal Lists to Dataset Object?
-			try:
-				subidx.remove(ritem)
-			except:
-				pass
-		gidx = subidx.copy()
-		gidx.remove('value')
-		data = data[list(subidx)].groupby(list(gidx)).sum() 		#Aggregate 'value'
-		return data
 
 	#-----------------------------#
 	#-PyEconLab Object Interfaces-#
 	#-----------------------------#
 
-	def to_nberfeenstrawtf(self, verbose=True):
+	def to_nberfeenstrawtf(self, dtype, verbose=True):
 		"""
 		Construct NBERFeenstraWTF Object with Common Core Object Names
 		Note: This is constructed from the ._dataset attribute
 
 		This will export the cleaned bilateral data to the NBERFeenstraWTF object. 
 
-		Interface: ['year', iiso3c', 'eiso3c', 'sitc4', 'value', 'quantity']
+		Arguments 
+		---------
+		dtype 	: 	'trade', 'export', 'import'
+
+		Object Interface's
+		------------------
+		'trade' 	: 	['year', iiso3c', 'eiso3c', 'sitc[1-4]', 'value'] 	(Optional: 'quantity'?)
+		'export' 	:	['year', 'eiso3c', 'sitc[1-4]', 'value']
+		'import'	: 	['year', 'iiso3c', 'sitc[1-4]', 'value']
 
 		Notes
 		-----
-		[1] It will be the responsibility of NBERFeenstraWTF to export to ProductLevelExportSystems etc. 
-		"""
-		obj = NBERFeenstraWTF()
-		sitcl = 'sitc%s' % self.level
-		self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
-		obj.from_dataframe(df=self.dataset, years=self.years)
-		return obj
+		[1] It will be the responsibility of NBERFeenstraWTF to export to ProductLevelExportSystems etc.
 
-	def to_dynamicproductleveltradesystem(self, verbose=True):
+		Future Work 
+		-----------
+		[1] Add attribute to automatically determine what type of dataset is being exported 
+		"""
+		if dtype == 'trade':
+			sitcl = 'sitc%s' % self.level
+			self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
+			return NBERFeenstraWTFTrade(data=self.dataset, years=self.years)
+		elif dtype == 'export' or dtype == 'exports':
+			sitcl = 'sitc%s' % self.level
+			self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
+			return NBERFeenstraWTFExport(data=self.dataset, years=self.years)
+		elif dtype == 'import' or dtype == 'imports':
+			sitcl = 'sitc%s' % self.level
+			self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
+			return NBERFeenstraWTFImport(data=self.dataset, years=self.years)
+		else:
+			raise ValueError("dtype must be either 'trade', 'export(s)', or 'import(s)'")
+
+	def to_dynamic_productleveltradesystem(self, verbose=True):
 		"""
 		Method to construct a ProductLevelTradeSystem from the dataset
 		"""
 		raise NotImplementedError
 
-	def to_dynamicproductlevelexportsystem(self, verbose=True):
+	def to_dynamic_productlevelexportsystem(self, verbose=True):
 		"""
 		Method to construct a Product Level Export System from the dataset
 		Warning: This assumes the dataset contains the intended data
@@ -2039,7 +2065,7 @@ class NBERFeenstraWTFConstructor(object):
 		system.from_df(df=self.dataset)
 		return system
 
-	def to_dynamicproductlevelimportsystem(self, verbose=True):
+	def to_dynamic_productlevelimportsystem(self, verbose=True):
 		"""
 		Method to construct a Product Level Import System from the dataset
 		Note: This requires 'import' data
