@@ -7,8 +7,8 @@ Supporting Constructor
 
 Dependancies
 ------------
-	[1] pyeconlab.trade.dataset 
-		Dataset, TradeData, ExportData, ImportData
+	[1] pyeconlab.trade
+		CPTradeDataset, CPTradeData, CPExportData, CPImportData
 
 Types
 =====
