@@ -1,9 +1,5 @@
 """
-Generic Trade Dataset Construction Classes
-
-STATUS: DEPRECATED 
-		This generalised approach confuses things further in terms of inheritence, in addition many of the methods will be overwritten anyway
-		such as from_pickle as C and CP data differs in terms of what attributes to restore
+Generic Country x Product Dataset Construction Classes
 
 Types
 =====
@@ -16,67 +12,61 @@ Notes
 [1] These objects get inherited by specific datasets. Any child dataset object (i.e. NBERFeenstraWTF) needs to have local class level properties for 
 	self.__data, and any other relevant locally stored attributes (self.__exports, self.__imports etc.). This avoids the need to use super etc. when 
 	assigning and accessing data
+
+Trade Datasets
+==============
+1. Feenstra/NBER Data  							[NBERFeenstraWTF]
+2. BACI Data 									[TBD]
+3. CEPII Data 									[TBD]
+
+Attribute Datasets
+==================
+1. UNCTAD Revealed Capital,Labour, and Land 	[TBD]
+
+Issues
+======
+1. 	How best to Incorporate the Source Dataset files. 
+	They can be very large  [Current Strategy: Constructors]
+	[Currently will pull in from a MyDatasets Object or manually from a source_dir]
+
+Future Work
+===========
+[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity']
+[2] Write a CTradeDataset for Country Level Datasets
+[3] Impliment Geographic Aggregates
 """
 
 import pandas as pd
 import cPickle as pickle
 import warnings
 
-#-Country Trade Dataset-#
+#-Country x Product Trade Dataset-#
 
-class TradeDataset(object):
+class CPTradeDataset(object):
 	"""
-	Generic Trade Data Object
+	Generic Country x Product Trade Data Object
 	This Object Impliments a Standard Interface for Incoming Data allowing methods to be writen easily
-
-	Universal Attributes
-	--------------------
-	'name' 	: 	name of dataset 
-	'years' : 	list of years in the dataset (property or attribute)
-	'available_years' 	: 	list of available_years in the source_dataset
-	'source_web'		: 	web link to source dataset 
-	'raw_units' 		: 	value units 
-	'raw_units_str'		: 	string representation of raw_units
-	'interfaces'		: 	Dictionary of Data Interfaces
-
-		Computable Attributes 
-		---------------------
-		num_years 			: 	number of years
-
-	Universal Methods
-	-----------------
-		IO
-		--
-		from_dataframe 	: 	Populate Object from a DataFrame
-		from_pickle 	: 	Populate Object from a Pickle File 	{Note: More Advanced Version of these may be found in cdataset, cpdataset}
-		from_hdf 		: 	Populate Object from a HDF File
-
-		to_pickle 		: 	Pickle Object 
-		to_hdf 			: 	HDF File of Object
-
-	geo_aggregates 		: 	Geographic Interfaces
-
 	"""
 
 	# - Attributes - #
 	name 			= None
 	years 			= None
 	available_years = None
+	classification 	= None
+	revision 		= None 
+	level 			= None
 	source_web 		= None
 	raw_units 		= None
 	raw_units_str 	= None
 	interface 		= {
-						'ctrade' : ['year', 'eiso3c', 'iiso3c', 'value'], 
-						'cexport' : ['year', 'eiso3c', 'value'],
-						'cimport' : ['year', 'iiso3c', 'value'],
-						'cptrade' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
-						'cpexport' : ['year', 'eiso3c', 'productcode', 'value'],
-						'cpimport' : ['year', 'iiso3c', 'productcode', 'value'],
+						 'trade' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
+						 'export' : ['year', 'eiso3c', 'productcode', 'value'],
+						 'import' : ['year', 'iiso3c', 'productcode', 'value'],
 					  }
 
 	def __init__(self, data): 	
 		""" 
-		Fill Trade Dataset Objects with Data
+		Fill Object with Data
 
 		Implimented Methods
 		-------------------
@@ -104,6 +94,16 @@ class TradeDataset(object):
 		loc = self.data.index.names.index('year')
 		return self.data.index.levshape[loc]
 
+	@property 
+	def num_products(self):
+		""" Number of Products """
+		loc = self.data.index.names.index('productcode')
+		return self.data.index.levshape[loc]
+
+	@property
+	def sitc_level(self):
+		return self.level
+
 	#-IO-#
 
 	def load_dataframe(self, df, dtype):
@@ -121,6 +121,11 @@ class TradeDataset(object):
 			self.data = df.set_index(self.interface[dtype][:-1]) 	#Index by all values except 'value'
 			#-Infer Years-#
 			self.years = list(df['year'].unique())
+			#-Infer Level-#
+			levels = df['productcode'].apply(lambda x: len(x)).unique()
+			if len(levels) > 1:
+				raise ValueError("Product Levels are not consistent lengths: %s" % levels)
+			self.level = levels[0]
 		else:
 			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface[dtype])
 
@@ -144,7 +149,7 @@ class TradeDataset(object):
 		#-Populate Object-#
 		self.data = obj.data
 		self.years = obj.years
-		#Need to set self.level if cp data
+		self.level = obj.level
 
 	def to_hdf(self, fn):
 		"""
@@ -180,17 +185,15 @@ class TradeDataset(object):
 		"""
 		raise NotImplementedError
 
-#-INWORK-#
-
-class TradeData(TradeDataset):
+class CPTradeData(CPTradeDataset):
 	""" 
-	Generic Country Trade Dataset Object
+	Generic Trade Dataset Object
 	
-	Interface: ['year', 'eiso3c', 'iiso3c', 'value']
+	Interface: ['year', 'eiso3c', 'iiso3c', 'productcode', 'value']
 
 	Future Work:
 	-----------
-	[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'value', 'quantity'], 
+	[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
 	"""
 
 	def __repr__(self):
@@ -199,6 +202,7 @@ class TradeData(TradeDataset):
 				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" 	% (self.available_years)		+ \
 				 "Number of Importers: %s\n" % (self.num_importers) 		+ \
 				 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
+				 "Number of Products: %s\n" % (self.num_products) 			+ \
 				 "Number of Trade Flows: %s\n" % (self.data.shape[0])
 		return string
 
@@ -277,7 +281,7 @@ class TradeData(TradeDataset):
 			return self.imports
 
 
-class ExportData(TradeDataset):
+class CPExportData(CPTradeDataset):
 	""" 
 	Generic Export Dataset Object
 
@@ -288,6 +292,7 @@ class ExportData(TradeDataset):
 		string = "Class: %s\n" % (self.__class__) 							+ \
 				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.available_years)		+ \
 				 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
+				 "Number of Products: %s\n" % (self.num_products) 			+ \
 				 "Number of Export Flows: %s\n" % (self.data.shape[0])
 		return string
 
@@ -320,10 +325,10 @@ class ExportData(TradeDataset):
 
 
 
-class ImportData(TradeDataset):
+class CPImportData(CPTradeDataset):
 	""" 
-	Generic Country Import Dataset Object
-	Interface: ['year', 'iiso3c', 'value']
+	Generic Import Dataset Object
+	Interface: ['year', 'iiso3c', 'productcode', 'value']
 	"""	
 	
 	def __repr__(self):
@@ -331,6 +336,7 @@ class ImportData(TradeDataset):
 		string = "Class: %s\n" % (self.__class__) 							+ \
 				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.available_years)		+ \
 				 "Number of Importers: %s\n" % (self.num_importers)			+ \
+				 "Number of Products: %s\n" % (self.num_products) 			+ \
 				 "Number of Import Flows: %s\n" % (self.data.shape[0])
 		return string
 
@@ -355,6 +361,7 @@ class ImportData(TradeDataset):
 		except:
 			warnings.warn("'iiso3c' is not found in the data", UserWarning)
 		return self.data.index.levshape[loc]
+
 
 	#-Data Import Methods-#
 

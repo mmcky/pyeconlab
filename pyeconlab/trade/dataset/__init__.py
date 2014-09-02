@@ -19,7 +19,7 @@ Current Work
 """
 
 #-Generic Dataset Objects-#
-from .dataset import CPTradeDataset, CPTradeData, CPExportData, CPImportData
+from .cpdataset import CPTradeDataset, CPTradeData, CPExportData, CPImportData
 
 #-NBER Feenstra World Trade Flows-#
 from .NBERFeenstraWTF.constructor import NBERFeenstraWTFConstructor

@@ -1,9 +1,5 @@
 """
-Generic Trade Dataset Construction Classes
-
-STATUS: DEPRECATED 
-		This generalised approach confuses things further in terms of inheritence, in addition many of the methods will be overwritten anyway
-		such as from_pickle as C and CP data differs in terms of what attributes to restore
+Generic Country Dataset Construction Classes
 
 Types
 =====
@@ -16,6 +12,21 @@ Notes
 [1] These objects get inherited by specific datasets. Any child dataset object (i.e. NBERFeenstraWTF) needs to have local class level properties for 
 	self.__data, and any other relevant locally stored attributes (self.__exports, self.__imports etc.). This avoids the need to use super etc. when 
 	assigning and accessing data
+
+Trade Datasets
+==============
+1. Feenstra/NBER Data  							[NBERFeenstraWTF]
+2. BACI Data 									[TBD]
+3. CEPII Data 									[TBD]
+
+
+Future Work
+===========
+[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'value', 'quantity']
+[2] Impliment Geographic Aggregates
+[3] Should I go one level up for to_pickle(), to_hdf() as just dataset objects? The inheritance is getting a bit confusing. 
+	[For now -> Duplicate to_pickle functionality at the base level of each type of dataset (i.e. CTradeDataset, CPTradeDataset)]
+	[This is because from_pickle differs based on C and CP Data as to what attributes are loaded therefore is overwritten anyway]
 """
 
 import pandas as pd
@@ -24,38 +35,10 @@ import warnings
 
 #-Country Trade Dataset-#
 
-class TradeDataset(object):
+class CTradeDataset(object):
 	"""
-	Generic Trade Data Object
+	Generic Country Level Trade Data Object
 	This Object Impliments a Standard Interface for Incoming Data allowing methods to be writen easily
-
-	Universal Attributes
-	--------------------
-	'name' 	: 	name of dataset 
-	'years' : 	list of years in the dataset (property or attribute)
-	'available_years' 	: 	list of available_years in the source_dataset
-	'source_web'		: 	web link to source dataset 
-	'raw_units' 		: 	value units 
-	'raw_units_str'		: 	string representation of raw_units
-	'interfaces'		: 	Dictionary of Data Interfaces
-
-		Computable Attributes 
-		---------------------
-		num_years 			: 	number of years
-
-	Universal Methods
-	-----------------
-		IO
-		--
-		from_dataframe 	: 	Populate Object from a DataFrame
-		from_pickle 	: 	Populate Object from a Pickle File 	{Note: More Advanced Version of these may be found in cdataset, cpdataset}
-		from_hdf 		: 	Populate Object from a HDF File
-
-		to_pickle 		: 	Pickle Object 
-		to_hdf 			: 	HDF File of Object
-
-	geo_aggregates 		: 	Geographic Interfaces
-
 	"""
 
 	# - Attributes - #
@@ -66,17 +49,14 @@ class TradeDataset(object):
 	raw_units 		= None
 	raw_units_str 	= None
 	interface 		= {
-						'ctrade' : ['year', 'eiso3c', 'iiso3c', 'value'], 
-						'cexport' : ['year', 'eiso3c', 'value'],
-						'cimport' : ['year', 'iiso3c', 'value'],
-						'cptrade' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
-						'cpexport' : ['year', 'eiso3c', 'productcode', 'value'],
-						'cpimport' : ['year', 'iiso3c', 'productcode', 'value'],
+						 'trade' : ['year', 'eiso3c', 'iiso3c', 'value'], 
+						 'export' : ['year', 'eiso3c', 'value'],
+						 'import' : ['year', 'iiso3c', 'value'],
 					  }
 
 	def __init__(self, data): 	
 		""" 
-		Fill Trade Dataset Objects with Data
+		Fill Object with Country Level Data
 
 		Implimented Methods
 		-------------------
@@ -144,7 +124,6 @@ class TradeDataset(object):
 		#-Populate Object-#
 		self.data = obj.data
 		self.years = obj.years
-		#Need to set self.level if cp data
 
 	def to_hdf(self, fn):
 		"""
@@ -180,9 +159,7 @@ class TradeDataset(object):
 		"""
 		raise NotImplementedError
 
-#-INWORK-#
-
-class TradeData(TradeDataset):
+class CTradeData(CTradeDataset):
 	""" 
 	Generic Country Trade Dataset Object
 	
@@ -277,7 +254,7 @@ class TradeData(TradeDataset):
 			return self.imports
 
 
-class ExportData(TradeDataset):
+class CExportData(CTradeDataset):
 	""" 
 	Generic Export Dataset Object
 
@@ -320,7 +297,7 @@ class ExportData(TradeDataset):
 
 
 
-class ImportData(TradeDataset):
+class CImportData(CTradeDataset):
 	""" 
 	Generic Country Import Dataset Object
 	Interface: ['year', 'iiso3c', 'value']
