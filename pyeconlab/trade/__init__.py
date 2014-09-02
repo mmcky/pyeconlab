@@ -28,7 +28,8 @@
 # from .ProductLevelExportNetwork import ProductLevelExportNetwork
 
 #-Datasets-#
-from .dataset import CPTradeDataset, CPTradeData, CPExportData, CPImportData
+from .dataset import 	CTradeDataset, CTradeData, CExportData, CImportData, 	\
+						CPTradeDataset, CPTradeData, CPExportData, CPImportData
 
 #-Specific Datasets-#
 from .dataset.NBERFeenstraWTF import NBERFeenstraWTFConstructor
