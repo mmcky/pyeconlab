@@ -5,9 +5,9 @@ Supporting Constructor: NBERFeenstraConstructor
 
 Types
 =====
-[1] Trade Dataset (Bilateral Trade Flows)
-[2] Export Dataset (Export Trade Flows)
-[3] Import Dataset (Import Trade Flows)
+[1] Trade Dataset 	(Bilateral Trade Flows)
+[2] Export Dataset 	(Export Trade Flows)
+[3] Import Dataset 	(Import Trade Flows)
 
 Future Work
 -----------
@@ -16,16 +16,21 @@ Future Work
 """
 
 import pandas as pd
+import cPickle as pickle
 
 class NBERFeenstraWTF(object):
 	"""
 	Parent Class for Trade, Export and Import Objects
-	
+
 	Source Dataset Attributes
 	-------------------------
 	Years: 			1962 to 2000
 	Classification: SITC R2 L4
 	Notes: 			Pre-1974 care is required for constructing intertemporally consistent data
+
+	Future Work 
+	-----------
+	[1] Move pickle restores etc into this super class __init__() and call super
 
 	"""
 
@@ -42,8 +47,137 @@ class NBERFeenstraWTF(object):
 	interface 		= {
 						 'trade' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
 						 'export' : ['year', 'eiso3c', 'productcode', 'value'],
-						 'import' : ['year', 'iis3oc', 'productcode', 'value'],
+						 'import' : ['year', 'iiso3c', 'productcode', 'value'],
 					  }
+
+	def __init__(self, data, years=[]): 	
+		""" 
+		Fill Object with Data
+
+		Implimented Methods
+		-------------------
+		[1] from_dataframe
+		[2] from_pickle
+
+		Future Work
+		-----------
+		[1] from_hdf
+		"""
+		if type(data) == pd.DataFrame:
+			self.from_dataframe(data)
+		elif type(data) == str:
+			fn, ftype = data.split('.')
+			if ftype == 'pickle':
+				self.from_pickle(fn=data)
+			elif ftype == 'h5':
+				self.from_hdf(fn=data)
+			else:
+				raise ValueError('Uknown File Type: %s' % ftype)
+
+	@property 
+	def num_years(self):
+		""" Number of Years """
+		loc = self.data.index.names.index('year')
+		return self.data.index.levshape[loc]
+
+	@property 
+	def num_exporters(self):
+		""" Number of Exporters """
+		loc = self.data.index.names.index('eiso3c')
+		return self.data.index.levshape[loc]
+
+	@property 
+	def num_importers(self):
+		""" Number of Importers """
+		loc = self.data.index.names.index('iiso3c')
+		return self.data.index.levshape[loc]
+
+	@property 
+	def num_products(self):
+		""" Number of Products """
+		loc = self.data.index.names.index('productcode')
+		return self.data.index.levshape[loc]
+
+	@property
+	def sitc_level(self):
+		return self.level
+
+	#-IO-#
+
+	def load_dataframe(self, df, dtype):
+		"""
+		Populate Object from Pandas DataFrame
+		"""
+		#-Force Interface Variables-#
+		if type(df) == pd.DataFrame:
+			# - Check Incoming Data Conforms - #
+			columns = set(df.columns)
+			for item in self.interface[dtype]:
+				if item not in columns: 
+					raise TypeError("Need %s to be specified in the incoming data" % item)
+			#-Set Attributes-#
+			self.data = df.set_index(self.interface[dtype][:-1]) 	#Index by all values except 'value'
+			#-Infer Years-#
+			self.years = list(df['year'].unique())
+			#-Infer Level-#
+			levels = df['productcode'].apply(lambda x: len(x)).unique()
+			if len(levels) > 1:
+				raise ValueError("Productoces are not consistent lengths: %s" % levels)
+			self.level = levels[0]
+		else:
+			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface[dtype])
+
+	def to_pickle(self, fn):
+		""" Pickle Object """
+		with open(fn, 'w') as f:
+			pickle.dump(self, f)
+		f.close()
+
+	def from_pickle(self, fn):
+		""" 
+		Load Object from Pickle
+		Notes
+		-----
+		[1] Load Object from Pickle and assign current object with data. All non-derived items should be transfered.  
+		"""
+		fl = open(fn, 'r')
+		obj = pickle.load(fl)
+		if type(obj) != self.__class__:
+			raise ValueError("Pickle Object doesn't contain a %s object!\nIt's type is: %s" % (str(self.__class__).split('.')[-1].split("'")[0], str(obj.__class__).split('.')[-1].split("'")[0]))
+		#-Populate Object-#
+		self.data = obj.data
+		self.years = obj.years
+		self.level = obj.level
+
+	def to_hdf(self, fn):
+		"""
+		Populate Object from HDF File
+		"""
+		raise NotImplementedError
+
+	def from_hdf(self, fn):
+		"""
+		Populate Object from HDF File
+		"""
+		raise NotImplementedError
+
+	#-Methods-#
+
+	def check_interface(self, columns, dtype):
+		""" Checking Incoming Data Conforms to Interface """
+		columns = set(columns)
+		for item in self.interface[dtype]:
+			if item not in columns: 
+				raise TypeError("Need %s to be specified in the incoming data" % item)
+
+	#-Country / Aggregates Filters-#
+
+	def geo_aggregates(self, members):
+		"""
+		members = dict {'iso3c' : 'region'}
+		Subsitute Country Names for Regions and Collapse.sum()
+		"""
+		pass
 
 #-------#
 #-Trade-#
@@ -60,24 +194,29 @@ class NBERFeenstraWTFTrade(NBERFeenstraWTF):
 	[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
 	"""
 
-	data = None
+	# def __init__(self, data, years=[]): 	
+	# 	""" 
+	# 	Fill Object with Data
 
-	def __init__(self, data, years=[]): 	
-		""" 
-		Fill Object with Data
+	# 	Implimented Methods
+	# 	-------------------
+	# 	[1] from_dataframe
+	# 	[2] from_pickle
 
-		Implimented Methods
-		-------------------
-		[1] from_dataframe(**kwargs)
-
-		Future Work
-		-----------
-		[1] from_pickle
-		[2] from_hd5py
-		"""
-		if years == []:
-			years = list(self.data['year'].unique())
-		self.from_dataframe(data, years)
+	# 	Future Work
+	# 	-----------
+	# 	[1] from_hdf
+	# 	"""
+	# 	if type(data) == pd.DataFrame:
+	# 		self.from_dataframe(data)
+	# 	elif type(data) == str:
+	# 		fn, ftype = data.split('.')
+	# 		if ftype == 'pickle':
+	# 			self.from_pickle(fn=data)
+	# 		elif ftype == 'h5':
+	# 			self.from_hdf(fn=data)
+	# 		else:
+	# 			raise ValueError('Uknown File Type: %s' % ftype)
 		
 	
 	def __repr__(self):
@@ -91,104 +230,50 @@ class NBERFeenstraWTFTrade(NBERFeenstraWTF):
 		return string
 
 	#-Properties-#
-
+	
 	@property 
 	def data(self):
-		return self.data
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values
 
 	@property 
-	def num_years(self):
-		""" Number of Years """
-		loc = self.data.index.names('year')
-		return self.data.index.levshape[loc]
+	def exports(self):
+		return self.__exports
+	@exports.setter
+	def exports(self, values):
+		self.exports = values
 
 	@property 
-	def num_exporters(self):
-		""" Number of Exporters """
-		loc = self.data.index.names('eiso3c')
-		return self.data.index.levshape[loc]
+	def imports(self):
+		return self.__imports
+	@imports.setter
+	def imports(self, values):
+		self.imports = values
 
-	@property 
-	def num_importers(self):
-		""" Number of Importers """
-		loc = self.data.index.names('iiso3c')
-		return self.data.index.levshape[loc]
-
-	@property 
-	def num_products(self):
-		""" Number of Products """
-		loc = self.data.index.names('productcode')
-		return self.data.index.levshape[loc]
-	
 	#-Data Import Methods-#
 
-	def from_dataframe(self, df, years):
-		"""
-		Populate Object from Pandas DataFrame
-		"""
-		#-Force Interface Variables-#
-		if type(df) == pd.DataFrame:
-			# - Check Incoming Data Conforms - #
-			columns = set(df.columns)
-			for item in self.interface['trade']:
-				if item not in columns: 
-					raise TypeError("Need %s to be specified in the incoming data" % item)
-			#-Set Attributes-#
-			self.data = df.set_index(self.interface['trade'][:-1]) 	#Index by all values except 'value'
-			self.years = years
-		else:
-			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface['trade'])
-		return self
-
-	def from_pickle(self, fl):
-		"""
-		Populate Object from Pickle File 
-		"""
-		raise NotImplementedError
-
-	def from_hdf(self, fl):
-		"""
-		Populate Object from hd5py File
-		"""
-		raise NotImplementedError
-
-	#-Country / Aggregates Filters-#
-
-	def country_data(self):
-		pass
-
-	def world_data(self):
-		pass
-
-	def geo_aggregates(self, members):
-		"""
-		members = dict {'iso3c' : 'region'}
-		Subsitute Country Names for Regions and Collapse.sum()
-		"""
-		pass 
+	def from_dataframe(self, df):
+		self.load_dataframe(df, dtype='trade')
 
 	#-Exports / Imports Data-#
 
 	def export_data(self):
 		"""
-		Extract Export Data from Raw Data and Return NBERFeenstraWTFExport
+		Collapse to obtain Export Data
 		"""
-		from pyeconlab.trade.concordance import NBERFeenstraExportersToISO3C, concord_data
-		
-		expdata = self.data[['year', 'exporter', 'sitc4', 'value']]
-		cntrynotfound = []
-		expdata['exporter'] = expdata['exporter'].apply(lambda x: concord_data(NBERFeenstraExportersToISO3C, x))
-
-		### --- Working Here --- #
-
-		self.exports = expdata
+		print "[WARNING] This method aggregates across iiso3c for every eiso3c. This most likely will not include NES regions if they have been discarded in the constructor"
+		self.exports = self.reset_index().data[['year', 'eiso3c', 'sitc%s'%self.level, 'value']].groupby(['year', 'eiso3c', 'sitc%s'%self.level]).sum()
 		return self.exports
 
 	def import_data(self):
 		"""
-		Extract Import Data from Data and Return NBERFeenstraWTFImport
+		Collapse on Importers
 		"""
-		pass
+		print "[WARNING] This method aggregates across eiso3c for every iiso3c. This most likely will not include NES regions if they have been discarded in the constructor"
+		self.exports = self.reset_index().data[['year', 'iiso3c', 'sitc%s'%self.level, 'value']].groupby(['year', 'iiso3c', 'sitc%s'%self.level]).sum()
+		return self.exports
 
 #--------#
 #-Export-#
@@ -199,25 +284,31 @@ class NBERFeenstraWTFExport(NBERFeenstraWTF):
 	NBER Feenstra EXPORT World Trade Data
 	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
-
-	def __init__(self, data, years=[]): 	
-		""" 
-		Fill Object with Data
-
-		Implimented Methods
-		-------------------
-		[1] from_dataframe(**kwargs)
-
-		Future Work
-		-----------
-		[1] from_pickle
-		[2] from_hd5py
-		"""
-		if years == []:
-			years = list(self.data['year'].unique())
-		self.from_dataframe(data, years)
-		
 	
+	# def __init__(self, data, years=[]): 	
+	# 	""" 
+	# 	Fill Object with Data
+
+	# 	Implimented Methods
+	# 	-------------------
+	# 	[1] from_dataframe
+	# 	[2] from_pickle
+
+	# 	Future Work
+	# 	-----------
+	# 	[1] from_hdf
+	# 	"""
+	# 	if type(data) == pd.DataFrame:
+	# 		self.from_dataframe(data)
+	# 	elif type(data) == str:
+	# 		fn, ftype = data.split('.')
+	# 		if ftype == 'pickle':
+	# 			self.from_pickle(fn=data)
+	# 		elif ftype == 'h5':
+	# 			self.from_hdf(fn=data)
+	# 		else:
+	# 			raise ValueError('Uknown File Type: %s' % ftype)
+
 	def __repr__(self):
 		""" Representation String Of Object """
 		string = "Class: %s\n" % (self.__class__) 							+ \
@@ -227,36 +318,19 @@ class NBERFeenstraWTFExport(NBERFeenstraWTF):
 				 "Number of Export Flows: %s\n" % (self.data.shape[0])
 		return string
 
-
 	#-Data Import Methods-#
 
-	def from_dataframe(self, df, years):
-		"""
-		Populate Object from Pandas DataFrame
-		"""
-		#-Force Interface Variables-#
-		if type(df) == pd.DataFrame:
-			# - Check Incoming Data Conforms - #
-			columns = set(df.columns)
-			for item in self.interface['export']:
-				if item not in columns: 
-					raise TypeError("Need %s to be specified in the incoming data" % item)
-			#-Set Attributes-#
-			self.__data = df.set_index(self.interface['export'][:-1]) 	#Index by all values except 'value'
-			self.years = years
-		else:
-			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface['export'])
-		return self
+	def from_dataframe(self, df):
+		self.load_dataframe(df, dtype='export')
 
+	#-Properties-#
 
-	#-Country / Aggregates Filters-#
-
-	def geo_aggregates(self, members):
-		"""
-		members = dict {'iso3c' : 'region'}
-		Subsitute Country Names for Regions and Collapse.sum()
-		"""
-		pass 
+	@property 
+	def data(self):
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values
 
 	
 #--------#
@@ -266,52 +340,52 @@ class NBERFeenstraWTFExport(NBERFeenstraWTF):
 class NBERFeenstraWTFImport(NBERFeenstraWTF):
 	"""
 	NBER Feenstra IMPORT World Trade Data
-	Interface: ['year', 'eiso3c', 'productcode', 'value']
+	Interface: ['year', 'iiso3c', 'productcode', 'value']
 	"""
-	def __init__(self, data, years=[]): 	
-		""" 
-		Fill Object with Data
+	# def __init__(self, data, years=[]): 	
+	# 	""" 
+	# 	Fill Object with Data
 
-		Implimented Methods
-		-------------------
-		[1] from_dataframe(**kwargs)
+	# 	Implimented Methods
+	# 	-------------------
+	# 	[1] from_dataframe
+	# 	[2] from_pickle
 
-		Future Work
-		-----------
-		[1] from_pickle
-		[2] from_hd5py
-		"""
-		if years == []:
-			years = list(self.data['year'].unique())
-		self.from_dataframe(data, years)
+	# 	Future Work
+	# 	-----------
+	# 	[1] from_hdf
+	# 	"""
+	# 	if type(data) == pd.DataFrame:
+	# 		self.from_dataframe(data)
+	# 	elif type(data) == str:
+	# 		fn, ftype = data.split('.')
+	# 		if ftype == 'pickle':
+	# 			self.from_pickle(fn=data)
+	# 		elif ftype == 'h5':
+	# 			self.from_hdf(fn=data)
+	# 		else:
+	# 			raise ValueError('Uknown File Type: %s' % ftype)
 		
 	
 	def __repr__(self):
 		""" Representation String Of Object """
 		string = "Class: %s\n" % (self.__class__) 							+ \
 				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.available_years)		+ \
-				 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
+				 "Number of Importers: %s\n" % (self.num_importers)			+ \
 				 "Number of Products: %s\n" % (self.num_products) 			+ \
-				 "Number of Export Flows: %s\n" % (self.data.shape[0])
+				 "Number of Import Flows: %s\n" % (self.data.shape[0])
 		return string
 
+	#-Properties-#
+	
+	@property 
+	def data(self):
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values
 
 	#-Data Import Methods-#
 
-	def from_dataframe(self, df, years):
-		"""
-		Populate Object from Pandas DataFrame
-		"""
-		#-Force Interface Variables-#
-		if type(df) == pd.DataFrame:
-			# - Check Incoming Data Conforms - #
-			columns = set(df.columns)
-			for item in self.interface['import']:
-				if item not in columns: 
-					raise TypeError("Need %s to be specified in the incoming data" % item)
-			#-Set Attributes-#
-			self.__data = df.set_index(self.interface['import'][:-1]) 	#Index by all values except 'value'
-			self.years = years
-		else:
-			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface['import'])
-		return self
+	def from_dataframe(self, df):
+		self.load_dataframe(df, dtype='import')
