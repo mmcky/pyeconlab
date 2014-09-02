@@ -1,5 +1,9 @@
 """
-Generic Dataset Construction Classes
+NBERFeenstraWTF Dataset Object
+
+STATUS: DEPRECATED 
+
+Supporting Constructor: NBERFeenstraConstructor
 
 Types
 =====
@@ -7,57 +11,50 @@ Types
 [2] Export Dataset 	(Export Trade Flows)
 [3] Import Dataset 	(Import Trade Flows)
 
-Notes
-=====
-[1] These objects get inherited by specific datasets. Any child dataset object (i.e. NBERFeenstraWTF) needs to have local class level properties for 
-	self.__data, and any other relevant locally stored attributes (self.__exports, self.__imports etc.). This avoids the need to use super etc. when 
-	assigning and accessing data
-
-Datasets
-========
-1. Feenstra/NBER Data  							[NBERFeenstraWTF]
-2. BACI Data
-3. CEPII Data
-4. UNCTAD Revealed Capital,Labour, and Land
-
-Issues
-======
-1. 	How best to Incorporate the Source Dataset files. 
-	They can be very large  [Current Strategy: Constructors]
-	[Currently will pull in from a MyDatasets Object or manually from a source_dir]
-
-Future Work:
+Future Work
 -----------
-[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
+[1] Can properties and attributes be generalised to the BASE Class NBERFeenstraWTF?
+[2] Write Generic Trade, Export, and Import Objects
+[3] This is currently a duplicate of the generic TradeData class object. 
+	Should this subpackage inherite TradeData or remain self contained?
 """
 
 import pandas as pd
 import cPickle as pickle
-import warnings
 
-class CPTradeDataset(object):
+class NBERFeenstraWTF(object):
 	"""
-	Generic Trade Data Object
-	This Object Impliments a Standard Interface for Incoming Data allowing methods to be writen easily
+	Parent Class for Trade, Export and Import Objects
+
+	Source Dataset Attributes
+	-------------------------
+	Years: 			1962 to 2000
+	Classification: SITC R2 L4
+	Notes: 			Pre-1974 care is required for constructing intertemporally consistent data
+
+	Future Work 
+	-----------
+	[1] Move pickle restores etc into this super class __init__() and call super
+
 	"""
 
 	# - Attributes - #
-	name 			= None
-	years 			= None
-	available_years = None
-	classification 	= None
-	revision 		= None 
-	level 			= None
-	source_web 		= None
-	raw_units 		= None
-	raw_units_str 	= None
+	name 			= u'Feenstra (NBER) World Trade Dataset'
+	years 			= []
+	available_years = xrange(1962, 2000, 1)
+	classification 	= 'SITC'
+	revision 		= 2
+	level 			= 4
+	source_web 		= u"http://cid.econ.ucdavis.edu/nberus.html"
+	raw_units 		= 1000
+	raw_units_str 	= u'US$1000\'s'
 	interface 		= {
 						 'trade' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
 						 'export' : ['year', 'eiso3c', 'productcode', 'value'],
 						 'import' : ['year', 'iiso3c', 'productcode', 'value'],
 					  }
 
-	def __init__(self, data): 	
+	def __init__(self, data, years=[]): 	
 		""" 
 		Fill Object with Data
 
@@ -85,6 +82,18 @@ class CPTradeDataset(object):
 	def num_years(self):
 		""" Number of Years """
 		loc = self.data.index.names.index('year')
+		return self.data.index.levshape[loc]
+
+	@property 
+	def num_exporters(self):
+		""" Number of Exporters """
+		loc = self.data.index.names.index('eiso3c')
+		return self.data.index.levshape[loc]
+
+	@property 
+	def num_importers(self):
+		""" Number of Importers """
+		loc = self.data.index.names.index('iiso3c')
 		return self.data.index.levshape[loc]
 
 	@property 
@@ -117,7 +126,7 @@ class CPTradeDataset(object):
 			#-Infer Level-#
 			levels = df['productcode'].apply(lambda x: len(x)).unique()
 			if len(levels) > 1:
-				raise ValueError("Product Levels are not consistent lengths: %s" % levels)
+				raise ValueError("Productoces are not consistent lengths: %s" % levels)
 			self.level = levels[0]
 		else:
 			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface[dtype])
@@ -174,11 +183,15 @@ class CPTradeDataset(object):
 		"""
 		pass
 
-class CPTradeData(CPTradeDataset):
-	""" 
-	Generic Trade Dataset Object
+#-------#
+#-Trade-#
+#-------#
+
+class NBERFeenstraWTFTrade(NBERFeenstraWTF):
+	"""
+	Feenstra NBER Bilateral World TRADE Data
 	
-	Interface: ['year', 'eiso3c', 'iiso3c', 'productcode', 'value']
+	Interfaces: ['year', 'eiso3c', 'iiso3c', 'productcode', 'value']
 
 	Future Work:
 	-----------
@@ -196,7 +209,7 @@ class CPTradeData(CPTradeDataset):
 		return string
 
 	#-Properties-#
-
+	
 	@property 
 	def data(self):
 		return self.__data
@@ -206,43 +219,17 @@ class CPTradeData(CPTradeDataset):
 
 	@property 
 	def exports(self):
-		try:
-			return self.__exports
-		except:
-			self.export_data()
-			return self.__exports
+		return self.__exports
 	@exports.setter
 	def exports(self, values):
-		self.__exports = values
+		self.exports = values
 
 	@property 
 	def imports(self):
-		try:
-			return self.__imports
-		except:
-			self.import_data()
-			return self.__imports
+		return self.__imports
 	@imports.setter
 	def imports(self, values):
-		self.__imports = values
-
-	@property 
-	def num_exporters(self):
-		""" Number of Exporters """
-		try:
-			loc = self.data.index.names.index('eiso3c')
-		except:
-			warnings.warn("'eiso3c' is not found in the data", UserWarning)
-		return self.data.index.levshape[loc]
-
-	@property 
-	def num_importers(self):
-		""" Number of Importers """
-		try:
-			loc = self.data.index.names.index('iiso3c')
-		except:
-			warnings.warn("'iiso3c' is not found in the data", UserWarning)
-		return self.data.index.levshape[loc]
+		self.imports = values
 
 	#-Data Import Methods-#
 
@@ -251,30 +238,29 @@ class CPTradeData(CPTradeDataset):
 
 	#-Exports / Imports Data-#
 
-	def export_data(self, return_data=False):
+	def export_data(self):
 		"""
 		Collapse to obtain Export Data
 		"""
-		warnings.warn("This method aggregates across iiso3c for every eiso3c. This most likely will not include NES regions if they have been discarded in the constructor (as they do not belong to any given importer)", UserWarning)
-		self.exports = self.data.reset_index()[['year', 'eiso3c', 'productcode', 'value']].groupby(['year', 'eiso3c', 'productcode']).sum()
-		if return_data:
-			return self.exports
+		print "[WARNING] This method aggregates across iiso3c for every eiso3c. This most likely will not include NES regions if they have been discarded in the constructor"
+		self.exports = self.reset_index().data[['year', 'eiso3c', 'sitc%s'%self.level, 'value']].groupby(['year', 'eiso3c', 'sitc%s'%self.level]).sum()
+		return self.exports
 
-	def import_data(self, return_data=False):
+	def import_data(self):
 		"""
-		Collapse to obtain Import Data
+		Collapse on Importers
 		"""
-		warnings.warn("This method aggregates across iiso3c for every eiso3c. This most likely will not include NES regions if they have been discarded in the constructor (as they do not belong to any given importer)", UserWarning)
-		self.imports = self.data.reset_index()[['year', 'iiso3c', 'productcode', 'value']].groupby(['year', 'iiso3c', 'productcode']).sum()
-		if return_data:
-			return self.imports
+		print "[WARNING] This method aggregates across eiso3c for every iiso3c. This most likely will not include NES regions if they have been discarded in the constructor"
+		self.imports = self.reset_index().data[['year', 'iiso3c', 'sitc%s'%self.level, 'value']].groupby(['year', 'iiso3c', 'sitc%s'%self.level]).sum()
+		return self.imports
 
+#--------#
+#-Export-#
+#--------#
 
-
-class CPExportData(CPTradeDataset):
-	""" 
-	Generic Export Dataset Object
-
+class NBERFeenstraWTFExport(NBERFeenstraWTF):
+	"""
+	NBER Feenstra EXPORT World Trade Data
 	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
 	def __repr__(self):
@@ -300,27 +286,16 @@ class CPExportData(CPTradeDataset):
 	def data(self, values):
 		self.__data = values
 
-	@property 
-	def exports(self):
-		return self.__data
+	
+#--------#
+#-Import-#
+#--------#
 
-	@property 
-	def num_exporters(self):
-		""" Number of Exporters """
-		try:
-			loc = self.data.index.names.index('eiso3c')
-		except:
-			warnings.warn("'eiso3c' is not found in the data", UserWarning)
-		return self.data.index.levshape[loc]
-
-
-
-class CPImportData(CPTradeDataset):
-	""" 
-	Generic Import Dataset Object
+class NBERFeenstraWTFImport(NBERFeenstraWTF):
+	"""
+	NBER Feenstra IMPORT World Trade Data
 	Interface: ['year', 'iiso3c', 'productcode', 'value']
 	"""	
-	
 	def __repr__(self):
 		""" Representation String Of Object """
 		string = "Class: %s\n" % (self.__class__) 							+ \
@@ -338,20 +313,6 @@ class CPImportData(CPTradeDataset):
 	@data.setter
 	def data(self, values):
 		self.__data = values
-
-	@property 
-	def imports(self):
-		return self.__data
-
-	@property 
-	def num_importers(self):
-		""" Number of Importers """
-		try:
-			loc = self.data.index.names.index('iiso3c')
-		except:
-			warnings.warn("'iiso3c' is not found in the data", UserWarning)
-		return self.data.index.levshape[loc]
-
 
 	#-Data Import Methods-#
 
