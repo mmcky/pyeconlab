@@ -12,7 +12,9 @@ Types
 Future Work
 -----------
 [1] Can properties and attributes be generalised to the BASE Class NBERFeenstraWTF?
-
+[2] Write Generic Trade, Export, and Import Objects
+[3] This is currently a duplicate of the generic TradeData class object. 
+	Should this subpackage inherite TradeData or remain self contained?
 """
 
 import pandas as pd
@@ -194,31 +196,6 @@ class NBERFeenstraWTFTrade(NBERFeenstraWTF):
 	[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
 	"""
 
-	# def __init__(self, data, years=[]): 	
-	# 	""" 
-	# 	Fill Object with Data
-
-	# 	Implimented Methods
-	# 	-------------------
-	# 	[1] from_dataframe
-	# 	[2] from_pickle
-
-	# 	Future Work
-	# 	-----------
-	# 	[1] from_hdf
-	# 	"""
-	# 	if type(data) == pd.DataFrame:
-	# 		self.from_dataframe(data)
-	# 	elif type(data) == str:
-	# 		fn, ftype = data.split('.')
-	# 		if ftype == 'pickle':
-	# 			self.from_pickle(fn=data)
-	# 		elif ftype == 'h5':
-	# 			self.from_hdf(fn=data)
-	# 		else:
-	# 			raise ValueError('Uknown File Type: %s' % ftype)
-		
-	
 	def __repr__(self):
 		""" Representation String Of Object """
 		string = "Class: %s\n" % (self.__class__) 							+ \
@@ -272,8 +249,8 @@ class NBERFeenstraWTFTrade(NBERFeenstraWTF):
 		Collapse on Importers
 		"""
 		print "[WARNING] This method aggregates across eiso3c for every iiso3c. This most likely will not include NES regions if they have been discarded in the constructor"
-		self.exports = self.reset_index().data[['year', 'iiso3c', 'sitc%s'%self.level, 'value']].groupby(['year', 'iiso3c', 'sitc%s'%self.level]).sum()
-		return self.exports
+		self.imports = self.reset_index().data[['year', 'iiso3c', 'sitc%s'%self.level, 'value']].groupby(['year', 'iiso3c', 'sitc%s'%self.level]).sum()
+		return self.imports
 
 #--------#
 #-Export-#
@@ -284,31 +261,6 @@ class NBERFeenstraWTFExport(NBERFeenstraWTF):
 	NBER Feenstra EXPORT World Trade Data
 	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
-	
-	# def __init__(self, data, years=[]): 	
-	# 	""" 
-	# 	Fill Object with Data
-
-	# 	Implimented Methods
-	# 	-------------------
-	# 	[1] from_dataframe
-	# 	[2] from_pickle
-
-	# 	Future Work
-	# 	-----------
-	# 	[1] from_hdf
-	# 	"""
-	# 	if type(data) == pd.DataFrame:
-	# 		self.from_dataframe(data)
-	# 	elif type(data) == str:
-	# 		fn, ftype = data.split('.')
-	# 		if ftype == 'pickle':
-	# 			self.from_pickle(fn=data)
-	# 		elif ftype == 'h5':
-	# 			self.from_hdf(fn=data)
-	# 		else:
-	# 			raise ValueError('Uknown File Type: %s' % ftype)
-
 	def __repr__(self):
 		""" Representation String Of Object """
 		string = "Class: %s\n" % (self.__class__) 							+ \
@@ -341,32 +293,7 @@ class NBERFeenstraWTFImport(NBERFeenstraWTF):
 	"""
 	NBER Feenstra IMPORT World Trade Data
 	Interface: ['year', 'iiso3c', 'productcode', 'value']
-	"""
-	# def __init__(self, data, years=[]): 	
-	# 	""" 
-	# 	Fill Object with Data
-
-	# 	Implimented Methods
-	# 	-------------------
-	# 	[1] from_dataframe
-	# 	[2] from_pickle
-
-	# 	Future Work
-	# 	-----------
-	# 	[1] from_hdf
-	# 	"""
-	# 	if type(data) == pd.DataFrame:
-	# 		self.from_dataframe(data)
-	# 	elif type(data) == str:
-	# 		fn, ftype = data.split('.')
-	# 		if ftype == 'pickle':
-	# 			self.from_pickle(fn=data)
-	# 		elif ftype == 'h5':
-	# 			self.from_hdf(fn=data)
-	# 		else:
-	# 			raise ValueError('Uknown File Type: %s' % ftype)
-		
-	
+	"""	
 	def __repr__(self):
 		""" Representation String Of Object """
 		string = "Class: %s\n" % (self.__class__) 							+ \

@@ -2031,15 +2031,18 @@ class NBERFeenstraWTFConstructor(object):
 		if dtype == 'trade':
 			sitcl = 'sitc%s' % self.level
 			self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
-			return NBERFeenstraWTFTrade(data=self.dataset, years=self.years)
+			# return NBERFeenstraWTFTrade(data=self.dataset, years=self.years)
+			return NBERFeenstraWTFTrade(data=self.dataset)
 		elif dtype == 'export' or dtype == 'exports':
 			sitcl = 'sitc%s' % self.level
 			self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
-			return NBERFeenstraWTFExport(data=self.dataset, years=self.years)
+			# return NBERFeenstraWTFExport(data=self.dataset, years=self.years)
+			return NBERFeenstraWTFExport(data=self.dataset)
 		elif dtype == 'import' or dtype == 'imports':
 			sitcl = 'sitc%s' % self.level
 			self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
-			return NBERFeenstraWTFImport(data=self.dataset, years=self.years)
+			# return NBERFeenstraWTFImport(data=self.dataset, years=self.years)
+			return NBERFeenstraWTFImport(data=self.dataset)
 		else:
 			raise ValueError("dtype must be either 'trade', 'export(s)', or 'import(s)'")
 
