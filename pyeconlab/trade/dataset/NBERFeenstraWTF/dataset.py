@@ -90,7 +90,7 @@ class NBERFeenstraWTFTrade(CPTradeData, NBERFeenstraWTF):
 			return self.__imports
 		except:
 			self.import_data()
-			return self.__exports
+			return self.__imports
 	@imports.setter
 	def imports(self, values):
 		self.__imports = values
