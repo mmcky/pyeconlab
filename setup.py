@@ -15,6 +15,7 @@ setup(
   			       'pyeconlab.util',
   			       'pyeconlab.trade',
   			       'pyeconlab.trade.dataset',
+               'pyeconlab.trade.dataset.CEPIIBACI',
                'pyeconlab.trade.dataset.NBERFeenstraWTF',
                'pyeconlab.trade.dataset.NBERFeenstraWTF.meta',    #Really?
                'pyeconlab.trade.classification',
@@ -34,5 +35,5 @@ setup(
   url = 'https://github.com/sanguineturtle/pyeconlab',
   download_url = 'https://github.com/sanguineturtle/pyeconlab/tarball/0.1-alpha', 
   keywords = ['quantitative', 'economics', 'international trade', 'complexity'],
-  #install_requires = ['countrycode'],
+  #install_requires = ['countrycode', 'rarfile'],
 )
