@@ -624,37 +624,45 @@ class DynamicProductLevelExportSystem(object):
 	# - DataFrames - #
 
 	def from_df(self, df, cntry_obj=None, prod_obj=None, dtypes=['DataFrame'], verbose=False):
-		'''
-			Construct ProductLevelExportSystem from LONG Pandas DataFrame Object
+		"""
+		Construct ProductLevelExportSystem from LONG Pandas DataFrame Object
 
-			Incoming DataFrame Structure:
-			-----------------------------
+		Incoming DataFrame Structure:
+		-----------------------------
 
-					'country' 	'productcode' 	'export'
-			<year> 	
+				'country' 	'productcode' 	'export'
+		<year> 	
 
-			Notes:
-			-----
-				[1] This Class DynProductLevelExportSystem is dealing with the Dynamic elements of trade data. 
-					Therefore, 'country', 'productcode' etc are not indices at this stage
+		Notes:
+		-----
+		[1] This Class DynProductLevelExportSystem is dealing with the Dynamic elements of trade data. 
+			Therefore, 'country', 'productcode' etc are not indices at this stage
 
-			Future Work:
-			------------
-				[1] Move Network Construction to a construct_network() method in ProductLevelExportSystem Class
-					Then No long need to carry around Country and Product Objects
-				[2] Add df.notes = ''
-				[3] Make Series_name more robust in terms of error checking; or impliment a replace method
-		'''
+		Future Work:
+		------------
+		[1] Move Network Construction to a construct_network() method in ProductLevelExportSystem Class
+			Then No long need to carry around Country and Product Objects
+		[2] Add df.notes = ''
+		[3] Should Column and IDX interfaces be moved to a utility function?
+		"""
  		# - Init Years from DF - #
 		self.years = sorted(set(df.index))
-		# - Check Series Name => Convert to 'export' - #
-		## IMPROVE THIS ##
-		if df.columns[0] != 'country' or df.columns[1] != 'productcode' or df.columns[2] != 'export':
-			print "[WARNING]: Imported Data is not labelled correctly!"
-			print "...Change (%s, %s, %s) to ('country', 'productcode', 'export')" % (df.columns[0], df.columns[1], df.columns[2])
-			print "Use: .change_data_series_name(replace={from_name : to_name}) to update to ('country', 'productcode', 'export')"
-			#df.columns = ['country', 'productcode', 'export'] # This is Dangerous
-		##################
+		# - Check Columns Interface - #
+		colnames = set(df.columns)
+		column_interface = ['country', 'productcode', 'export']
+		for item in column_interface:
+			if item not in colnames:
+				print "[INFO] Current DataFrame Has Columns: %s" % colnames
+				print "[INFO] Interface requirements is: ('country', 'productcode', 'export')"
+				raise ValueError("%s is not contained in the incoming dataframe!" % item)
+		# - Check Index Interface - #
+		idxnames = df.index.names
+		idx_interface = ['year']
+		for item in idx_interface:
+			if item not in idxnames:
+				print "[INFO] Current DataFrame is indexed by: %s" % idxnames
+				print "[INFO] Interface requirements is: ('year')"
+				raise ValueError("%s is not indexed correctly in the incoming dataframe!" % item)
 		for year in self.years:
 			if verbose: print "\nComputing ProductLevelExportSystem for Year: %s" % year
 			cross_section = df.ix[year].set_index(keys=['country', 'productcode'])
@@ -2029,16 +2037,19 @@ class DynamicProductLevelExportSystem(object):
 
 
 ### -- Main For Library File: DynProductLevelExportSystem --- ###
-
+### -- Note: These have been migrated to tests/ but remain here as demonstrations on how to use the class -- ###
 
 if __name__ == '__main__':
 	print "Library File for DynProductLevelExportSystem Class"
+	print "Following is a Demonstration of Some Features of the Class"
 	print 
+
 	### --- Options --- ###
 	graphics = True
 
 	### --- Test Data --- ###
-	data = './test-data/export-testdata.csv'
+	TEST_DATA_DIR = package_folder(__file__, "tests/data") 
+	data = TEST_DATA_DIR + 'export-testdata.csv'
 	
 	#####################################
 	### --- Test Simple Networks  --- ###

@@ -323,6 +323,22 @@ class CPExportData(CPTradeDataset):
 			warnings.warn("'eiso3c' is not found in the data", UserWarning)
 		return self.data.index.levshape[loc]
 
+	def to_dynamic_productlevelexportsystem(self, verbose=True):
+		"""
+		Method to construct a Product Level Export System from the dataset
+		Note: This requires 'export' data
+		"""
+		#-Prepare Names-#
+		data = self.data.copy(deep=True) 											#Don't Alter Dataset, Should this be the default behaviour of the data attribute?
+		data = data.reset_index()
+		data.rename(columns={'eiso3c' : 'country', 'value' : 'export'}, inplace=True)
+		data.set_index(['year'], inplace=True)
+		#-Construct Object-#
+		from pyeconlab.trade.systems import DynamicProductLevelExportSystem
+		system = DynamicProductLevelExportSystem()
+		system.from_df(df=data)
+		return system
+
 
 
 class CPImportData(CPTradeDataset):
