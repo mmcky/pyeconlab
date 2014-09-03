@@ -16,7 +16,7 @@ Dependancies:
 Architecture Question:
 ---------------------
 	Should this have the following simplifing structure
-		DynProductLevelExportSystem {Contains Core Attributes and Methods of Objects}
+		DynamicProductLevelExportSystem {Contains Core Attributes and Methods of Objects}
 			Diffusion 				{Diffusion Analysis}
 			Plotting 
 			Animation 
@@ -40,6 +40,7 @@ from __future__ import division
 
 import sys
 import re
+import warnings
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -91,7 +92,7 @@ class DynamicProductLevelExportSystem(object):
 	
 	## -- Base Class Functions -- ##
 
-	def __init__(self, fn='', series_name='export', verbose=False):
+	def __init__(self, fn='', series_name='export', replace={}, verbose=False):
 		
 		## -- Core Cross-Section Object Tables -- ##
 		self.ples 			= dict()						# In-Memory Core Data
@@ -118,7 +119,7 @@ class DynamicProductLevelExportSystem(object):
 		# - Parse Options - #
 		if re.search("\.csv", fn):
 			print "[NOTICE] Populating Object from csv file with default kwargs: %s (May use .from_csv() method for more options)" % fn
-			self.from_csv(fn, verbose=verbose)
+			self.from_csv(fn, replace=replace, verbose=verbose)
 
 
 
@@ -563,13 +564,16 @@ class DynamicProductLevelExportSystem(object):
 	# - CSV - #
 
 	def change_data_series_name(self, replace={'exports' : 'export'}, verbose=False):
-		'''
-			Change Data Series Name in (self.data)
+		"""
+		Change Data Series Name in (self.data)
 
-			replace 	: 	dict("exports" : "export")
+		STATUS: DEPRICATED (ADDED as option to from_csv() and from_df())
 
-			Typical Usage is when loading "exports" and want to change to "export" for internal consistency
-		'''
+		replace 	: 	dict("exports" : "export")
+
+		Typical Usage is when loading "exports" and want to change to "export" for internal consistency
+		"""
+		warnings.warn("DEPRICATED use replace={} in from_csv() or from_df()", UserWarning)
 		# - Info - #
 		for item in sorted(replace.keys()):
 			print "[Info] Changing Series named: %s to :%s" % (item, replace[item])
@@ -585,29 +589,29 @@ class DynamicProductLevelExportSystem(object):
 			self.ples[year].data.columns = pd.Index(new_column)
 
 
-	def from_csv(self, fn, country_classification='ISO3C', cntry_obj=None, product_classification='SITCR2L4', prod_obj=None, dtypes=['DataFrame'] , years=None, verbose=False):
-		'''
-			Import Data from Standard CSV File
+	def from_csv(self, fn, country_classification='ISO3C', cntry_obj=None, product_classification='SITCR2L4', prod_obj=None, dtypes=['DataFrame'] , years=None, replace={}, verbose=False):
+		"""
+		Import Data from Standard CSV File
 
-			Input Data:	
-			-----------
-				<year>, <country>, <productcode>, <export-value>
+		Input Data:	
+		-----------
+			<year>, <country>, <productcode>, <export-value>
 
-			Options:
-			--------
-				[1] years 		: 		[yearlist] 	Add Year Filter to Importing Subset of Years
+		Options:
+		--------
+			[1] years 		: 		[yearlist] 	Add Year Filter to Importing Subset of Years
 
-			Notes:
-			------
-				[1] Import into DataFrame and then call from_df() method
-				[2] ProductCode dtype == 'str' to handle leading zero's easily
-				[3] Pass Country and Product Objects around as they are instances of separate class
+		Notes:
+		------
+			[1] Import into DataFrame and then call from_df() method
+			[2] ProductCode dtype == 'str' to handle leading zero's easily
+			[3] Pass Country and Product Objects around as they are instances of separate class
 
-			Future Work:
-			------------
-				[1] Move Network Construction to a construct_network() method in ProductLevelExportSystem Class
-					Then No long need to carry around Country and Product Objects
-		'''
+		Future Work:
+		------------
+			[1] Move Network Construction to a construct_network() method in ProductLevelExportSystem Class
+				Then No long need to carry around Country and Product Objects
+		"""
 		# - Import CSV - #
 		if verbose: print "Loading Dynamic Product Level Export System From: %s" % fn
 		self.data_file = fn
@@ -619,11 +623,11 @@ class DynamicProductLevelExportSystem(object):
 		self.country_classification = country_classification
 		self.product_classification = product_classification
 		# - Construct ProductLevelExportSystem for each year - #
-		self.from_df(df, cntry_obj=cntry_obj, prod_obj=prod_obj, dtypes=dtypes, verbose=verbose)
+		self.from_df(df, cntry_obj=cntry_obj, prod_obj=prod_obj, dtypes=dtypes, replace=replace, verbose=verbose)
 
 	# - DataFrames - #
 
-	def from_df(self, df, cntry_obj=None, prod_obj=None, dtypes=['DataFrame'], verbose=False):
+	def from_df(self, df, cntry_obj=None, prod_obj=None, dtypes=['DataFrame'], replace={}, verbose=False):
 		"""
 		Construct ProductLevelExportSystem from LONG Pandas DataFrame Object
 
@@ -635,7 +639,7 @@ class DynamicProductLevelExportSystem(object):
 
 		Notes:
 		-----
-		[1] This Class DynProductLevelExportSystem is dealing with the Dynamic elements of trade data. 
+		[1] This Class DynamicProductLevelExportSystem is dealing with the Dynamic elements of trade data. 
 			Therefore, 'country', 'productcode' etc are not indices at this stage
 
 		Future Work:
@@ -647,6 +651,9 @@ class DynamicProductLevelExportSystem(object):
 		"""
  		# - Init Years from DF - #
 		self.years = sorted(set(df.index))
+		#-Check Replacements-#
+		if replace != {}:
+			df.rename(columns=replace, inplace=True)
 		# - Check Columns Interface - #
 		colnames = set(df.columns)
 		column_interface = ['country', 'productcode', 'export']
@@ -676,7 +683,7 @@ class DynamicProductLevelExportSystem(object):
 
 	def from_rca_df(self, rca, rca_notes='', verbose=False):
 		'''
-			Construct a DynProductLevelExportSystem from an RCA Matrix
+			Construct a DynamicProductLevelExportSystem from an RCA Matrix
 			Useful when sources is already RCA Data
 
 			Incoming DataFrame Structure:
@@ -1316,7 +1323,7 @@ class DynamicProductLevelExportSystem(object):
 		elif re.match('[0-9]{4}', prox_matrix): 			# Year Has Been Specified
 			use_prox = A[prox_matrix].proximity
 		elif prox_matrix == 'average':
-			if verbose: print "Computing an Average Proximity Matrix across ALL years in DynProductLevelExportSystem"
+			if verbose: print "Computing an Average Proximity Matrix across ALL years in DynamicProductLevelExportSystem"
 			prox_matrix = self.get_proximity(rtype='wide').mean(axis=1).unstack(level='productcode2') 				#Note: mean(1.0 + np.nan) = 1.0
 			use_prox = prox_matrix
 		else:
@@ -1345,7 +1352,7 @@ class DynamicProductLevelExportSystem(object):
 		data = data.reset_index().set_index(keys='year') 	#Prepare Balanced Panel For from_df()
 		if fillna: data = data.fillna(0.0)
 		# - Construct a New DynPLES - #
-		DynPLES = DynProductLevelExportSystem()
+		DynPLES = DynamicProductLevelExportSystem()
 		# - Carry Across Data Attributes - #
 		DynPLES.product_classification = self.product_classification
 		DynPLES.country_classification = self.country_classification 
@@ -1431,7 +1438,7 @@ class DynamicProductLevelExportSystem(object):
 
 	def compute_smoothed_trade_data(self, smoother=(1,1,1), method='pandas', data_name='self.data', years=None, verbose=False):
 		'''
-			Compute Smoothed Trade Data (i.e. 3YRMA) and Return a New DynProductLevelExportSystem
+			Compute Smoothed Trade Data (i.e. 3YRMA) and Return a New DynamicProductLevelExportSystem
 			Note: This function only acts on self.data
 			Assumptions: Centering of Smoother = True
 
@@ -1449,7 +1456,7 @@ class DynamicProductLevelExportSystem(object):
 
 			Notes:
 			------
-				[1] This will return DynProductLevelExportSystem that are build on self.data and self.matrix. 
+				[1] This will return DynamicProductLevelExportSystem that are build on self.data and self.matrix. 
 				How will Country and Product Objects be treated?  => split the from_df() function into a simple from_df() to self.data and construct_network()
 				Then Networks can be constructed from self.data and Node and Edge Objects
 				[2] This function was written when originally thinking about that data structure of the object to be self.data, self.matrix
@@ -1478,7 +1485,7 @@ class DynamicProductLevelExportSystem(object):
 				idx = zip(['export']*len(years), years)
 				data = data.unstack(level='year')[idx].stack().reorder_levels(order=['year', 'country', 'productcode']).sort_index()
 				# - Construct return system - #
-				dynples = DynProductLevelExportSystem()
+				dynples = DynamicProductLevelExportSystem()
 				dynples.from_df(data.reset_index().set_index(keys=['year'])) 
 				# - Carry Over Attributes - #
 				dynples.country_classification = self.country_classification
@@ -1491,7 +1498,7 @@ class DynamicProductLevelExportSystem(object):
 				selection = ['country', 'productcode']
 				window = sum(smoother)
 				matrix = matrix.groupby(level=selection).apply(lambda x: pd.rolling_mean(x, window=window, center=True))
-				return DynProductLevelExportSystem().from_rca_df(data.reset_index().set_index(keys=['year']), rca_notes='Smoothed by Smoother: %s' % smoother) 				#Return New TradeSystem with Smoothed RCA Matrices
+				return DynamicProductLevelExportSystem().from_rca_df(data.reset_index().set_index(keys=['year']), rca_notes='Smoothed by Smoother: %s' % smoother) 				#Return New TradeSystem with Smoothed RCA Matrices
 			else:
 				raise ValueError("method has only been constructed for self.data and self.matrix")
 		else:
@@ -1499,7 +1506,7 @@ class DynamicProductLevelExportSystem(object):
 
 	def compute_intertemporal_fill(self, interpolate=True, ffill=True, ffill_limit=1, bfill=True, bfill_limit=1, verbose=False):
 		'''
-			Compute Data with Intertemporal Fill and Return a New DynProductLevelExportSystem with new data
+			Compute Data with Intertemporal Fill and Return a New DynamicProductLevelExportSystem with new data
 			
 			** Status: NEEDS TESTING **
 
@@ -1514,7 +1521,7 @@ class DynamicProductLevelExportSystem(object):
         	Note: 
         	-----
         		[1] This is useful when using the current compute_smoothed_data() function as it requires all cells to include data to compute which creates intertemporal gaps
-        		[2] Return basic DynProductLevelExportSystem based only on the Default 'DataFrame' data structure. If network representations desired in the new DynPLES then will need to construct them using appropriate constructor methods
+        		[2] Return basic DynamicProductLevelExportSystem based only on the Default 'DataFrame' data structure. If network representations desired in the new DynPLES then will need to construct them using appropriate constructor methods
 		'''
 		# - Obtain Long Form Data to Leverage Pandas - #
 		data = self.get_data(rtype='long', sort=True)
@@ -1525,7 +1532,7 @@ class DynamicProductLevelExportSystem(object):
 		if bfill == True:
 			data.fillna(method='bfill', limit=bfill_limit)
 		# - Construct DynPLES - #
-		DynPLES = DynProductLevelExportSystem()
+		DynPLES = DynamicProductLevelExportSystem()
 		DynPLES.from_df(data)
 		return DynPLES
 
@@ -1632,7 +1639,7 @@ class DynamicProductLevelExportSystem(object):
 		'''
 		# - Check Required Data - #
 		if self.global_panel != True:
-			raise ValueError("DynProductLevelExportSystem needs to be a Global Dynamic Panel (with the same c x p matrix sizes)")
+			raise ValueError("DynamicProductLevelExportSystem needs to be a Global Dynamic Panel (with the same c x p matrix sizes)")
 		if type(self.proximity) != dict: 																								#Assuming filled with pd.DataFrames
 			print "[NOTICE] Proximity matrix at (self.proximity) is currently not available. Computing Proximity with default kwargs"
 			self.proximity_matrices()
@@ -2036,11 +2043,11 @@ class DynamicProductLevelExportSystem(object):
 		return fig
 
 
-### -- Main For Library File: DynProductLevelExportSystem --- ###
+### -- Main For Library File: DynamicProductLevelExportSystem --- ###
 ### -- Note: These have been migrated to tests/ but remain here as demonstrations on how to use the class -- ###
 
 if __name__ == '__main__':
-	print "Library File for DynProductLevelExportSystem Class"
+	print "Library File for DynamicProductLevelExportSystem Class"
 	print "Following is a Demonstration of Some Features of the Class"
 	print 
 
@@ -2055,7 +2062,7 @@ if __name__ == '__main__':
 	### --- Test Simple Networks  --- ###
 	#####################################
 	
-	A = DynProductLevelExportSystem()
+	A = DynamicProductLevelExportSystem()
 	# - Import Test Data - #
 	# - Funtions Tested: from_csv, from_df
 	A.from_csv(data, dtypes=['DataFrame', 'BiPartiteGraph'], verbose=True)
@@ -2155,7 +2162,7 @@ if __name__ == '__main__':
 	#################################################
 
 	print "\nObject B:"
-	B = DynProductLevelExportSystem()
+	B = DynamicProductLevelExportSystem()
 	# - Import Test Data - #
 	B.from_csv(data, dtypes=['DataFrame'], verbose=True)
 	B.construct_bipartite(verbose=True)
@@ -2172,7 +2179,7 @@ if __name__ == '__main__':
 	C = Countries() 																								#Investigate a Pickle Here
 	C.build_from_wdi(W)
 
-	A = DynProductLevelExportSystem()
+	A = DynamicProductLevelExportSystem()
 	# - Import Test Data - #
 	# - Funtions Tested: from_csv, from_df
 	A.from_csv(data, cntry_obj=C, dtypes=['DataFrame', 'BiPartiteGraph'], verbose=True)
