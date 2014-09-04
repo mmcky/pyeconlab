@@ -32,5 +32,7 @@ from .dataset import 	CTradeDataset, CTradeData, CExportData, CImportData, 	\
 						CPTradeDataset, CPTradeData, CPExportData, CPImportData
 
 #-Specific Datasets-#
+from .dataset import BACIConstructor
+
 from .dataset.NBERFeenstraWTF import NBERFeenstraWTFConstructor
 from .dataset.NBERFeenstraWTF import NBERFeenstraWTF, NBERFeenstraWTFTrade, NBERFeenstraWTFExport, NBERFeenstraWTFImport
