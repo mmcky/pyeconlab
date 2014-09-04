@@ -2775,12 +2775,12 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		years = self._available_years
 		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '_raw' + '.h5'
-		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
-		self.__raw_data_hdf = hdf
-		pd.set_option('io.hdf.default_format', 'table')
+			# hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
+			# self.__raw_data_hdf = hdf
+			# pd.set_option('io.hdf.default_format', 'table')
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
 		hdf.put('raw_data', self.raw_data, format='table')
-		print hdf
+		if verbose: print hdf
 		hdf.close()
 
 
