@@ -280,7 +280,7 @@ class BACIConstructor(BACI):
 			yid = 'year'
 		else:
 			yid = 't'
-		for year in self.raw_data[yearid].unique():
+		for year in self.raw_data[yid].unique():
 			hdf.put('Y'+str(year), self.raw_data.loc[self.raw_data.year == year], format=format) 	
 		if verbose: print hdf
 		hdf.close()
