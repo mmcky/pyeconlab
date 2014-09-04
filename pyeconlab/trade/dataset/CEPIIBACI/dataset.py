@@ -51,7 +51,7 @@ class BACI(CPTradeDataset):
 
 	#-Attributes-#
 	name 						= u'CEPII BACI Trade Dataset'
-	available_years 			= {'HS92' : xrange(1995, END_YEAR['HS92'], 1), 'HS96' : xrange(1998, END_YEAR['HS96'], 1), 'HS02' : xrange(2003, END_YEAR['HS02'],1)} 
+	available_years 			= {'HS92' : xrange(1995, END_YEAR['HS92']+1, 1), 'HS96' : xrange(1998, END_YEAR['HS96']+1, 1), 'HS02' : xrange(2003, END_YEAR['HS02']+1,1)} 
 	available_classification 	= ['HS92', 'HS96', 'HS02'] 
 	available_revisions 		= ['1992']
 	source_web 					= u"http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1"

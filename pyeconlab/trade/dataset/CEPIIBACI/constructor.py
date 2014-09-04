@@ -63,14 +63,14 @@ class BACIConstructor(BACI):
 	fn_structure 	= 'baci<classification>_<year>'
 	fn_type 		= 'rar' 							#csv?
 
-	def __init__(self, source_dir, src_class, ftype='csv', years=[], skip_setup=False, reduce_memory=False, verbose=True):
+	def __init__(self, source_dir, src_class, ftype='csv', years=[], std_names=False, skip_setup=False, reduce_memory=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
 		Arguments
 		---------
 		source_dir 		: 	Must contain the raw csv files
-		src_class 			: 	Type of Source Files to Load ['HS92', 'HS96', 'HS02']
+		src_class 		: 	Type of Source Files to Load ['HS92', 'HS96', 'HS02']
 		years 			: 	Apply a Year Filter [Default: ALL]
 		ftype 			: 	File Type ['rar', 'csv', hdf']
 		skip_setup 		: 	[Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
@@ -86,13 +86,11 @@ class BACIConstructor(BACI):
 
 		#-Set Classification-#
 		self.classification = src_class
-
-		#-Parse Skip Setup-#
-		if skip_setup == True:
-			print "[INFO] Skipping Setup of BACI Constructor!"
-			self.__raw_data 	= None 										#Allows to be assigned later on
+		if self.classification == "HS02":
+			self.product_data_fixed = False 								#Should this be more sophisticated, this is a constructor so probably not
 
 		#-Setup Object-#
+		self.std_names = std_names
 		if verbose: print "[INFO] Fetching BACI Data from %s" % source_dir
 		if years == []:
 			self.complete_dataset = True			# This forces object to be imported based on the whole dataset
@@ -100,17 +98,23 @@ class BACIConstructor(BACI):
 		#-Assign to Attribute-#
 		self.years 	= years
 
+		#-Parse Skip Setup-#
+		if skip_setup == True:
+			print "[INFO] Skipping Setup of BACI Constructor!"
+			self.__raw_data 	= None 										#Allows to be assigned later on
+			return None
+
 		# - Fetch Raw Data for Years - #
 		if ftype == 'rar':
 			self.load_raw_from_rar(verbose=verbose)
 		elif ftype == 'csv':
-			self.load_raw_from_csv(verbose=verbose)
+			self.load_raw_from_csv(std_names=self.std_names, verbose=verbose)
 		elif ftype == 'hdf':
 			try:
 				self.load_raw_from_hdf(years=years, verbose=verbose)
 			except:
-				print "[INFO] Your source_directory: %s does not contain h5 version.\nStarting to compile one now ...."
-				self.load_raw_from_rar(verbose=verbose)
+				print "[INFO] Your source_directory: %s does not contain h5 version.\nStarting to compile one now ...." % self.source_dir
+				# self.load_raw_from_rar(verbose=verbose)
 				self.convert_raw_data_to_hdf(verbose=verbose) 			#Compute hdf file for next load
 				self.convert_raw_data_to_hdf_yearindex(verbose=verbose)		#Compute Year Index Version Also
 		else:
@@ -118,10 +122,10 @@ class BACIConstructor(BACI):
 
 		#-Reduce Memory-#
 		if reduce_memory:
-			self._dataset = self.__raw_data 									#Saves ~2Gb of RAM (but cannot access raw_data)
+			self.dataset = self.__raw_data 									#Saves ~2Gb of RAM (but cannot access raw_data)
 			self.__raw_data = None
 		else:
-			self._dataset = self.__raw_data.copy(deep=True) 					#[Default] pandas.DataFrame.copy(deep=True) is much more efficient than copy.deepcopy()
+			self.dataset = self.__raw_data.copy(deep=True) 					#[Default] pandas.DataFrame.copy(deep=True) is much more efficient than copy.deepcopy()
 
 	def __repr__(self):
 		""" Representation String Of Object """
@@ -171,13 +175,7 @@ class BACIConstructor(BACI):
 				if verbose: print "[DELETING] Column: %s" % item
 				del self.__raw_data[item]
 		if std_names:
-			if verbose:
-				for item in self.__raw_data.columns:
-					try:
-						print "[CHANGING] Column: %s to %s" % (item, self.interface[item])
-					except:
-						pass #Passing Items not Converted by self.interface
-			self.__raw_data.rename(columns=self.interface, inplace=True)
+			self.use_standard_column_names(self.__raw_data)
 			
 	def load_raw_from_rar(self, verbose=False):
 		""" 
@@ -197,7 +195,7 @@ class BACIConstructor(BACI):
 			rar = rarfile.RarFile(fn)
 			#- Incomplete [currently debating if want to build dependancy on unrar -#
 
-	def load_raw_from_hdf(self, verbose=False):
+	def load_raw_from_hdf(self, years=[], verbose=False):
 		"""
 		Load HDF Version of RAW Dataset from a source_directory
 		Note: 	To construct your own hdf version requires to initially load from BACI supplied RAW dta files
@@ -223,17 +221,36 @@ class BACIConstructor(BACI):
 		"""
 		fn = self.source_dir + self.country_data_fn[self.classification]
 		self.country_data = pd.read_csv(fn)
+		if self.std_names:
+			self.use_standard_column_names(self.country_data)
 
-	def load_product_data(self, verbose=False):
+	def load_product_data(self, fix_source=True, verbose=False):
 		"""
 		Load Product Code Classification File from Archive
 		"""
+		if fix_source and self.product_data_fixed == False:
+			self.fix_product_code_baci02(verbose=verbose)
+		if self.product_data_fixed == False:
+			print "[WARNING] Has the product_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.product_data_fn[self.classification]
 		self.product_data = pd.read_csv(fn, dtype={'Code' : object})
+		if self.std_names:
+			self.use_standard_column_names(self.product_data)
+
+	def use_standard_column_names(self, df, verbose=True):
+		"""
+		Use interface attribute to Adjust Columns to use Standard Names (inplace=True)
+		"""
+		if verbose:
+			for item in df.columns:
+				try: print "[CHANGING] Column: %s to %s" % (item, self.interface[item])
+				except: pass 																#Passing Items not Converted by self.interface
+		df.rename(columns=self.interface, inplace=True)
+
 
 	#-Conversion-#
 
-	def convert_raw_data_to_hdf(self, key='raw_data', format='table', verbose=True):
+	def convert_raw_data_to_hdf(self, key='raw_data', format='fixed', hdf_fn='', verbose=True):
 		""" 
 		Convert Raw Data to HDF
 		Note: this currently just converts whatever is contained in raw_data
@@ -241,28 +258,34 @@ class BACIConstructor(BACI):
 		-----------
 		[1] Add a year filter and name the file accordingly
 		"""
-		hdf_fn = self.source_dir + self.raw_data_hdf_fn[self.classification] 	#This default is the entire dataset for any given classification
+		if hdf_fn == '':
+			hdf_fn = self.source_dir + self.raw_data_hdf_fn[self.classification] 	#This default is the entire dataset for any given classification
 		if verbose: print "[INFO] Writing raw_data to %s" % hdf_fn
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
 		hdf.put(key, self.raw_data, format=format)
 		if verbose: print hdf
 		hdf.close()
 	
-	def convert_raw_data_to_hdf_yearindex(self, format='table', verbose=True):
+	def convert_raw_data_to_hdf_yearindex(self, format='fixed', hdf_fn='', verbose=True):
 		""" 
 		Convert Raw Data to HDF File Indexed by Year
 		Note: This compute a list of unique years from self.__raw_data
 		"""
-		hdf_fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification] 	#This default is the entire dataset for any given classification
+		if hdf_fn == '': 
+			hdf_fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification] 	#This default is the entire dataset for any given classification
 		if verbose: print "[INFO] Writing raw_data to %s" % hdf_fn
 		#-Construct HDF File-#
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
-		for year in self.raw_data['year'].unique():
-			hdf.put('Y%s'%year, self.raw_data.loc[self.raw_data.year == year], format=format) 	
+		if self.std_names == True:
+			yid = 'year'
+		else:
+			yid = 't'
+		for year in self.raw_data[yearid].unique():
+			hdf.put('Y'+str(year), self.raw_data.loc[self.raw_data.year == year], format=format) 	
 		if verbose: print hdf
 		hdf.close()
 
-	def convert_csv_to_hdf_yearindex(self, years=[], format='table', verbose=True):
+	def convert_csv_to_hdf_yearindex(self, years=[], format='fixed', hdf_fn='', verbose=True):
 		""" 
 		Convert CSV Files to HDF File Indexed by Year
 		year 	: 	apply a year filter
@@ -270,22 +293,25 @@ class BACIConstructor(BACI):
 		if years == []:
 			years = self.available_years[self.classification]
 		#-Setup HDF File-#
-		hdf_fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification]
+		if hdf_fn == '':
+			hdf_fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification]
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
 		#-Convert Years-#
 		for year in years:
-			csv_fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + year + '.csv'
-			if verbose: print "[INFO] Converting file: %s to file: %s" % (dta_fn, hdf_fn)
-			hdf.put('Y'+str(year), pd.read_csv(dta_fn), format=format)
+			csv_fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.csv'
+			if verbose: print "[INFO] Converting file: %s to file: %s" % (csv_fn, hdf_fn)
+			hdf.put('Y'+str(year), pd.read_csv(csv_fn), format=format)
 		if verbose: print hdf
 		hdf.close()
 		return hdf_fn
 
 	#-Fix Source Issues-#
-	def fix_product_code_baci02(self):
+
+	def fix_product_code_baci02(self, verbose=True):
 		"""
 		Fix issue with product_code_baci02 csv file
 		"""
+		if verbose: print "[INFO] Fixing original hs02 product data file in source_dir: %s" % self.source_dir
 		if self.classification != "HS02":
 			raise ValueError("This method only runs on HS02 Data")
 		fn = self.product_data_fn["HS02"]
@@ -295,8 +321,9 @@ class BACIConstructor(BACI):
 		fn = fn + "_adjust" + "." + ext
 		nf = open(self.source_dir + fn, 'w')
 		for idx, line in enumerate(f):
-			line = re.match("^\"(.*)\"$", line).group(1)
-			line = line.replace('\"\"', '\"')
+			line = re.match("^\"(.*)\"$", line).group(1) 					#Unwrap extra "'s
+			line = line.replace('\"\"', '\"') 								#Remove Double Quoting
+			#-Fix for Code Column-#
 			if idx == 0:
 				line = line.lstrip('Code')
 				line = '\"Code\"' + line
@@ -312,4 +339,6 @@ class BACIConstructor(BACI):
 		f.close()
 		nf.close()
 		#-Update File List to use adjusted File-#
+		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.product_data_fn["HS02"], fn)
 		self.product_data_fn["HS02"] = fn
+		self.product_data_fixed = True
