@@ -44,6 +44,7 @@ Notes
 """
 
 import re
+import warnings
 import pandas as pd
 
 from .dataset import BACI
@@ -58,12 +59,18 @@ class BACIConstructor(BACI):
 	-----------
 		[1] BACI 			: 	Provides Meta Data on CEPII Dataset
 		[2] CPTradeDataset	:	Provides CORE Country Product Methods 
+
+	Notes
+	-----
+	[1] When should standard_names be implimented (at the beginning or at the end?)
+		Beginning: update all native imports, but a bit easier to read in the programming
+		End: all baci files merge natively untouched. Could write a merge routine to undertake this approach as a check against using standard_names
 	"""
 
 	fn_structure 	= 'baci<classification>_<year>'
 	fn_type 		= 'rar' 							#csv?
 
-	def __init__(self, source_dir, src_class, ftype='csv', years=[], std_names=False, skip_setup=False, reduce_memory=False, verbose=True):
+	def __init__(self, source_dir, src_class, ftype='csv', years=[], std_names=True, skip_setup=False, reduce_memory=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -176,24 +183,6 @@ class BACIConstructor(BACI):
 				del self.__raw_data[item]
 		if std_names:
 			self.use_standard_column_names(self.__raw_data)
-			
-	def load_raw_from_rar(self, verbose=False):
-		""" 
-		
-		STATUS: INCOMPLETE - ON HOLD
-		
-		Load Raw Data from RAR Files 
-		Note
-		----
-		[1] this will require the installation of unrar!?
-		"""
-		raise NotImplementedError("Currenlty considering the use of unrar!")
-		data = pd.DataFrame()
-		for year in self.years:
-			fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.rar'
-			print "[INFO] Opening: %s" % fn
-			rar = rarfile.RarFile(fn)
-			#- Incomplete [currently debating if want to build dependancy on unrar -#
 
 	def load_raw_from_hdf(self, years=[], verbose=False):
 		"""
@@ -210,21 +199,21 @@ class BACIConstructor(BACI):
 			if verbose: print "[INFO] Loading RAW DATA from %s" % fn
 			self.__raw_data = pd.read_hdf(fn, key='raw_data')
 		else:
-			fn = self._source_dir + self.raw_data_hdf_yearindex_fn[self.classification] 
+			fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification] 
 			for year in years:
 				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
 				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
 
-	def load_country_data(self, verbose=False):
+	def load_country_data(self, std_names=True, verbose=False):
 		"""
 		Load Country Classification/Concordance File From Archive
 		"""
 		fn = self.source_dir + self.country_data_fn[self.classification]
 		self.country_data = pd.read_csv(fn)
-		if self.std_names:
+		if std_names:
 			self.use_standard_column_names(self.country_data)
 
-	def load_product_data(self, fix_source=True, verbose=False):
+	def load_product_data(self, fix_source=True, std_names=True, verbose=False):
 		"""
 		Load Product Code Classification File from Archive
 		"""
@@ -234,7 +223,7 @@ class BACIConstructor(BACI):
 			print "[WARNING] Has the product_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.product_data_fn[self.classification]
 		self.product_data = pd.read_csv(fn, dtype={'Code' : object})
-		if self.std_names:
+		if std_names:
 			self.use_standard_column_names(self.product_data)
 
 	def use_standard_column_names(self, df, verbose=True):
@@ -250,7 +239,7 @@ class BACIConstructor(BACI):
 
 	#-Conversion-#
 
-	def convert_raw_data_to_hdf(self, key='raw_data', format='fixed', hdf_fn='', verbose=True):
+	def convert_raw_data_to_hdf(self, key='raw_data', format='table', hdf_fn='', verbose=True):
 		""" 
 		Convert Raw Data to HDF
 		Note: this currently just converts whatever is contained in raw_data
@@ -266,7 +255,7 @@ class BACIConstructor(BACI):
 		if verbose: print hdf
 		hdf.close()
 	
-	def convert_raw_data_to_hdf_yearindex(self, format='fixed', hdf_fn='', verbose=True):
+	def convert_raw_data_to_hdf_yearindex(self, format='table', hdf_fn='', verbose=True):
 		""" 
 		Convert Raw Data to HDF File Indexed by Year
 		Note: This compute a list of unique years from self.__raw_data
@@ -281,11 +270,11 @@ class BACIConstructor(BACI):
 		else:
 			yid = 't'
 		for year in self.raw_data[yid].unique():
-			hdf.put('Y'+str(year), self.raw_data.loc[self.raw_data.year == year], format=format) 	
+			hdf.put('Y'+str(year), self.raw_data.loc[self.raw_data[yid] == year], format=format) 	
 		if verbose: print hdf
 		hdf.close()
 
-	def convert_csv_to_hdf_yearindex(self, years=[], format='fixed', hdf_fn='', verbose=True):
+	def convert_csv_to_hdf_yearindex(self, years=[], format='table', hdf_fn='', verbose=True):
 		""" 
 		Convert CSV Files to HDF File Indexed by Year
 		year 	: 	apply a year filter
@@ -342,3 +331,56 @@ class BACIConstructor(BACI):
 		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.product_data_fn["HS02"], fn)
 		self.product_data_fn["HS02"] = fn
 		self.product_data_fixed = True
+
+	#-Datasets-#
+	
+	def merge_all_sourcefiles(self, rename_newvars=True, verbose=True):
+		"""
+		Merge all baciXX_YYYY.csv, country_code_baciXX.csv, product_code_baciXX.csv files using native column names
+		
+		Note
+		----
+		[1] This can be used as a test against using the converted standard_names
+		[2] Should I rename incoming data? I think harmonised internal reader friendly columns names are the best solution
+		"""
+		warnings.warn("[WARNING] This method will reconstruct raw_data and dataset attributes!", UserWarning)
+		#-Ensure raw_data is source data-#
+		self.load_raw_from_csv(std_names=False, deletions=False, verbose=verbose)
+		self.load_country_data(std_names=False, verbose=verbose)
+		self.load_product_data(fix_source=True, std_names=False, verbose=verbose)
+		#-Merge Datasets-#
+		self.dataset = self.raw_data
+		#-Countries-#
+		#-Exporters-#
+		self.dataset = self.dataset.merge(self.country_data[['iso3', 'name_english', 'i']], how="left", left_on='i', right_on=['i'])
+		if rename_newvars: 
+			self.dataset = self.dataset.rename(columns={'iso3' : 'eiso3c', 'name_english' : 'ename'})
+		#-Importers-#
+		self.dataset = self.dataset.merge(self.country_data[['iso3', 'name_english', 'i']], how="left", left_on=['j'], right_on=['i'])
+		if rename_newvars: 
+			self.dataset = self.dataset.rename(columns={'iso3' : 'iiso3c', 'name_english' : 'iname'})
+		#-Products-#
+		self.dataset = self.dataset.merge(self.product_data[['Code', 'ShortDescription']], how="left", left_on=['hs6'], right_on=['Code'])
+
+
+
+
+
+	#---FUTURE WORK-----#
+
+
+	def load_raw_from_rar(self, verbose=False):
+		""" 
+		STATUS: INCOMPLETE - ON HOLD
+		Load Raw Data from RAR Files 
+		Note
+		----
+		[1] this will require the installation of unrar!?
+		"""
+		raise NotImplementedError("Currenlty considering the use of unrar!")
+		data = pd.DataFrame()
+		for year in self.years:
+			fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.rar'
+			print "[INFO] Opening: %s" % fn
+			rar = rarfile.RarFile(fn)
+			#- Incomplete [currently debating if want to build dependancy on unrar -#
