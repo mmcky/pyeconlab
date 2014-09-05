@@ -87,6 +87,9 @@ class BACIConstructor(BACI):
 							Usage: Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
 							[Default: False] Only Saves ~?GB of RAM
 		
+		Future Work
+		-----------
+		[1] Should I add a hdf_fn='' option for specifying a h5 file rather than using the internal defaults?
 		"""
 		#-Assign Source Directory-#
 		self.__source_dir 	= check_directory(source_dir) 	# check_directory() performs basic tests on the specified directory
@@ -120,9 +123,9 @@ class BACIConstructor(BACI):
 			try:
 				self.load_raw_from_hdf(years=years, verbose=verbose)
 			except:
-				print "[INFO] Your source_directory: %s does not contain h5 version.\nStarting to compile one now ...." % self.source_dir
-				# self.load_raw_from_rar(verbose=verbose)
-				self.convert_raw_data_to_hdf(verbose=verbose) 			#Compute hdf file for next load
+				print "[INFO] Your source directory: %s does not contain h5 version.\nStarting to compile one now ...." % self.source_dir
+				self.load_raw_from_csv(std_names=self.std_names, verbose=verbose)
+				self.convert_raw_data_to_hdf(verbose=verbose) 				#Compute hdf file for next load
 				self.convert_raw_data_to_hdf_yearindex(verbose=verbose)		#Compute Year Index Version Also
 		else:
 			raise ValueError("ftype must be 'rar', 'csv', or 'hdf'")
