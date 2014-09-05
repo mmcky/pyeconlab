@@ -197,7 +197,8 @@ class BACIConstructor(BACI):
 		[1] Should this be moved to Generic Constructor Class?
 		"""
 		self.__raw_data = pd.DataFrame() 
-		if years == []: 						#years assigned prior to loading data
+		print years
+		if years == [] or years == self.available_years[self.classification]:
 			fn = self.source_dir + self.raw_data_hdf_fn[self.classification]
 			if verbose: print "[INFO] Loading RAW DATA from %s" % fn
 			self.__raw_data = pd.read_hdf(fn, key='raw_data')

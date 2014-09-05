@@ -22,17 +22,21 @@ class TestRawDataToHDF(object):
 
 	def test_raw_data_to_hdf(self):
 		""" test_raw_data_to_hdf method """
-		a = BACIConstructor(source_dir=SOURCE_DIR, src_class="HS02", ftype='csv', verbose=True)
-		a.convert_raw_data_to_hdf(verbose=True) 	
-		b = BACIConstructor(source_dir=SOURCE_DIR, src_class="HS02", ftype='hdf', verbose=True)
-		assert_frame_equal(a.dataset,b.dataset)
+		self.a = BACIConstructor(source_dir=SOURCE_DIR, src_class="HS02", ftype='csv', verbose=True)
+		self.a.convert_raw_data_to_hdf(verbose=True) 	
+		self.b = BACIConstructor(source_dir=SOURCE_DIR, src_class="HS02", ftype='hdf', verbose=True)
+		assert_frame_equal(self.a.dataset,self.b.dataset)
 
 	def test_raw_data_to_hdf_yearindex(self):
 		""" test_raw_data_to_hdf method """
-		a = BACIConstructor(source_dir=SOURCE_DIR, src_class="HS02", years=[2003,2004], ftype='csv', verbose=True)
-		a.convert_raw_data_to_hdf_yearindex(verbose=True) 	
-		b = BACIConstructor(source_dir=SOURCE_DIR, src_class="HS02", years=[2003,2004], ftype='hdf', verbose=True)
-		assert_frame_equal(a.dataset,b.dataset)
+		self.a = BACIConstructor(source_dir=SOURCE_DIR, src_class="HS02", years=[2003,2004], ftype='csv', verbose=True)
+		self.a.convert_raw_data_to_hdf_yearindex(verbose=True) 	
+		self.b = BACIConstructor(source_dir=SOURCE_DIR, src_class="HS02", years=[2003,2004], ftype='hdf', verbose=True)
+		assert_frame_equal(self.a.dataset,self.b.dataset)
+
+	# def tearDown(self):
+	# 	del self.a 
+	# 	del self.b
 
 	# @classmethod
 	# def tearDownClass(cls):
