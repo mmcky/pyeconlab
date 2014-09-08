@@ -45,6 +45,7 @@ Notes
 
 import re
 import warnings
+import string
 import pandas as pd
 
 from .dataset import BACI
@@ -321,10 +322,32 @@ class BACIConstructor(BACI):
 
 	#-Fix Source Issues-#
 
-	def fix_country_code_baci02(self, verbose=True):
-		""" 
-		Fix issue with country_code_baci02 csv file
+	def fix_country_code_baci(self, verbose=True):
 		"""
+		Fix Source Country Code File Based on Classification
+		"""
+		opstring = u"(fix_country_code)"
+		if self.classification == "HS92":
+			self.fix_product_code_baci92(verbose=verbose)
+		elif self.classification == "HS96":
+			self.fix_product_code_baci96(verbose=verbose)
+		elif self.classification == "HS02":
+			self.fix_country_code_baci02(verbose=verbose)
+		else:
+			raise ValueError("Invalide Classification: %s" % self.classification)
+		update_operations(self, opstring)
+
+
+	def fix_country_code_baci92(self, verbose=True):
+		""" Fix issue with country_code_baci92 csv file """
+		raise NotImplementedError
+
+	def fix_country_code_baci96(self, verbose=True):
+		""" Fix issue with country_code_baci96 csv file """
+		raise NotImplementedError
+
+	def fix_country_code_baci02(self, verbose=True):
+		""" Fix issue with country_code_baci02 csv file """
 		if verbose: print "[INFO] Fixing original HS02 country data file in source_dir: %s" % self.source_dir
 		if self.classification != "HS02":
 			raise ValueError("This method only runs on HS02 Data")
@@ -336,6 +359,7 @@ class BACIConstructor(BACI):
 		nf = open(self.source_dir + fn, 'w')
 		#-Core-#
 		for idx, line in enumerate(f):
+			line = filter(lambda x: x in string.printable, line)
 			line = line.replace("?", "")
 			match = re.match("\"(.*)\"", line)
 			if match:
@@ -462,21 +486,48 @@ class BACIConstructor(BACI):
 	#-META DATA-#
 	#-----------#
 
-	def iso3n_to_countryname_pyfile(self, target_dir='meta', verbose=True):
+	def iso3n_to_countryname_pyfile(self, target_dir='meta/', force=False, verbose=True):
 		""" 
-		Write Dictionary of iso3n to countryname pyfile
+		Write Dictionary of iso3n to countryname pyfile from BACI Country Concordance File
 
 		Future Work
 		-----------
 		[1] Add fix_country_code_baci02
 		"""
+		if not self.complete_dataset:
+			if not force: raise ValueError("This is not a complete dataset!")
+		if not self.country_data_fixed:
+			self.fix_country_code_baci()
 		#-Set Filename-#
-		fl = '%s_baci_iso3n_to_countryname.py' % (self.classification.lower())
+		fl = '%s_iso3n_to_countryname.py' % (self.classification.lower())
 		docstring = "ISO3N to CountryName Dictionary for Classification: %s" % self.classification
 		data = pd.read_csv(self.source_dir + self.country_data_fn[self.classification])
 		data = data[['i', 'name_english']].set_index('i')
-		from_idxseries_to_pydict(data['name_english'], target_dir=target_dir, fl=fl, docstring=docstring, verbose=verbose)
+		data = data['name_english']
+		data.name = u"iso3n_to_countryname"
+		from_idxseries_to_pydict(data, target_dir=target_dir, fl=fl, docstring=docstring, verbose=verbose)
 
+	def iso3n_to_iso3c_pyfile(self, target_dir='meta/', force=False, verbose=True):
+		""" 
+		Write Dictionary of iso3n to iso3c pyfile from BACI Country Concordance File
+
+		Future Work
+		-----------
+		[1] Add fix_country_code_baci02
+		"""
+		if not self.complete_dataset:
+			if not force: raise ValueError("This is not a complete dataset!")
+		if not self.country_data_fixed:
+			self.fix_country_code_baci()
+		#-Set Filename-#
+		fl = '%s_iso3n_to_iso3c.py' % (self.classification.lower())
+		docstring = "ISO3N to CountryName Dictionary for Classification: %s" % self.classification
+		docstring += "Source: BACI Country Concordance File"
+		data = pd.read_csv(self.source_dir + self.country_data_fn[self.classification])
+		data = data[['i', 'iso3']].set_index('i').dropna()
+		data = data['iso3']
+		data.name = u"iso3n_to_iso3c"
+		from_idxseries_to_pydict(data, target_dir=target_dir, fl=fl, docstring=docstring, verbose=verbose)
 
 	# - Country Codes Meta - #
 

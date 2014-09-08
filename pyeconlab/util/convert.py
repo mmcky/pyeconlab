@@ -6,7 +6,6 @@ Should These be in files.py?
 import csv
 import pandas as pd
 
-
 # ------------ #
 # - CSV Files - #
 # ------------ #
@@ -106,7 +105,7 @@ def from_idxseries_to_pydict(series, target_dir='data/', fl=None, docstring=None
 		if once == True:
 			items += "\n"
 			once = False
-		items += '\t'*tabs + '\'' + '%s'%idx + '\''  + ' : ' + '\'' + '%s'%val + '\'' + ',' + '\n'
+		items += '\t'*tabs + '\'' + '%s'%idx + '\''  + ' : ' + '\'' + '%s'%str(val).replace("'", "\\'") + '\'' + ',' + '\n' 			#Repalce Internal ' with \'
 	doc = docstring + items + '}\n'
 	if type(fl) in [str, unicode]:
 		# Write to Disk #
