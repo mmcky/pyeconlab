@@ -10,10 +10,46 @@ Downloadable Files
 	Description: 	Contains a list of CountryCodes used in BACI HS92
 	Source: 		http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1
 	Downloaded: 	03/09/2014
-	MD5: 			8a37ced0b0006145e14bb58e8317546f (WIN7)
+	ORIG-MD5: 		8a37ced0b0006145e14bb58e8317546f (WIN7)
+	EDITED-MD5: 	?
+	Notes: 			Hand Curated Fixes  (DO NOT DELETE)
 
 [2] product_code_baci92.csv
 	Description: 	Contains a list of Product Codes used in BACI H92
 	Source: 		http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1
 	Downloaded: 	03/09/2014
-	MD5: 			f0b24e9c231d9a9a8e03969952fb0137 (WIN7)				
+	MD5: 			f0b24e9c231d9a9a8e03969952fb0137 (WIN7)	
+	EDITED-MD5: 	?	
+	Notes: 			Hand Curated Fixes  (DO NOT DELETE)		
+
+[3] country_code_baci96.csv 		
+	Description: 	Contains a list of CountryCodes used in BACI HS96
+	Source: 		http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1
+	Downloaded: 	03/09/2014
+	MD5: 			750d53094d38a45961087836d7f7d36d (WIN7)
+	EDITED-MD5: 	?
+	Notes: 			Hand Curated Fixes  (DO NOT DELETE)
+
+[4] product_code_baci96.csv
+	Description: 	Contains a list of Product Codes used in BACI H96
+	Source: 		http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1
+	Downloaded: 	03/09/2014
+	MD5: 			234014abfe641c400ca88270c37d94e3 (WIN7)	
+	EDITED-MD5: 	?	
+	Notes: 			Hand Curated Fixes  (DO NOT DELETE)		
+
+[5] country_code_baci02.csv 		
+	Description: 	Contains a list of CountryCodes used in BACI HS02
+	Source: 		http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1
+	Downloaded: 	03/09/2014
+	MD5: 			a413be983d165782c838b29b53258603 (WIN7)
+	EDITED-MD5: 	?
+	Notes: 			Hand Curated Fixes  (DO NOT DELETE)
+
+[6] product_code_baci02.csv
+	Description: 	Contains a list of Product Codes used in BACI H02
+	Source: 		http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1
+	Downloaded: 	03/09/2014
+	MD5: 			f0b24e9c231d9a9a8e03969952fb0137 (WIN7)		
+	EDITED-MD5: 	?
+	Notes: 			Hand Curated Fixes  (DO NOT DELETE)		
