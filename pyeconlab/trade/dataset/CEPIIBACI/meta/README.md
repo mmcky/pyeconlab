@@ -77,3 +77,11 @@ These files are found in curated/
 	MD5: 			f0b24e9c231d9a9a8e03969952fb0137 (WIN7)		
 	EDITED-MD5: 	?
 	Notes: 			Hand Curated Fixes  (DO NOT DELETE)		
+
+Check Files
+~~~~~~~~~~~
+
+Check Data can be found in /check
+This can be useful diagnostic data such as intertemporal country_codes found in the raw_data
+
+

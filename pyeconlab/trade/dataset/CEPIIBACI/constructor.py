@@ -537,7 +537,7 @@ class BACIConstructor(BACI):
 		"""
 		if dataset:
 			if verbose: print "Constructing Intertemporal Country Code Tables from Dataset ..."
-			table_iiso3n, table_eiso3n = self.intertemporal_countrycodes_dataset(force=force, verbose=verbose)
+			table_iiso3n, table_eiso3n = self.intertemporal_countrycodes_dataset(cid=cid, force=force, verbose=verbose)
 			return table_iiso3n, table_eiso3n
 		else:
 			if verbose: print "Constructing Intertemporal Country Code Tables from RAW DATA ..."
@@ -609,7 +609,6 @@ class BACIConstructor(BACI):
 		if not check_operations(self, u"(use_standard_column_names)"):
 			self.use_standard_column_names(data, verbose=verbose) 
 		#-Importers-#
-		
 		table_iiso3 = data[['year', 'i'+cid]]
 		table_iiso3['code'] = table_iiso3['i'+cid] 				#keep a 'j' in the index
 		table_iiso3 = table_iiso3.drop_duplicates().set_index(['i'+cid, 'year'])

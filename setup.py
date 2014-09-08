@@ -16,6 +16,7 @@ setup(
   			       'pyeconlab.trade',
   			       'pyeconlab.trade.dataset',
                'pyeconlab.trade.dataset.CEPIIBACI',
+               'pyeconlab.trade.dataset.CEPIIBACI.meta',          #Really?
                'pyeconlab.trade.dataset.NBERFeenstraWTF',
                'pyeconlab.trade.dataset.NBERFeenstraWTF.meta',    #Really?
                'pyeconlab.trade.classification',
@@ -24,6 +25,7 @@ setup(
   			       'pyeconlab.wdi',
   			  ], 
   package_data =  { 'pyeconlab.country' : ['data/*.xls'],
+                    'pyeconlab.trade.dataset.CEPIIBACI.meta' : ['meta/*.py', 'meta/curated/*.csv'],
                     'pyeconlab.trade.dataset.NBERFeenstraWTF' : ['data/*.py'],
                     'pyeconlab.trade.dataset.NBERFeenstraWTF.meta' : ['meta/*.py', 'meta/csv/*.csv'],
                     'pyeconlab.trade.classification'  :   ['data/un/*.txt', 'data/wits/*.xls'],  
