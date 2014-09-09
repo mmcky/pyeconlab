@@ -110,9 +110,8 @@ class BACIConstructor(BACI):
 
 		#-Set Classification-#
 		self.classification = src_class
-		if self.classification == "HS02":
-			self.product_data_fixed = False 								#Should this be more sophisticated, this is a constructor so probably not
-			self.country_data_fixed = False
+		self.product_data_fixed = False 								#Should this be more sophisticated, this is a constructor so probably not
+		self.country_data_fixed = False
 
 		#-Setup Object-#
 		if verbose: print "[INFO] Fetching BACI Data from %s" % source_dir
@@ -235,13 +234,17 @@ class BACIConstructor(BACI):
 				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
 				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
 
-	def load_country_data(self, fix_source=True, std_names=True, verbose=False):
+	def load_country_data(self, fix_source=True, std_names=True, verbose=True):
 		"""
 		Load Country Classification/Concordance File From Archive
+		Note: [1] Write a wrapper for self.classification selection?
 		"""
 		if fix_source and self.country_data_fixed == False:
-			self.fix_country_code_baci02(verbose=verbose)
-		if self.country_data_fixed == False:
+			if self.classification == "HS92" or self.classification == "HS96":
+				self.fix_country_code_baci9296(verbose=verbose)
+			if self.classification == "HS02":
+				self.fix_country_code_baci02(verbose=verbose)
+		if self.country_data_fixed == False and self.classification == "HS02":
 			print "[WARNING] Has the country_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.country_data_fn[self.classification]
 		self.country_data = pd.read_csv(fn)
@@ -253,8 +256,13 @@ class BACIConstructor(BACI):
 		Load Product Code Classification File from Archive
 		"""
 		if fix_source and self.product_data_fixed == False:
-			self.fix_product_code_baci02(verbose=verbose)
-		if self.product_data_fixed == False:
+			if self.classification == "HS92":
+				self.fix_product_code_baci92(verbose=verbose)
+			if self.classification == "HS96":
+				self.fix_product_code_baci96(verbose=verbose)
+			if self.classification == "HS02":
+				self.fix_product_code_baci02(verbose=verbose)
+		if self.product_data_fixed == False and self.classification == "HS02":
 			print "[WARNING] Has the product_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.product_data_fn[self.classification]
 		self.product_data = pd.read_csv(fn, dtype={'Code' : object})
@@ -278,7 +286,7 @@ class BACIConstructor(BACI):
 	#-Conversion-#
 	#------------#
 
-	def convert_raw_data_to_hdf(self, key='raw_data', format='table', hdf_fn='', verbose=True):
+	def convert_raw_data_to_hdf(self, key='raw_data', format='fixed', hdf_fn='', verbose=True):
 		""" 
 		Convert Raw Data to HDF
 		Note: this currently just converts whatever is contained in raw_data
@@ -294,7 +302,7 @@ class BACIConstructor(BACI):
 		if verbose: print hdf
 		hdf.close()
 	
-	def convert_raw_data_to_hdf_yearindex(self, format='table', hdf_fn='', verbose=True):
+	def convert_raw_data_to_hdf_yearindex(self, format='fixed', hdf_fn='', verbose=True):
 		""" 
 		Convert Raw Data to HDF File Indexed by Year
 		Note: This compute a list of unique years from self.__raw_data
@@ -313,7 +321,7 @@ class BACIConstructor(BACI):
 		if verbose: print hdf
 		hdf.close()
 
-	def convert_csv_to_hdf_yearindex(self, years=[], format='table', hdf_fn='', verbose=True):
+	def convert_csv_to_hdf_yearindex(self, years=[], format='fixed', hdf_fn='', verbose=True):
 		""" 
 		Convert CSV Files to HDF File Indexed by Year
 		year 	: 	apply a year filter
@@ -343,23 +351,82 @@ class BACIConstructor(BACI):
 		"""
 		opstring = u"(fix_country_code)"
 		if self.classification == "HS92":
-			self.fix_product_code_baci92(verbose=verbose)
+			self.fix_country_code_baci9296(verbose=verbose)
 		elif self.classification == "HS96":
-			self.fix_product_code_baci96(verbose=verbose)
+			self.fix_country_code_baci9296(verbose=verbose)
 		elif self.classification == "HS02":
 			self.fix_country_code_baci02(verbose=verbose)
 		else:
-			raise ValueError("Invalide Classification: %s" % self.classification)
+			raise ValueError("Invalid Classification: %s" % self.classification)
 		update_operations(self, opstring)
 
+	def fix_country_code_baci9296(self, verbose=True):
+		""" 
+		Fix issue with country_code_baci92 or country_code_baci96 csv file
+		"""
+		if verbose: print "[INFO] Fixing original %s country data file in source_dir: %s" % (self.classification, self.source_dir)
+		if self.classification != "HS92" and self.classification != "HS96":
+			raise ValueError("This method only runs on HS92 or HS96 Data")
+		fn = self.country_data_fn[self.classification]
+		f = open(self.source_dir + fn, 'r')
+		#-Adjust Filename-#
+		fn,ext = fn.split(".")
+		fn = fn + "_adjust" + "." + ext
+		nf = open(self.source_dir + fn, 'w')
+		#-Core-#
+		for idx, line in enumerate(f):
+			line = filter(lambda x: x in string.printable, line)
+			line = line.replace("?", "")
+			nf.write(line)
+		#-Close Files-#
+		f.close()
+		nf.close()
+		#-DropDuplicates-#
+		df = pd.read_csv(self.source_dir+fn)
+		init_shape = df.shape
+		df = df.drop_duplicates()
+		df.to_csv(self.source_dir+fn, index=False)
+		if verbose: print "[INFO] Dropping (%s) Duplicates Found in country codes file: %s" % (init_shape[0] - df.shape[0], self.country_data_fn[self.classification])
+		#-Update File List to use adjusted File-#
+		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.country_data_fn[self.classification], fn)
+		self.country_data_fn[self.classification] = fn
+		self.country_data_fixed = True
 
-	def fix_country_code_baci92(self, verbose=True):
-		""" Fix issue with country_code_baci92 csv file """
-		raise NotImplementedError
-
-	def fix_country_code_baci96(self, verbose=True):
-		""" Fix issue with country_code_baci96 csv file """
-		raise NotImplementedError
+	#=> DELETE ONCE TESTS WRITTEN <= #
+	#
+	# def fix_country_code_baci96(self, verbose=True):
+	# 	""" 
+	# 	Fix issue with country_code_baci96 csv file
+	# 	"""
+	# 	if verbose: print "[INFO] Fixing original HS96 country data file in source_dir: %s" % self.source_dir
+	# 	if self.classification != "HS96":
+	# 		raise ValueError("This method only runs on HS96 Data")
+	# 	fn = self.country_data_fn["HS96"]
+	# 	f = open(self.source_dir + fn, 'r')
+	# 	#-Adjust Filename-#
+	# 	fn,ext = fn.split(".")
+	# 	fn = fn + "_adjust" + "." + ext
+	# 	nf = open(self.source_dir + fn, 'w')
+	# 	#-Core-#
+	# 	for idx, line in enumerate(f):
+	# 		line = filter(lambda x: x in string.printable, line)
+	# 		line = line.replace("?", "")
+	# 		nf.write(line)
+	# 	#-Close Files-#
+	# 	f.close()
+	# 	nf.close()
+	# 	#-DropDuplicates-#
+	# 	df = pd.read_csv(self.source_dir+fn)
+	# 	init_shape = df.shape
+	# 	df = df.drop_duplicates()
+	# 	df.to_csv(self.source_dir+fn, index=False)
+	# 	if verbose: print "[INFO] Dropping (%s) Duplicates Found in country codes file: %s" % (init_shape[0] - df.shape[0], self.country_data_fn["HS96"])
+	# 	#-Update File List to use adjusted File-#
+	# 	if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.country_data_fn["HS96"], fn)
+	# 	self.country_data_fn["HS96"] = fn
+	# 	self.country_data_fixed = True
+	#
+	#=> END DELETE <= #
 
 	def fix_country_code_baci02(self, verbose=True):
 		""" Fix issue with country_code_baci02 csv file """
@@ -398,11 +465,61 @@ class BACIConstructor(BACI):
 		self.country_data_fn["HS02"] = fn
 		self.country_data_fixed = True
 
+	#-ProductCode File Fixes-#
+
+	def fix_product_code_baci92(self, verbose=True):
+		"""
+		Fix issues with the product_code_baci92.csv file
+		"""
+		if verbose: print "[INFO] Fixing original HS92 product data file in source_dir: %s" % self.source_dir
+		fn = self.product_data_fn["HS92"]
+		df = pd.read_csv(self.source_dir + fn)
+		df.columns = ["Code", "Description"]
+		#-Update FileName-#
+		fn,ext = fn.split(".")
+		fn = fn + "_adjust" + "." + ext
+		df.to_csv(self.source_dir + fn, index=False, quoting=True)
+		#-Update File List to use adjusted File-#
+		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.product_data_fn["HS92"], fn)
+		self.product_data_fn["HS92"] = fn
+		self.product_data_fixed = True
+
+	def fix_product_code_baci96(self, verbose=True):
+		"""
+		Fix issues with product_code_baci96.csv file
+		"""
+		if verbose: print "[INFO] Fixing original HS96 product data file in source_dir: %s" % self.source_dir
+		if self.classification != "HS96":
+			raise ValueError("This method only runs on HS96 Data")
+		fn = self.product_data_fn["HS96"]
+		f = open(self.source_dir + fn, 'r')
+		#-Adjust Filename-#
+		fn,ext = fn.split(".")
+		fn = fn + "_adjust" + "." + ext
+		nf = open(self.source_dir + fn, 'w')
+		for idx, line in enumerate(f):
+			if idx == 0:
+				nf.write("\"Code\",\"Description\"\n")
+				continue
+			code = re.match("([0-9]*);?", line).group(1) 											#look for productcodes
+			rest = line.lstrip(code+";")
+			rest = rest.replace("\"", "")
+			rest = rest.rstrip("\n")
+			line = "\"%s\",\"%s\"" % (code, rest)
+			nf.write(line + "\n")
+		#-Close Files-#
+		f.close()
+		nf.close()
+		#-Update File List to use adjusted File-#
+		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.product_data_fn["HS96"], fn)
+		self.product_data_fn["HS96"] = fn
+		self.product_data_fixed = True
+
 	def fix_product_code_baci02(self, verbose=True):
 		"""
 		Fix issue with product_code_baci02 csv file
 		"""
-		if verbose: print "[INFO] Fixing original hs02 product data file in source_dir: %s" % self.source_dir
+		if verbose: print "[INFO] Fixing original HS02 product data file in source_dir: %s" % self.source_dir
 		if self.classification != "HS02":
 			raise ValueError("This method only runs on HS02 Data")
 		fn = self.product_data_fn["HS02"]
@@ -452,7 +569,7 @@ class BACIConstructor(BACI):
 			print "[INFO] Removing Units with eiso3c == np.nan"
 			edrop = len(self.dataset[self.dataset.eiso3c.isnull()])
 			print "[Deleting] EISO3N %s observations with codes:" % edrop
-			print "%s" % self.dataset[self.dataset.eiso3c.isnull()].eiso3n.unique()
+			print "%s" % sorted(self.dataset[self.dataset.eiso3c.isnull()].eiso3n.unique())
 			self.dataset.dropna(subset=['eiso3c'], inplace=True)
 		#-Importer-#
 		self.dataset = self.dataset.merge(self.country_data[['iso3n', 'iso3c']], how='left', left_on=['iiso3n'], right_on=['iso3n'])
@@ -462,7 +579,7 @@ class BACIConstructor(BACI):
 			print "[INFO] Removing Units with iiso3c == np.nan"
 			idrop = len(self.dataset[self.dataset.iiso3c.isnull()])
 			print "[Deleting] IISO3N %s observations with codes:" % idrop
-			print "%s" % self.dataset[self.dataset.iiso3c.isnull()].iiso3n.unique()
+			print "%s" % sorted(self.dataset[self.dataset.iiso3c.isnull()].iiso3n.unique())
 			self.dataset.dropna(subset=['iiso3c'], inplace=True)
 			self.dataset = self.dataset.reset_index()
 			del self.dataset['index']
@@ -507,15 +624,17 @@ class BACIConstructor(BACI):
 		Future Work 
 		-----------
 		[1] Account for levels in special cases
-
+		[2] Consider Implimenting Aggregation for quantity
+		[3] Automate classification and level encoding
 		"""
 		#-Add Special Cases to the concordance-#
 		for k,v in  self.adjust_hs6_to_sitc[self.classification].items():
 			concordance[k] = v
-		self.dataset[new_classification] = self.dataset['hs6'].apply(lambda x: concord_data(concordance, int(x), issue_error='.'))
+		self.dataset[new_classification] = self.dataset['hs6'].apply(lambda x: concord_data(concordance, x, issue_error='.'))
+		self.dataset = self.dataset[['year', 'eiso3n', 'iiso3n', 'value']+[new_classification]].groupby(['year', 'eiso3n', 'iiso3n']+[new_classification]).sum().reset_index()
+		#-Reset Attributes-#
 		self.classification = new_classification
 		self.level = new_level		
-
 
 
 	def merge_all_sourcefiles(self, rename_newvars=True, verbose=True):
@@ -688,6 +807,27 @@ class BACIConstructor(BACI):
 		table_eiso3 = table_eiso3.unstack(level='year')
 		table_eiso3.columns = table_eiso3.columns.droplevel() 	#Removes Unnecessary 'code' label
 		return table_iiso3, table_eiso3
+
+	#--------------#
+	#---Datasets---#
+	#--------------#
+
+	#-Self Contained-#
+
+	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, data, source_institution='un', verbose=True):
+		"""
+		Construct a Self Contained (SC) Direct Action Dataset at the Country x Product Level (SITC Level 3)
+		Note: SC methods reduce the Need to Debug other routines and methods. The other methods are however useful to diagnose issues and to understand properties of the dataset
+
+		Source Classification: HS96
+
+		data 				: 	'trade', 'export', 'import'
+
+		"""
+		data = a.dataset
+		#-Adjust CountryCodes-#
+
+		#-Concord Productcodes-#
 
 
 

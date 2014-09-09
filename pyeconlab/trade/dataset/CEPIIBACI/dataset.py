@@ -60,7 +60,7 @@ class BACI(CPTradeDataset):
 	raw_units 					= 1000
 	raw_units_str 				= "US$1000's"
 	interface 					= {'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q' : 'quantity'}
-	deletions 					= {'HS02' : 'a'} 
+	deletions 					= {'HS92' : '', 'HS96' : '', 'HS02' : 'a'} 
 
 	#-Dataset Concordances-#
 
