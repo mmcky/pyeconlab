@@ -1,6 +1,65 @@
 """
 ISO3N to CountryName Dictionary for Classification: HS02
-Manual Check: <date>
+
+Manual Check: 09/09/2014
+
+Notes
+-----
+[1] This list contains some country codes that are NOT found in ISO3166
+	<code snippet>
+	#-BACI-#
+	from pyeconlab.trade.dataset.CEPIIBACI.meta import hs02_iso3n_to_iso3c
+	baci_iso3n = set([int(x) for x in hs02_iso3n_to_iso3c.keys()])
+	#-ISO3166-#
+	from pyeconlab.country import ISO3166
+	iso = ISO3166()
+	iso3n = [str(item) for item in iso.iso3n]
+	#-Compare Sets-#
+	x = set(baci_iso3n)
+	y = set(iso3n)
+	print len(x) 							#217
+	print len(y) 							#249
+	print len(set(x).intersection(y)) 		#203
+
+	Codes in BACI but not ISO3166 (x - y)
+	{58, 251, 381, 490, 530, 536, 579, 699, 711, 736, 757, 842, 849, 891}
+
+Not Countries
+~~~~~~~~~~~~~
+'536' : 'NTZ' 	=> Neutral Zone
+
+[2] Checking the Inverse of the Dictionary using ISO3C
+	#-BACI-#
+	from pyeconlab.trade.dataset.CEPIIBACI.meta import iso3n_to_iso3c
+	iso3c_to_iso3n = {v:k for k,v in iso3n_to_iso3c['HS02'].items()}
+	baci_iso3c = set(hs02_iso3c_to_iso3n.keys())
+	#-ISO3166-#
+	from pyeconlab.country import ISO3166
+	iso = ISO3166()
+	#-Compare Sets-#
+	x = set(baci_iso3c)
+	y = set(iso.iso3c)
+	print len(x) 							#217
+	print len(y) 							#249
+	print len(set(x).intersection(y)) 		#211
+
+	Codes in BACI but not ISO3166 (x - y)
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	{'ANT', 'NTZ', 'ROM', 'TMP', 'YUG', 'ZAR'}
+
+	These are transitional codes that have been reserved after deletion from ISO3166-1
+
+	ANT Netherlands Antilles
+	NTZ Neutral Zone  
+	ROM Romania
+	TMP East Timor
+	YUG Yugoslavia
+	ZAR Zaire
+
+Not Countries:
+~~~~~~~~~~~~~
+'NTZ' : Neutral Zone
+
 """
 
 iso3n_to_iso3c = {

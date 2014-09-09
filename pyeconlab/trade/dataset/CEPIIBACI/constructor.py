@@ -50,6 +50,7 @@ import pandas as pd
 
 from .dataset import BACI
 
+from pyeconlab.country import ISO3166
 from pyeconlab.util import check_directory, check_operations, update_operations, from_idxseries_to_pydict
 
 class BACIConstructor(BACI):
@@ -60,6 +61,12 @@ class BACIConstructor(BACI):
 	-----------
 		[1] BACI 			: 	Provides Meta Data on CEPII Dataset
 		[2] CPTradeDataset	:	Provides CORE Country Product Methods 
+
+	Country Codes 
+	-------------
+	[1] Not all country codes are the current ISO3166 iso3n values.
+		'France' = 251 in Baci; while ISO3166 records 'France' = 250
+		Therefore use BACI country concordance to assign iso3c values
 
 	Notes
 	-----
@@ -159,6 +166,7 @@ class BACIConstructor(BACI):
 				 "Complete Dataset: %s\n" % (self.complete_dataset) 		+ \
 				 "Source Last Checked: %s\n" % (self.source_last_checked)
 		return string
+	
 	#-Properties-#
 	
 	@property
@@ -453,6 +461,33 @@ class BACIConstructor(BACI):
 			del self.dataset['eiso3n']
 			del self.dataset['iiso3n']
 		assert init_obs == self.dataset.shape[0]+edrop+idrop, "%s != %s" % (init_obs, self.dataset.shape[0])
+
+	def countries_only(self, cid='iso3n', verbose=True):
+		"""
+		Drop countries specified in country_only_iso3c_deletions, country_only_iso3n_deletions
+		Note: this function only uses standard_names (iiso3n, iiso3c etc) 
+
+		Future Work 
+		-----------
+		[1] Write a decorator to print number of observations before and after the function runs
+		"""
+		if cid == 'iso3n':
+			for item in self.country_only_iso3n_deletions[self.classification]:
+				if verbose: print "[INFO] Deleting iiso3n and eiso3n code: %s" % item
+				init_numobs = self.dataset.shape[0]
+				self.dataset = self.dataset[self.dataset['eiso3n'] != item]
+				self.dataset = self.dataset[self.dataset['iiso3n'] != item]
+				if verbose: print "[DELETED] %s observations" % (init_numobs - self.dataset.shape[0])
+		elif cid == 'iso3c':
+			for item in self.country_only_iso3c_deletions[self.classification]:
+				if verbose: print "[INFO] Deleting iiso3c and eiso3c code: %s" % item
+				init_numobs = self.dataset.shape[0]
+				self.dataset = self.dataset[self.dataset['eiso3c'] != item]
+				self.dataset = self.dataset[self.dataset['iiso3c'] != item]
+				if verbose: print "[DELETED] %s observations" % (init_numobs - self.dataset.shape[0])
+		else:
+			raise ValueError("'cid' must be 'iso3n' or 'iso3c'")
+
 
 	def merge_all_sourcefiles(self, rename_newvars=True, verbose=True):
 		"""

@@ -1,9 +1,18 @@
 """
 ISO3N to CountryName Dictionary for Classification: HS02
-Manual Check: <date>
+
+Note: This should NOT be used to filter for countries as this dictionary contains NES and other names
+
+Manual Check: 09/09/2014
+
+Changes
+-------
+'384' : 'Cte d\'Ivoire' 	=> 	'384' : 'Cote d\'Ivoire'
+'642' : 'romania' 			=> 	'642' : 'Romania'
+
 """
 
-iso3n_to_countryname = {
+iso3n_to_name = {
 				'4' : 'Afghanistan',
 				'8' : 'Albania',
 				'10' : 'Antarctica',
@@ -106,7 +115,7 @@ iso3n_to_countryname = {
 				'372' : 'Ireland',
 				'376' : 'Israel',
 				'381' : 'Italy',
-				'384' : 'Cte d\'Ivoire',
+				'384' : 'Cote d\'Ivoire',
 				'388' : 'Jamaica',
 				'392' : 'Japan',
 				'398' : 'Kazakstan',
@@ -177,7 +186,7 @@ iso3n_to_countryname = {
 				'626' : 'East Timor',
 				'634' : 'Qatar',
 				'637' : 'North America and Central America, nes',
-				'642' : 'romania',
+				'642' : 'Romania',
 				'643' : 'Russian Federation',
 				'646' : 'Rwanda',
 				'654' : 'Saint Helena',

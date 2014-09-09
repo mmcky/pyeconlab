@@ -27,9 +27,11 @@ class ISO3166(CountryCodes):
 		Original FileName: 	iso_3166.xml
 		Original md5hash: 	ae467df20f32c089da909dd27191cf7d
 	"""
-	def __init__(self, verbose=True):
+	def __init__(self, numeric=int, verbose=True):
 		"""
 		Initialise Class and Populate with Data From Package
+
+		numeric 	: 	'int' or 'str'
 
 		Future Work
 		-----------
@@ -55,6 +57,9 @@ class ISO3166(CountryCodes):
 				official_name = ''
 			row = {'iso2c' : iso2c, 'iso3c' : iso3c, 'iso3n' : iso3n, 'countryname' : name, 'official_name' : official_name}
 			data = data.append(row, ignore_index=True)
+
+		#-Parse Option: numeric-#
+		data['iso3n'] = data['iso3n'].apply(lambda x: int(x))
 
 		# - Recode Data - #
 		self.data = data

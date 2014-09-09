@@ -36,7 +36,11 @@ class CountryCodes(object):
 
 	@property 
 	def iso3c(self):
-		return list(self.data['iso3c'].dropna()) 			#Some Countries don't have official iso3c codes
+		return list(self.data['iso3c'].dropna()) 			#Some Countries don't have official iso3c codes in some incomplete datasets
+
+	@property
+	def iso3n(self):
+		return list(self.data['iso3n'].dropna())
 
 	#-Generate Concordance Dictionaries-#
 

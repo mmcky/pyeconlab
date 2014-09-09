@@ -93,3 +93,11 @@ class BACI(CPTradeDataset):
 		'HS96' : 'baci96_1998_%s_yearindex.h5' % (END_YEAR['HS96']),
 		'HS02' : "baci02_2003_%s_yearindex.h5"%(END_YEAR['HS02'])
 	}
+
+	country_only_iso3c_deletions = {
+		'HS02' : ['NTZ'] 				#Neutral Zone, Documented meta/hs02_iso3n_to_iso3c.py
+	}
+
+	country_only_iso3n_deletions = {
+		'HS02' : [536] 					#Neutral Zone, Documented meta/hs02_iso3n_to_iso3c.py
+	}
