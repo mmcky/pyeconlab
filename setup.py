@@ -24,7 +24,7 @@ setup(
                'pyeconlab.trade.systems',
   			       'pyeconlab.wdi',
   			  ], 
-  package_data =  { 'pyeconlab.country' : ['data/*.xls'],
+  package_data =  { 'pyeconlab.country' : ['data/*.xls', 'data/*.xml'],
                     'pyeconlab.trade.dataset.CEPIIBACI.meta' : ['meta/*.py', 'meta/curated/*.csv'],
                     'pyeconlab.trade.dataset.NBERFeenstraWTF' : ['data/*.py'],
                     'pyeconlab.trade.dataset.NBERFeenstraWTF.meta' : ['meta/*.py', 'meta/csv/*.csv'],

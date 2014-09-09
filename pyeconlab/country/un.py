@@ -81,7 +81,6 @@ class UNCountryCodes(CountryCodes):
 			self._md5hash 	= "0ae80063248db7a9446d155c1360345d" 						#This is the md5sum on the mac?
 		self._fl 		= _util.package_folder(__file__, "data") + self._fn
 
-		# - Acquire Data From Package - #
 			# --> This Requires Debugging <-- #
 			#
 			# if _util.verify_md5hash(self._fl, self._md5hash):
@@ -90,6 +89,7 @@ class UNCountryCodes(CountryCodes):
 			# 	raise ValueError("Object's md5hash (%s) doesn't match the md5hash of the package data file!" % self._md5hash)
 			#
 			# ---> END Debugging < -- #
+		# - Acquire Data From Package - #
 		self.data 	= _pd.read_excel(self._fl)
 		if verbose: print '[INFO] Loaded UN Country Codes from file %s \nLocation: %s\n' % (self._fn, self._fl)
 

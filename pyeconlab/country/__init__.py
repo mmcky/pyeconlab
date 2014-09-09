@@ -8,6 +8,8 @@ from countrycode import countrycode
 
 #-CountryCode Objects-#
 from .un import UNCountryCodes
+from .iso3166 import ISO3166
+
 
 #-Concordances-#
 #These are currently generators rather than static objects (from meta/)
