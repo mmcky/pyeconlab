@@ -51,7 +51,7 @@ import pandas as pd
 from .dataset import BACI
 
 from pyeconlab.country import ISO3166
-from pyeconlab.util import check_directory, check_operations, update_operations, from_idxseries_to_pydict
+from pyeconlab.util import check_directory, check_operations, update_operations, from_idxseries_to_pydict, concord_data
 
 class BACIConstructor(BACI):
 	"""
@@ -167,8 +167,10 @@ class BACIConstructor(BACI):
 				 "Source Last Checked: %s\n" % (self.source_last_checked)
 		return string
 	
+	#------------#
 	#-Properties-#
-	
+	#------------#
+
 	@property
 	def raw_data(self):
 		""" Raw Data Property to Return a Copy of the Private Attribute """ 
@@ -182,7 +184,9 @@ class BACIConstructor(BACI):
 	def source_dir(self):
 		return self.__source_dir
 
+	#----#
 	#-IO-#
+	#----#
 
 	def load_raw_from_csv(self, std_names=False, deletions=True, verbose=False):
 		""" 
@@ -201,7 +205,7 @@ class BACIConstructor(BACI):
 			fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.csv'
 			if verbose: print "[INFO] Loading Year: %s from file: %s" % (year, fn)
 			self.__raw_data = self.__raw_data.append(pd.read_csv(fn, dtype={'hs6' : str}))
-		self.__raw_data = self.__raw_data.reset_index() 								#Otherwise Each year has repeated obs numbers
+		self.__raw_data = self.__raw_data.reset_index() 											#Otherwise Each year has repeated obs numbers
 		del self.__raw_data['index']
 		if deletions:
 			for item in self.deletions[self.classification]:
@@ -270,8 +274,9 @@ class BACIConstructor(BACI):
 		#-Update Operations Attribute-#
 		update_operations(self, opstring)
 
-
+	#------------#
 	#-Conversion-#
+	#------------#
 
 	def convert_raw_data_to_hdf(self, key='raw_data', format='table', hdf_fn='', verbose=True):
 		""" 
@@ -323,12 +328,14 @@ class BACIConstructor(BACI):
 		for year in years:
 			csv_fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.csv'
 			if verbose: print "[INFO] Converting file: %s to file: %s" % (csv_fn, hdf_fn)
-			hdf.put('Y'+str(year), pd.read_csv(csv_fn), format=format)
+			hdf.put('Y'+str(year), pd.read_csv(csv_fn, dtype={'hs6' : str}), format=format)
 		if verbose: print hdf
 		hdf.close()
 		return hdf_fn
 
+	#-------------------#
 	#-Fix Source Issues-#
+	#-------------------#
 
 	def fix_country_code_baci(self, verbose=True):
 		"""
@@ -427,8 +434,10 @@ class BACIConstructor(BACI):
 		self.product_data_fn["HS02"] = fn
 		self.product_data_fixed = True
 
-	#-Datasets-#
-	
+	#-----------------------#
+	#-Operations on Dataset-#
+	#-----------------------#
+
 	def add_country_iso3c(self, remove_iso3n=False, dropna=True, verbose=True):
 		"""
 		Add CountryNames to ISO3N Codes
@@ -488,6 +497,26 @@ class BACIConstructor(BACI):
 		else:
 			raise ValueError("'cid' must be 'iso3n' or 'iso3c'")
 
+	def concord_productcode(self, concordance, new_classification, new_level, verbose=True):
+		""" 
+		Apply a HS6 concordance to convert dataset to a new trade classification
+		
+		concordance 		: concordance dictionary of HS6 to Something Else
+		new_classification
+
+		Future Work 
+		-----------
+		[1] Account for levels in special cases
+
+		"""
+		#-Add Special Cases to the concordance-#
+		for k,v in  self.adjust_hs6_to_sitc[self.classification].items():
+			concordance[k] = v
+		self.dataset[new_classification] = self.dataset['hs6'].apply(lambda x: concord_data(concordance, int(x), issue_error='.'))
+		self.classification = new_classification
+		self.level = new_level		
+
+
 
 	def merge_all_sourcefiles(self, rename_newvars=True, verbose=True):
 		"""
@@ -495,6 +524,7 @@ class BACIConstructor(BACI):
 		
 		Note
 		----
+		[1] Is this useful?
 		[1] This can be used as a test against using the converted standard_names
 		[2] Should I rename incoming data? I think harmonised internal reader friendly columns names are the best solution
 		"""
@@ -564,7 +594,9 @@ class BACIConstructor(BACI):
 		data.name = u"iso3n_to_iso3c"
 		from_idxseries_to_pydict(data, target_dir=target_dir, fl=fl, docstring=docstring, verbose=verbose)
 
-	# - Country Codes Meta - #
+	#--------------------#
+	#-Country Codes Meta-#
+	#--------------------#
 
 	def intertemporal_countrycodes(self, cid='iso3c', dataset=False, force=False, verbose=True):
 		"""
@@ -658,7 +690,11 @@ class BACIConstructor(BACI):
 		return table_iiso3, table_eiso3
 
 
-	#---FUTURE WORK-----#
+
+
+	#-----------------#
+	#---FUTURE WORK---#
+	#-----------------#
 
 
 	def load_raw_from_rar(self, verbose=False):

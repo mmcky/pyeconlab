@@ -1,9 +1,5 @@
-'''
-	Subpackage: Concordance
-'''
-# Concordance Functions
-from concordance import concord_data
+"""
+Subpackage: Concordance
+"""
 
-
-# Concordances: NBER Feenstra World Trade Flows #
-from NBERFeenstraWTF import NBERFeenstraExportersToISO3C
+from .concordance import HS2002_To_SITCR2

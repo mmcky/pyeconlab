@@ -43,7 +43,7 @@ class SITC(object):
 								See data/README.md for more information
 
 		"""
-		#-Attributes-@
+		#-Attributes-#
 		self.revision 			= revision
 		self.source_institution = source_institution
 

@@ -43,7 +43,7 @@ class HS(object):
 		Arguments
 		---------
 		revision 			: 	[1992, 1996, 2002, 2007] 		[HS Revision Number]
-		source_institution 	:	['un', 'wits'] 	[Default: 'un']
+		source_institution 	:	['un', 'wits'] 					[Default: 'un']
 								See data/README.md for more information
 
 		"""

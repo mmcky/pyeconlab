@@ -94,10 +94,30 @@ class BACI(CPTradeDataset):
 		'HS02' : "baci02_2003_%s_yearindex.h5"%(END_YEAR['HS02'])
 	}
 
+	#-Should these be here or in meta-#
+
+	#-Deletions to Remove Non-Country Entries by ISO3C-#
 	country_only_iso3c_deletions = {
 		'HS02' : ['NTZ'] 				#Neutral Zone, Documented meta/hs02_iso3n_to_iso3c.py
 	}
 
+	#-Deletions to Remove Non-Country Entries by ISO3N-#
 	country_only_iso3n_deletions = {
 		'HS02' : [536] 					#Neutral Zone, Documented meta/hs02_iso3n_to_iso3c.py
+	}
+
+	#-Adjustments for Official to BACI HS6 ProductCodes-#
+	adjust_officialhs_to_hs6 = {
+		'HS02' :  	{ 	'271011' : '271000', 	#Oil Collapsed in BACI Data
+						'271019' : '271000', 	#Oil Collapsed in BACI Data
+						'271091' : '271000', 	#Oil Collapsed in BACI Data
+						'271099' : '271000', 	#Oil Collapsed in BACI Data
+						'710820' : '.', 		#Not found in BACI
+						'711890' : '.', 		#Not found in BACI
+						'999999' : '.', 		#Not found in BACI
+					}
+	}
+
+	adjust_hs6_to_sitc = {
+		'HS02' : 	{'271000' : '334'}
 	}
