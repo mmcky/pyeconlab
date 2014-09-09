@@ -392,42 +392,6 @@ class BACIConstructor(BACI):
 		self.country_data_fn[self.classification] = fn
 		self.country_data_fixed = True
 
-	#=> DELETE ONCE TESTS WRITTEN <= #
-	#
-	# def fix_country_code_baci96(self, verbose=True):
-	# 	""" 
-	# 	Fix issue with country_code_baci96 csv file
-	# 	"""
-	# 	if verbose: print "[INFO] Fixing original HS96 country data file in source_dir: %s" % self.source_dir
-	# 	if self.classification != "HS96":
-	# 		raise ValueError("This method only runs on HS96 Data")
-	# 	fn = self.country_data_fn["HS96"]
-	# 	f = open(self.source_dir + fn, 'r')
-	# 	#-Adjust Filename-#
-	# 	fn,ext = fn.split(".")
-	# 	fn = fn + "_adjust" + "." + ext
-	# 	nf = open(self.source_dir + fn, 'w')
-	# 	#-Core-#
-	# 	for idx, line in enumerate(f):
-	# 		line = filter(lambda x: x in string.printable, line)
-	# 		line = line.replace("?", "")
-	# 		nf.write(line)
-	# 	#-Close Files-#
-	# 	f.close()
-	# 	nf.close()
-	# 	#-DropDuplicates-#
-	# 	df = pd.read_csv(self.source_dir+fn)
-	# 	init_shape = df.shape
-	# 	df = df.drop_duplicates()
-	# 	df.to_csv(self.source_dir+fn, index=False)
-	# 	if verbose: print "[INFO] Dropping (%s) Duplicates Found in country codes file: %s" % (init_shape[0] - df.shape[0], self.country_data_fn["HS96"])
-	# 	#-Update File List to use adjusted File-#
-	# 	if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.country_data_fn["HS96"], fn)
-	# 	self.country_data_fn["HS96"] = fn
-	# 	self.country_data_fixed = True
-	#
-	#=> END DELETE <= #
-
 	def fix_country_code_baci02(self, verbose=True):
 		""" Fix issue with country_code_baci02 csv file """
 		if verbose: print "[INFO] Fixing original HS02 country data file in source_dir: %s" % self.source_dir
