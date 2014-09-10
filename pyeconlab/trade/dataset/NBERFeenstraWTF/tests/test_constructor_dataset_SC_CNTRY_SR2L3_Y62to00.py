@@ -22,8 +22,8 @@ Future Work
 [2] Consider using to_export, and to_import attributes rather than recomputing everything
 """
 
-TEST_DATA_DIR 	= "E:\\work-data\\repos-pyeconlab-testdata\\" 
-SOURCE_DATA_DIR = "E:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\" #win7
+TEST_DATA_DIR 	= "D:\\work-data\\repos-pyeconlab-testdata\\" 
+SOURCE_DATA_DIR = "D:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\" #win7
 
 import pandas as pd
 from numpy.testing import assert_allclose
