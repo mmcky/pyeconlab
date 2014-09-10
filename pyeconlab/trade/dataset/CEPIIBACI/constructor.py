@@ -781,18 +781,41 @@ class BACIConstructor(BACI):
 	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, data, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset at the Country x Product Level (SITC Level 3)
-		Note: SC methods reduce the Need to Debug other routines and methods. The other methods are however useful to diagnose issues and to understand properties of the dataset
+		Note: SC methods reduce the Need to Debug other routines and methods. 
+		The other methods are however useful to diagnose issues and to understand properties of the dataset
 
 		Source Classification: HS96
 
 		data 				: 	'trade', 'export', 'import'
+								'export' will include values from a country to any region (including NES, and Nuetral Zone etc.)
+								'import' will include values to a country from any region (including NES, and Nuetral Zone etc.)
 
+		Note
+		----
+		[1] NBER Adjustment will happen when joining the two datasets together
 		"""
-		data = a.dataset
-		#-Adjust CountryCodes-#
+		#-Start from RawData-#
+		data = a.raw_data 
+		data = data.rename({'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q': 'quantity'}) 	#'hs6' is unchanged
+		#-Exclude Quantity-#
+		del data['quantity']
+		#-Collapse Trade Data based on data option-#
+		if data == "trade":
+			idx = ['year', 'eiso3n', 'iiso3n', 'hs6']
+		elif data == "export" or data == "exports":
+			del data['iiso3n']
+			data = data.groupby(['year', 'eiso3n', 'hs6']).sum().reset_index()
+			idx = ['year', 'eiso3n', 'hs6']
+		elif data == "import" or data == "imports":
+			del data['eiso3n']
+			data = data.groupby(['year', 'iiso3n', 'hs6']).sum().reset_index()
+			idx = ['year', 'iiso3n', 'hs6']
+		else:
+			raise ValueError("'data' must be 'trade', 'export', or 'import'")
+		#-Adjust Country Codes to ISO3C-#
 
-		#-Concord Productcodes-#
-
+		#-Concord Productcodes and Collapse to SITCR3-#
+		
 
 
 
