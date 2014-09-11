@@ -817,74 +817,74 @@ class BACIConstructor(BACI):
 		----
 		[1] NBER Adjustment will happen when joining the two datasets together
 		"""
+
+		#-Helper Functions-#
+		def merge_iso3c_and_replace_iso3n(data, cntry_data, column):
+			" Merge ISO3C and Replace match on column (i.e. eiso3n)"
+			data = data.merge(cntry_data, how='left', left_on=[to], right_on=['iso3n'])
+			del data['iso3n']
+			del data[to]
+			data.rename(columns={'iso3c' : to}, inplace=True)
+			return data
+
+		def dropna__iso3c(data, column):
+			" Drop iiso3c or eiso3c isnull() values "
+			if column == 'iiso3c':
+				data.drop(data.loc[(data.iiso3c.isnull())].index, inplace=True)
+			elif column == 'eiso3c':
+				data.drop(data.loc[(data.eiso3c.isnull())].index, inplace=True)
+			return data
+
+		def merge_sitcr2_level3(data, concord):
+			" Merge and Collapse hs6 to sitc r2 level 3"
+			#-Special Adjustments-#
+			raise NotImplementedError
+
 		#-Start from RawData-#
 		data = a.raw_data 
+		#-Obtain Key Index Variables-#
 		data.rename(columns={'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q': 'quantity'}, inplace=True) 	#'hs6' is unchanged
 		#-Exclude Quantity-#
 		del data['quantity']
+		
+		#-Import Country Codes to ISO3C-#
+		self.load_country_data(fix_source=True, std_names=True, verbose=True)	#Using this due to fix required on source files and it's data is attached to self.country_data
+		cntry_data = self.country_data[['iso3n', 'iso3c']]
+		
 		#-Collapse Trade Data based on data option-#
 		if data == "trade":
-			idx = ['year', 'eiso3n', 'iiso3n', 'hs6']
+			#-Merge in ISO3C-#
+			data = merge_iso3c_and_replace_iso3n(data, cntry_data, ['eiso3n'])
+			data = merge_iso3c_and_replace_iso3n(data, cntry_data, ['iiso3n'])
+			print "[WARNING] Dropping Countries where iso3c has null() values will remove country export/import from NES, and other regions!"
+			data = dropna_iso3c(data, column=['eiso3c'])
+			data = dropna_iso3c(data, column=['iiso3c'])
+			#-Merge in SITCR2 Level 3-#
+
+			print "[Returning] BACI HS96 Source => TRADE data for SITCR2 Level 3 with ISO3C Countries"
 		elif data == "export" or data == "exports":
 			del data['iiso3n']
 			data = data.groupby(['year', 'eiso3n', 'hs6']).sum().reset_index()
-			idx = ['year', 'eiso3n', 'hs6']
+			#-Merge in ISO3C-#
+			data = merge_iso3c_and_replace_iso3n(data, cntry_data, ['eiso3n'])
+			data = dropna_iso3c(data, column=['eiso3c'])
+			#-Merge in SITCR2 Level 3-#
+
+			print "[Returning] BACI HS96 Source => EXPORT data for SITCR2 Level 3 with ISO3C Countries"
 		elif data == "import" or data == "imports":
 			del data['eiso3n']
 			data = data.groupby(['year', 'iiso3n', 'hs6']).sum().reset_index()
-			idx = ['year', 'iiso3n', 'hs6']
+			#-Merge in ISO3C-#
+			data = merge_iso3c_and_replace_iso3n(data, cntry_data, ['iiso3n'])
+			data = dropna_iso3c(data, column=['iiso3c'])
+			#-Merge in SITCR2 Level 3-#
+
+			print "[Returning] BACI HS96 Source => IMPORT data for SITCR2 Level 3 with ISO3C Countries"
 		else:
 			raise ValueError("'data' must be 'trade', 'export', or 'import'")
-		#-Adjust Country Codes to ISO3C-#
-		self.load_country_data(fix_source=True, std_names=True, verbose=True)	#Using this due to fix required on source files and it's data is attached to self.country_data
-		cntry_data = self.country_data[['iso3n', 'iso3c']]
-		#-Exporters-#
-		data = data.merge(cntry_data, how='left', left_on=['eiso3n'], right_on=['iso3n'])
-		del data['iso3n']
-		data.rename(columns={'iso3c' : 'eiso3c'}, inplace=True)
-		#-Importers-#
-		data = data.merge(cntry_data, how='left', left_on=['iiso3n'], right_on=['iso3n'])
-		del data['iso3n']
-		data.rename(columns={'iso3c' : 'iiso3c'}, inplace=True)
-		#-Concord Productcodes and Collapse to SITCR3-#
+		#-Return DataFrame-#
+		return data
 		
-
-		#=> Working from CODE <=#
-
-			#-Exporter-#
-			self.dataset = self.dataset.merge(self.country_data[['iso3n', 'iso3c']], how='left', left_on=['eiso3n'], right_on=['iso3n'])
-			del self.dataset['iso3n'] 																											#Remove Merge Key
-			self.dataset.rename(columns={'iso3c' : 'eiso3c'}, inplace=True)
-			if dropna:
-				print "[INFO] Removing Units with eiso3c == np.nan"
-				edrop = len(self.dataset[self.dataset.eiso3c.isnull()])
-				print "[Deleting] EISO3N %s observations with codes:" % edrop
-				print "%s" % sorted(self.dataset[self.dataset.eiso3c.isnull()].eiso3n.unique())
-				self.dataset.dropna(subset=['eiso3c'], inplace=True)
-			#-Importer-#
-			self.dataset = self.dataset.merge(self.country_data[['iso3n', 'iso3c']], how='left', left_on=['iiso3n'], right_on=['iso3n'])
-			del self.dataset['iso3n'] 																											#Remove Merge Key
-			self.dataset.rename(columns={'iso3c' : 'iiso3c'}, inplace=True)
-			if dropna:
-				print "[INFO] Removing Units with iiso3c == np.nan"
-				idrop = len(self.dataset[self.dataset.iiso3c.isnull()])
-				print "[Deleting] IISO3N %s observations with codes:" % idrop
-				print "%s" % sorted(self.dataset[self.dataset.iiso3c.isnull()].iiso3n.unique())
-				self.dataset.dropna(subset=['iiso3c'], inplace=True)
-				self.dataset = self.dataset.reset_index()
-				del self.dataset['index']
-			if remove_iso3n:
-				del self.dataset['eiso3n']
-				del self.dataset['iiso3n']
-			drop_special, iso3c_list = drop_special
-			if drop_special:
-				for iso3c in iso3c_list:
-					spdrop = len(self.dataset.loc[(self.dataset.iiso3c == iso3c) | (self.dataset.eiso3c == iso3c)])
-					if verbose: print "[Deleting] %s country code with %s observations" % (iso3c, spdrop)
-					self.dataset.drop(self.dataset.loc[(self.dataset.iiso3c == iso3c) | (self.dataset.eiso3c == iso3c)].index, inplace=True)
-			assert init_obs == self.dataset.shape[0]+edrop+idrop+spdrop, "%s != %s" % (init_obs, self.dataset.shape[0])
-
-		#=END WORKING FROM=#
 
 
 
