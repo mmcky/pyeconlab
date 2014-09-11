@@ -519,11 +519,28 @@ class BACIConstructor(BACI):
 	#-Operations on Dataset-#
 	#-----------------------#
 
-	def add_country_iso3c(self, remove_iso3n=False, dropna=True, verbose=True):
+	def add_country_iso3c(self, remove_iso3n=False, dropna=False, drop_special=(False, ['NTZ']), verbose=True):
 		"""
 		Add CountryNames to ISO3N Codes
+
+		remove_iso3n 	: 	remove iso3n columns
+		dropna 			: 	drop countries in the concordance that are np.nan() 	
+							[Default: False. Care must be given when dropping as it may influence exporter, importer collapses]
+		drop_special 	: 	drop special tuple 3-digit codes such as NTZ = Neutral Zone
+							[Note: First Item is True/False to see if drop_special should be processed]
+
+		Notes
+		-----
+		[1] Check these against the CountryNames Concordance File to Ensure that None of them are Countries
+		dropna=True
+		~~~~~~~~~~~
+		[1] EISO3N Codes Dropped: 
+			[10, 74, 80, 129, 239, 275, 290, 334, 336, 471, 473, 492, 499, 527, 531, 534, 535, 568, 577, 581,636, 637, 688, 728, 729, 807, 837, 838, 839, 879, 899]
+		[2] IISO3N Codes Dropped: 
+			[10, 74, 80, 129, 221, 239, 275, 290, 334, 336, 471, 473, 492, 499, 527, 531, 534, 535, 568, 577, 581, 636, 637, 688, 697, 728, 729, 807, 837, 838, 839, 879, 899]
+
 		"""
-		edrop, idrop = 0,0
+		edrop, idrop, spdrop = 0,0,0
 		init_obs = self.dataset.shape[0]
 		#-Exporter-#
 		self.dataset = self.dataset.merge(self.country_data[['iso3n', 'iso3c']], how='left', left_on=['eiso3n'], right_on=['iso3n'])
@@ -550,7 +567,13 @@ class BACIConstructor(BACI):
 		if remove_iso3n:
 			del self.dataset['eiso3n']
 			del self.dataset['iiso3n']
-		assert init_obs == self.dataset.shape[0]+edrop+idrop, "%s != %s" % (init_obs, self.dataset.shape[0])
+		drop_special, iso3c_list = drop_special
+		if drop_special:
+			for iso3c in iso3c_list:
+				spdrop = len(self.dataset.loc[(self.dataset.iiso3c == iso3c) | (self.dataset.eiso3c == iso3c)])
+				if verbose: print "[Deleting] %s country code with %s observations" % (iso3c, spdrop)
+				self.dataset.drop(self.dataset.loc[(self.dataset.iiso3c == iso3c) | (self.dataset.eiso3c == iso3c)].index, inplace=True)
+		assert init_obs == self.dataset.shape[0]+edrop+idrop+spdrop, "%s != %s" % (init_obs, self.dataset.shape[0])
 
 	def countries_only(self, cid='iso3n', verbose=True):
 		"""
@@ -796,7 +819,7 @@ class BACIConstructor(BACI):
 		"""
 		#-Start from RawData-#
 		data = a.raw_data 
-		data = data.rename({'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q': 'quantity'}) 	#'hs6' is unchanged
+		data.rename(columns={'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q': 'quantity'}, inplace=True) 	#'hs6' is unchanged
 		#-Exclude Quantity-#
 		del data['quantity']
 		#-Collapse Trade Data based on data option-#
@@ -813,9 +836,60 @@ class BACIConstructor(BACI):
 		else:
 			raise ValueError("'data' must be 'trade', 'export', or 'import'")
 		#-Adjust Country Codes to ISO3C-#
-
+		self.load_country_data(fix_source=True, std_names=True, verbose=True)	#Using this due to fix required on source files and it's data is attached to self.country_data
+		cntry_data = self.country_data[['iso3n', 'iso3c']]
+		#-Exporters-#
+		data = data.merge(cntry_data, how='left', left_on=['eiso3n'], right_on=['iso3n'])
+		del data['iso3n']
+		data.rename(columns={'iso3c' : 'eiso3c'}, inplace=True)
+		#-Importers-#
+		data = data.merge(cntry_data, how='left', left_on=['iiso3n'], right_on=['iso3n'])
+		del data['iso3n']
+		data.rename(columns={'iso3c' : 'iiso3c'}, inplace=True)
 		#-Concord Productcodes and Collapse to SITCR3-#
 		
+
+		#=> Working from CODE <=#
+
+			#-Exporter-#
+			self.dataset = self.dataset.merge(self.country_data[['iso3n', 'iso3c']], how='left', left_on=['eiso3n'], right_on=['iso3n'])
+			del self.dataset['iso3n'] 																											#Remove Merge Key
+			self.dataset.rename(columns={'iso3c' : 'eiso3c'}, inplace=True)
+			if dropna:
+				print "[INFO] Removing Units with eiso3c == np.nan"
+				edrop = len(self.dataset[self.dataset.eiso3c.isnull()])
+				print "[Deleting] EISO3N %s observations with codes:" % edrop
+				print "%s" % sorted(self.dataset[self.dataset.eiso3c.isnull()].eiso3n.unique())
+				self.dataset.dropna(subset=['eiso3c'], inplace=True)
+			#-Importer-#
+			self.dataset = self.dataset.merge(self.country_data[['iso3n', 'iso3c']], how='left', left_on=['iiso3n'], right_on=['iso3n'])
+			del self.dataset['iso3n'] 																											#Remove Merge Key
+			self.dataset.rename(columns={'iso3c' : 'iiso3c'}, inplace=True)
+			if dropna:
+				print "[INFO] Removing Units with iiso3c == np.nan"
+				idrop = len(self.dataset[self.dataset.iiso3c.isnull()])
+				print "[Deleting] IISO3N %s observations with codes:" % idrop
+				print "%s" % sorted(self.dataset[self.dataset.iiso3c.isnull()].iiso3n.unique())
+				self.dataset.dropna(subset=['iiso3c'], inplace=True)
+				self.dataset = self.dataset.reset_index()
+				del self.dataset['index']
+			if remove_iso3n:
+				del self.dataset['eiso3n']
+				del self.dataset['iiso3n']
+			drop_special, iso3c_list = drop_special
+			if drop_special:
+				for iso3c in iso3c_list:
+					spdrop = len(self.dataset.loc[(self.dataset.iiso3c == iso3c) | (self.dataset.eiso3c == iso3c)])
+					if verbose: print "[Deleting] %s country code with %s observations" % (iso3c, spdrop)
+					self.dataset.drop(self.dataset.loc[(self.dataset.iiso3c == iso3c) | (self.dataset.eiso3c == iso3c)].index, inplace=True)
+			assert init_obs == self.dataset.shape[0]+edrop+idrop+spdrop, "%s != %s" % (init_obs, self.dataset.shape[0])
+
+		#=END WORKING FROM=#
+
+
+
+
+
 
 
 
