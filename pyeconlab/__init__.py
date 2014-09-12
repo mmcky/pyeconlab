@@ -4,12 +4,26 @@
 
 from __future__ import division
 
-# - Datasets - #
-from pyeconlab.trade.dataset import NBERFeenstraWTFConstructor, NBERFeenstraWTF
+#----------#
+#-Datasets-#
+#----------#
+
+#-Specific-#
+from pyeconlab.trade import NBERFeenstraWTFConstructor, NBERFeenstraWTF, BACIConstructor
+
+#-General-#
+from pyeconlab.trade import CTradeDataset, CTradeData, CExportData, CImportData, 	\
+									CPTradeDataset, CPTradeData, CPExportData, CPImportData
+
+#---------------#
+#-Trade Systems-#
+#---------------#
+
+from pyeconlab.trade import ProductLevelExportSystem, DynamicProductLevelExportSystem
+
 
 # - Utilities - #
 # Note: Utilities probably don't need to be at this namespace level #
-from pyeconlab.util import from_series_to_pyfile, home_folder, package_folder
+# from pyeconlab.util import from_series_to_pyfile, home_folder, package_folder
 
-# - Trade Systems - #
-#from pyeconlab.trade import ProductLevelExportSystem
+

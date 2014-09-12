@@ -36,6 +36,7 @@ from __future__ import division
 import os
 import copy
 import re
+import gc
 import pandas as pd
 import numpy as np
 import countrycode as cc
@@ -560,7 +561,7 @@ class NBERFeenstraWTFConstructor(object):
 				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
 				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
 
-	def dataset_to_hdf(self, flname='default', key='default', format='fixed', verbose=True):
+	def dataset_to_hdf(self, flname='default', key='default', format='table', verbose=True):
 		"""
 		Save a dataset to HDF File
 		"""
@@ -1715,7 +1716,7 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		raise NotImplementedError
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, dtype, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Level 3
 		Note: SC Reduce the Need to Debug many other routines for the time being. 
@@ -1723,7 +1724,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		STATUS: tests/test_constructor_SC_CNTRY_SR2L3_Y62to00.py
 
-		data 				: 	'trade', 'export', 'import'
+		dtype 				: 	'trade', 'export', 'import'
 
 		Data Settings
 		-------------
@@ -1786,12 +1787,12 @@ class NBERFeenstraWTFConstructor(object):
 		#-Country Adjustment-#
 		df = df.loc[(df.exporter != "World") & (df.importer != "World")]
 			#-Exports (can include NES on importer side)-#
-		if data == 'export' or data == 'exports':
+		if dtype == 'export' or dtype == 'exports':
 			df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
 			df = df.loc[(df.eiso3c != '.')]
 			df = df.groupby(['year', 'eiso3c', 'sitc3']).sum()['value'].reset_index()
 			#-Imports (can include NES on importer side)-#
-		elif data == 'import' or data == 'imports':
+		elif dtype == 'import' or dtype == 'imports':
 			df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
 			df = df.loc[(df.iiso3c != '.')]
 			df = df.groupby(['year','iiso3c', 'sitc3']).sum()['value'].reset_index()
@@ -1826,12 +1827,12 @@ class NBERFeenstraWTFConstructor(object):
 			from pyeconlab.util import concord_data
 			from .meta import iso3c_recodes_for_1962_2000
 			#-Export-#
-			if data == 'export' or data == 'exports':
+			if dtype == 'export' or dtype == 'exports':
 				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 				df = df[df['eiso3c'] != '.']
 				df = df.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
 			#-Import-#
-			elif data == 'import' or data == 'imports':
+			elif dtype == 'import' or dtype == 'imports':
 				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 				df = df[df['iiso3c'] != '.']
 				df = df.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
@@ -1848,11 +1849,11 @@ class NBERFeenstraWTFConstructor(object):
 			from pyeconlab.util import concord_data
 			from .meta import incomplete_iso3c_for_1962_2000
 			#-Export-#
-			if data == 'export' or data == 'exports':
+			if dtype == 'export' or dtype == 'exports':
 				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 				df = df[df['eiso3c'] != '.']
 			#-Import-#
-			elif data == 'import' or data == 'imports':
+			elif dtype == 'import' or dtype == 'imports':
 				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 				df = df[df['iiso3c'] != '.']
 			#-Trade-#
@@ -1879,66 +1880,67 @@ class NBERFeenstraWTFConstructor(object):
 			print report
 		self._dataset = df
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data, rtrn=False, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, dtype, rtrn=True, verbose=True):
 		"""
 		Complete Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset A]
 		A => dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
-		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+		dtype 	: 	'trade', 'export', 'import' [Default: 'trade']
 
 		Note
 		---- 
-		[1] For Export/Import Aggregations should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data='export'/'import') as can aggregate with NES which is dropped in the cleaned trade database
+		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype='export'/'import') 
+			as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype=dtype, dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		if rtrn:
 			return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data, rtrn=False, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, dtype, rtrn=True, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()	[Dataset B]
 		B => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
-		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+		dtype 	: 	'trade', 'export', 'import' [Default: 'trade']
 
 		Note
 		---- 
-		[1] For Export/Import Aggregations should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data='export'/'import') as can aggregate with NES which is dropped in the cleaned trade database
-
+		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype='export'/'import') 
+			as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype=dtype, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		if rtrn:
 			return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data, rtrn=False, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, dtype, rtrn=True, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset C]
 		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
 
-		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+		dtype 	: 	'trade', 'export', 'import' [Default: 'trade']
 		Note
 		---- 
-		[1] For Export/Import Aggregations should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data='export'/'import') as can aggregate with NES which is dropped in the cleaned trade database
-
+		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype='export'/'import') 
+			as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype=dtype, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		if rtrn:
 			return self.dataset
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data, rtrn=False, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, dtype, rtrn=True, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset D]
 		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
 
-		data 	: 	'trade', 'export', 'import' [Default: 'trade']
+		dtype 	: 	'trade', 'export', 'import' [Default: 'trade']
 
 		Note
 		---- 
-		[1] For Export/Import Aggregations should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data='export'/'import') as can aggregate with NES which is dropped in the cleaned trade database
-
+		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype='export'/'import') 
+			as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data=data, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype=dtype, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
 		if rtrn:
 			return self.dataset
 
@@ -2733,7 +2735,7 @@ class NBERFeenstraWTFConstructor(object):
 	# - Converters - #
 	# -------------- #
 
-	def convert_stata_to_hdf_yearindex(self, verbose=True):
+	def convert_stata_to_hdf_yearindex(self, format='table', verbose=True):
 		"""
 		Convert the Raw Stata Source Files to a HDF File Container indexed by Y#### (where #### = year)
 
@@ -2747,7 +2749,7 @@ class NBERFeenstraWTFConstructor(object):
 		#Note: This might write into a dataset!
 		years = self._available_years
 		hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] + '_yearindex' + '.h5' 	
-		pd.set_option('io.hdf.default_format', 'table')
+		pd.set_option('io.hdf.default_format', format)
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
 		self.__raw_data_hdf_yearindex = hdf 									#SHould this be a filename rather than a Container?
 
@@ -2756,13 +2758,13 @@ class NBERFeenstraWTFConstructor(object):
 			dta_fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
 			if verbose: print "Converting file: %s to file: %s" % (dta_fn, hdf_fn)
 			#pd.read_stata(dta_fn).to_hdf(hdf_fn, 'Y'+str(year))
-			hdf.put('Y'+str(year), pd.read_stata(dta_fn), format='table')
+			hdf.put('Y'+str(year), pd.read_stata(dta_fn), format=format)
 			
 		print hdf
 		hdf.close()
 
 
-	def convert_raw_data_to_hdf(self, verbose=True):
+	def convert_raw_data_to_hdf(self, format='table', verbose=True):
 		"""
 		Convert the Entire RAW Data Compilation to a HDF File with index 'raw_data'
 
@@ -2779,7 +2781,7 @@ class NBERFeenstraWTFConstructor(object):
 			# self.__raw_data_hdf = hdf
 			# pd.set_option('io.hdf.default_format', 'table')
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
-		hdf.put('raw_data', self.raw_data, format='table')
+		hdf.put('raw_data', self.__raw_data, format=format)
 		if verbose: print hdf
 		hdf.close()
 

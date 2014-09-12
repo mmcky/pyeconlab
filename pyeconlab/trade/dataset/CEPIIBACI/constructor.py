@@ -47,6 +47,7 @@ import re
 import warnings
 import string
 import pandas as pd
+import numpy as np
 
 from .dataset import BACI
 
@@ -84,22 +85,22 @@ class BACIConstructor(BACI):
 	#-Defaults-#
 	std_names 		= False
 
-	def __init__(self, source_dir, src_class, ftype='csv', years=[], std_names=True, skip_setup=False, reduce_memory=False, verbose=True):
+	def __init__(self, source_dir, source_classification, ftype='csv', years=[], std_names=True, skip_setup=False, reduce_memory=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
 		Arguments
 		---------
-		source_dir 		: 	Must contain the raw csv files
-		src_class 		: 	Type of Source Files to Load ['HS92', 'HS96', 'HS02']
-		years 			: 	Apply a Year Filter [Default: ALL]
-		ftype 			: 	File Type ['rar', 'csv', hdf']
-		skip_setup 		: 	[Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
-							This is mainly used for loading test data to check attributes and methods etc. 
-		reduce_memory	: 	This will delete self.__raw_data after initializing self._dataset with the raw_data
-							[Warning: This will render properties that depend on self.__raw_data inoperable]
-							Usage: Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
-							[Default: False] Only Saves ~?GB of RAM
+		source_dir 				: 	Must contain the raw csv files
+		source_classification 	: 	Type of Source Files to Load ['HS92', 'HS96', 'HS02']
+		years 					: 	Apply a Year Filter [Default: ALL]
+		ftype 					: 	File Type ['rar', 'csv', hdf']
+		skip_setup 				: 	[Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
+									This is mainly used for loading test data to check attributes and methods etc. 
+		reduce_memory			: 	This will delete self.__raw_data after initializing self._dataset with the raw_data
+									[Warning: This will render properties that depend on self.__raw_data inoperable]
+									Usage: Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
+									[Default: False] Only Saves ~?GB of RAM
 		
 		Future Work
 		-----------
@@ -109,7 +110,7 @@ class BACIConstructor(BACI):
 		self.__source_dir 	= check_directory(source_dir) 	# check_directory() performs basic tests on the specified directory
 
 		#-Set Classification-#
-		self.classification = src_class
+		self.classification = source_classification
 		self.product_data_fixed = False 								#Should this be more sophisticated, this is a constructor so probably not
 		self.country_data_fixed = False
 
@@ -178,6 +179,11 @@ class BACIConstructor(BACI):
 		except: 																#Load from h5 file (quickest Load Times)
 			self.load_raw_from_hdf(years=self.years, verbose=False)
 			return self.__raw_data.copy(deep=True)
+
+	def del_raw_data(self, force=False):
+		""" Delete Raw Data """
+		if force==True:
+			del self.__raw_data
 
 	@property
 	def source_dir(self):
@@ -801,7 +807,7 @@ class BACIConstructor(BACI):
 
 	#-Self Contained-#
 
-	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, data, source_institution='un', verbose=True):
+	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, dtype, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset at the Country x Product Level (SITC Level 3)
 		Note: SC methods reduce the Need to Debug other routines and methods. 
@@ -809,7 +815,7 @@ class BACIConstructor(BACI):
 
 		Source Classification: HS96
 
-		data 				: 	'trade', 'export', 'import'
+		dtype 				: 	'trade', 'export', 'import'
 								'export' will include values from a country to any region (including NES, and Nuetral Zone etc.)
 								'import' will include values to a country from any region (including NES, and Nuetral Zone etc.)
 
@@ -821,13 +827,13 @@ class BACIConstructor(BACI):
 		#-Helper Functions-#
 		def merge_iso3c_and_replace_iso3n(data, cntry_data, column):
 			" Merge ISO3C and Replace match on column (i.e. eiso3n)"
-			data = data.merge(cntry_data, how='left', left_on=[to], right_on=['iso3n'])
+			data = data.merge(cntry_data, how='left', left_on=[column], right_on=['iso3n'])
 			del data['iso3n']
-			del data[to]
-			data.rename(columns={'iso3c' : to}, inplace=True)
+			del data[column]
+			data.rename(columns={'iso3c' : column[0:-1]+'c'}, inplace=True)
 			return data
 
-		def dropna__iso3c(data, column):
+		def dropna_iso3c(data, column):
 			" Drop iiso3c or eiso3c isnull() values "
 			if column == 'iiso3c':
 				data.drop(data.loc[(data.iiso3c.isnull())].index, inplace=True)
@@ -841,53 +847,77 @@ class BACIConstructor(BACI):
 			raise NotImplementedError
 
 		#-Start from RawData-#
-		data = a.raw_data 
+		#--------------------#
+		data = self.raw_data 
 		#-Obtain Key Index Variables-#
 		data.rename(columns={'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q': 'quantity'}, inplace=True) 	#'hs6' is unchanged
 		#-Exclude Quantity-#
 		del data['quantity']
-		
 		#-Import Country Codes to ISO3C-#
+		#-------------------------------#
 		self.load_country_data(fix_source=True, std_names=True, verbose=True)	#Using this due to fix required on source files and it's data is attached to self.country_data
 		cntry_data = self.country_data[['iso3n', 'iso3c']]
-		
+		#-Import Product Concordance-#
+		#----------------------------#
+		from pyeconlab.trade.concordance import HS2002_To_SITCR2
+		concordance = HS2002_To_SITCR2(sitc_level=3).concordance
+		#-Add Special Cases to the concordance-#
+		for k,v in  self.adjust_hs6_to_sitc[self.classification].items():
+			concordance[k] = v
+		#-Change Value Units-#
+		#--------------------#
+		data['value'] = data['value']*1000
 		#-Collapse Trade Data based on data option-#
-		if data == "trade":
+		#------------------------------------------#
+		if dtype == "trade":
 			#-Merge in ISO3C-#
-			data = merge_iso3c_and_replace_iso3n(data, cntry_data, ['eiso3n'])
-			data = merge_iso3c_and_replace_iso3n(data, cntry_data, ['iiso3n'])
+			#----------------#
+			data = merge_iso3c_and_replace_iso3n(data, cntry_data, column='eiso3n')
+			data = merge_iso3c_and_replace_iso3n(data, cntry_data, column='iiso3n')
 			print "[WARNING] Dropping Countries where iso3c has null() values will remove country export/import from NES, and other regions!"
-			data = dropna_iso3c(data, column=['eiso3c'])
-			data = dropna_iso3c(data, column=['iiso3c'])
+			data = dropna_iso3c(data, column='eiso3c')
+			data = dropna_iso3c(data, column='iiso3c')
 			#-Merge in SITCR2 Level 3-#
-
+			#-------------------------#
+			data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+			del data['hs6']
+			data = data.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()
 			print "[Returning] BACI HS96 Source => TRADE data for SITCR2 Level 3 with ISO3C Countries"
-		elif data == "export" or data == "exports":
+		elif dtype == "export" or dtype == "exports":
+			#-Export Level-#
+			#--------------#
 			del data['iiso3n']
 			data = data.groupby(['year', 'eiso3n', 'hs6']).sum().reset_index()
 			#-Merge in ISO3C-#
-			data = merge_iso3c_and_replace_iso3n(data, cntry_data, ['eiso3n'])
-			data = dropna_iso3c(data, column=['eiso3c'])
+			#----------------#
+			data = merge_iso3c_and_replace_iso3n(data, cntry_data, column='eiso3n')
+			data = dropna_iso3c(data, column='eiso3c')
 			#-Merge in SITCR2 Level 3-#
-
+			#-------------------------#
+			data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+			del data['hs6']
+			data = data.groupby(['year', 'eiso3c', 'sitc3']).sum()
 			print "[Returning] BACI HS96 Source => EXPORT data for SITCR2 Level 3 with ISO3C Countries"
-		elif data == "import" or data == "imports":
+		elif dtype == "import" or dtype == "imports":
+			#-Import Level-#
+			#--------------#
 			del data['eiso3n']
 			data = data.groupby(['year', 'iiso3n', 'hs6']).sum().reset_index()
 			#-Merge in ISO3C-#
-			data = merge_iso3c_and_replace_iso3n(data, cntry_data, ['iiso3n'])
-			data = dropna_iso3c(data, column=['iiso3c'])
+			#----------------#
+			data = merge_iso3c_and_replace_iso3n(data, cntry_data, column='iiso3n')
+			data = dropna_iso3c(data, column='iiso3c')
 			#-Merge in SITCR2 Level 3-#
-
+			#-------------------------#
+			data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+			del data['hs6']
+			data = data.groupby(['year', 'iiso3c', 'sitc3']).sum()
 			print "[Returning] BACI HS96 Source => IMPORT data for SITCR2 Level 3 with ISO3C Countries"
 		else:
 			raise ValueError("'data' must be 'trade', 'export', or 'import'")
 		#-Return DataFrame-#
 		return data
 		
-
-
-
 
 
 
