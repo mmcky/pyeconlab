@@ -18,6 +18,7 @@ Types
 
 """
 
+import numpy as np
 import pandas as pd
 import cPickle as pickle
 
@@ -37,14 +38,15 @@ class NBERFeenstraWTF(CPTradeDataset):
 	"""
 
 	# - Attributes - #
-	name 			= u'Feenstra (NBER) World Trade Dataset'
-	available_years = xrange(1962, 2000, 1)
-	classification 	= 'SITC'
-	revision 		= 2
-	level 			= 4
-	source_web 		= u"http://cid.econ.ucdavis.edu/nberus.html"
-	raw_units 		= 1000
-	raw_units_str 	= u'US$1000\'s'
+	source_name 			= u'Feenstra (NBER) World Trade Dataset'
+	source_years 			= xrange(1962, 2000, 1)
+	source_classification 	= 'SITC'
+	source_revision 		= 2
+	source_level 			= 4
+	source_web 				= u"http://cid.econ.ucdavis.edu/nberus.html"
+	source_raw_units 		= 1000
+	source_raw_units_str 	= u'US$1000\'s'
+	source_last_checked 	= np.datetime64('2014-07-04')
 
 #-------#
 #-Trade-#
@@ -61,7 +63,7 @@ class NBERFeenstraWTFTrade(CPTradeData, NBERFeenstraWTF):
 	[1] Only set attribute here for it to be local to the class. Other attributes are inherited. 
 		If there is an attribute specific to NBERFeenstraWTF TRADE then it should be included here
 	"""
-		
+
 	#-Data-#
 
 	@property 

@@ -49,7 +49,8 @@ import string
 import pandas as pd
 import numpy as np
 
-from .dataset import BACI
+from .meta import BACI
+from .dataset import BACITradeData, BACIExportData, BACIImportData
 
 from pyeconlab.country import ISO3166
 from pyeconlab.util import check_directory, check_operations, update_operations, from_idxseries_to_pydict, concord_data
@@ -61,7 +62,6 @@ class BACIConstructor(BACI):
 	Inheritance
 	-----------
 		[1] BACI 			: 	Provides Meta Data on CEPII Dataset
-		[2] CPTradeDataset	:	Provides CORE Country Product Methods 
 
 	Country Codes 
 	-------------
@@ -80,10 +80,28 @@ class BACIConstructor(BACI):
 	[1] Should self.raw_data have i,j etc rather than standard_names if it is to be untouched.
 	"""
 
-	fn_structure 	= 'baci<classification>_<year>'
-	fn_type 		= 'rar' 							#csv?
-	#-Defaults-#
-	std_names 		= False
+	#-Constructor Meta Data/Attributes-#
+
+	#-Protected Attributes-#
+	self.__raw_data 	= pd.DataFrame
+	self.__source_dir 	= str
+	#-Flexible Attributes-#
+	self.dataset 		= pd.DataFrame
+	self.dtype 			= str
+	self.name 			= str 
+	self.classification = str 
+	self.revision 		= str 
+	self.years 			= list 
+	self.notes 			= str
+	self.complete_dataset = bool
+	self.standard_names = bool
+	self.operations 	= str
+
+	#-Specific Attributes to BACIConstructor-#
+
+	self.product_datafl_fixed = bool 
+	self.country_datafl_fixed = bool
+
 
 	def __init__(self, source_dir, source_classification, ftype='csv', years=[], std_names=True, skip_setup=False, reduce_memory=False, verbose=True):
 		""" 
@@ -93,6 +111,7 @@ class BACIConstructor(BACI):
 		---------
 		source_dir 				: 	Must contain the raw csv files
 		source_classification 	: 	Type of Source Files to Load ['HS92', 'HS96', 'HS02']
+		source_revision 		: 	1992, 1996, 2002
 		years 					: 	Apply a Year Filter [Default: ALL]
 		ftype 					: 	File Type ['rar', 'csv', hdf']
 		skip_setup 				: 	[Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
@@ -107,22 +126,27 @@ class BACIConstructor(BACI):
 		[1] Should I add a hdf_fn='' option for specifying a h5 file rather than using the internal defaults?
 		"""
 		#-Assign Source Directory-#
-		self.__source_dir 	= check_directory(source_dir) 	# check_directory() performs basic tests on the specified directory
+		self.__source_dir 	= check_directory(source_dir) 		#check_directory() performs basic tests on the specified directory
 
-		#-Set Classification-#
+		#-Assign Attributes-#
+		self.name 			= u"BACI Trade Dataset"
+		self.dtype 			= u"trade"
 		self.classification = source_classification
-		self.product_data_fixed = False 								#Should this be more sophisticated, this is a constructor so probably not
+		self.revision 		= source_classification[-2:] 		#Last two digits	
+		self.notes 			= ""
+		self.operations 	= u"" 
+		
+		#-Country, Product Source File Fixed Indicator-#
+		self.product_data_fixed = False 						#Should this be more sophisticated, this is a constructor so probably not
 		self.country_data_fixed = False
 
-		#-Setup Object-#
+		#-Parse Years-#
 		if verbose: print "[INFO] Fetching BACI Data from %s" % source_dir
 		if years == []:
-			self.complete_dataset = True			# This forces object to be imported based on the whole dataset
-			years = self.available_years[self.classification] 	
+			self.complete_dataset = True						# This forces object to be imported based on the whole dataset
+			years = self.source_available_years[self.classification] 	
 		#-Assign to Attribute-#
-		self.years 	= years
-		#-Dataset Operations-#
-		self.operations = ""
+		self.years = years 		
 
 		#-Parse Skip Setup-#
 		if skip_setup == True:
@@ -167,9 +191,9 @@ class BACIConstructor(BACI):
 				 "Source Last Checked: %s\n" % (self.source_last_checked)
 		return string
 	
-	#------------#
-	#-Properties-#
-	#------------#
+	#-----------------------------------#
+	#-Properties (Protected Attributes)-#
+	#-----------------------------------#
 
 	@property
 	def raw_data(self):
@@ -230,7 +254,7 @@ class BACIConstructor(BACI):
 		"""
 		self.__raw_data = pd.DataFrame() 
 		print years
-		if years == [] or years == self.available_years[self.classification]:
+		if years == [] or years == self.source_available_years[self.classification]:
 			fn = self.source_dir + self.raw_data_hdf_fn[self.classification]
 			if verbose: print "[INFO] Loading RAW DATA from %s" % fn
 			self.__raw_data = pd.read_hdf(fn, key='raw_data')
@@ -333,7 +357,7 @@ class BACIConstructor(BACI):
 		year 	: 	apply a year filter
 		"""
 		if years == []:
-			years = self.available_years[self.classification]
+			years = self.source_available_years[self.classification]
 		#-Setup HDF File-#
 		if hdf_fn == '':
 			hdf_fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification]
@@ -807,7 +831,7 @@ class BACIConstructor(BACI):
 
 	#-Self Contained-#
 
-	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, dtype, source_institution='un', verbose=True):
+	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, dtype, dataset_object=True, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset at the Country x Product Level (SITC Level 3)
 		Note: SC methods reduce the Need to Debug other routines and methods. 
@@ -915,11 +939,37 @@ class BACIConstructor(BACI):
 			print "[Returning] BACI HS96 Source => IMPORT data for SITCR2 Level 3 with ISO3C Countries"
 		else:
 			raise ValueError("'data' must be 'trade', 'export', or 'import'")
-		#-Return DataFrame-#
-		return data
-		
+		#-Replace Dataset-#
+		self.dataset = data
+		#-Return Dataset Object-#
+		if dataset_object:
+			self.to_dataset()
+	
+	def attach_attributes_to_dataset(df):
+		""" Attach Attributes to the Dataset DataFrame for Transfer """
+ 		#-Attach Attributes to dataset object for transfer-#
+		df.txf_name 			= self.name
+		df.txf_dtype 			= self.dtype
+		df.txf_classification 	= self.classification
+		df.txf_revision 		= self.revision
+		df.txf_complete_dataset = self.complete_dataset
+		df.txf_notes 			= self.notes
+		return df
 
-
+	def to_dataset(self):
+		""" Convert to a Dataset Object """
+		#-Prepare Data for Object Standard Input-#
+		data = self.dataset.reset_index()
+		data = data.rename_axis({'sitc3' : 'productcode'}, axis=1)
+		data = attach_attributes_to_dataset(data) 							#Alternatively we could create the object and then attach names directly!
+		if self.dtype == "trade":
+			return BACITradeData(data)
+		elif self.dtype == "export":
+			return BACIExportData(data)
+		elif self.dtype == "import":
+			return BACIImportData(data)
+		else:
+			raise ValueError("dtype (%s) is not 'trade', 'export' or 'import'" % self.dtype)	
 
 
 

@@ -48,23 +48,68 @@ class CPTradeDataset(object):
 	This Object Impliments a Standard Interface for Incoming Data allowing methods to be writen easily
 	"""
 
-	# - Attributes - #
-	name 			= None
-	years 			= None
-	available_years = None
-	classification 	= None
-	revision 		= None 
-	level 			= None
-	source_web 		= None
-	raw_units 		= None
-	raw_units_str 	= None
-	interface 		= {
+	# - Dataset Attributes - #
+	__data 				= pd.DataFrame()
+	__dtype 			= None 					#'Trade', 'Export', 'Import'
+	__level 			= None
+	__classification 	= None 					#'HS', 'SICT'
+	__revision 			= None  				#'1992', 2
+	__name 				= ""
+	__years 			= None
+	__value_units 		= None
+	__value_units_str 	= ""
+	__complete_dataset 	= False	
+	__interface 		= {
 						 'trade' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
 						 'export' : ['year', 'eiso3c', 'productcode', 'value'],
 						 'import' : ['year', 'iiso3c', 'productcode', 'value'],
-					  }
+					  	}
+	__notes 			= ""
 
-	def __init__(self, data): 	
+	#-Source Attributes-#
+	source_name 			= None
+	source_available_years 	= None
+	source_web 				= None
+	source_classification 	= None
+	source_revision 		= None
+	source_level 			= None
+	source_value_units 		= None
+	source_value_units_str 	= None
+	source_last_checked 	= None
+	
+	def __repr__(self):
+		"""
+		Future Work: Add in Value Units?
+		"""
+		try:
+			num_exporters = "Number of Exporters: %s\n" % (self.num_exporters)
+		except:
+			num_exporters = "<Not Applicable>"
+		try:
+			num_importers = "Number of Importers: %s\n" % (self.num_importers)
+		except:
+			num_importers = "<Not Applicable>"
+
+		#-Construct REPR-#
+		string = "Class: %s\n" % (self.__class__) 							+ \
+				 "-------\n" 										 		+ \
+				 "DATASET:\n" 										 		+ \
+				 "Name: %s (Type: %s)\n" % (self.__name, self.__dtype) 		+ \
+				 "Classification: %s (L:%s) [R:%s]\n" % (self.__classification, self.__level, self.__revision) + \
+				 num_exporters 												+ \
+				 num_importers 												+ \
+				 "Number of Products: %s\n" % (self.num_products) 			+ \
+				 "Number of Trade Flows: %s\n" % (self.data.shape[0])   	+ \
+				 "Years: %s\n" % (self.__years)								+ \
+				 "Complete Dataset: %s\n" % (self.__complete_dataset) 		+ \
+				 "Dataset Notes: %s\n" % (self.__notes) 					+ \
+				 "-------\n" 										 		+ \
+				 "SOURCE:\n"	 											+ \
+				 "%s (%s)\n" % (self.source_name, self.source_web) 			+ \
+				 "Last Checked: %s" % (self.source_last_checked)
+		return string.replace("<Not Applicable>", "")
+
+	def __init__(self, data, dtype): 	
 		""" 
 		Fill Object with Data
 
@@ -78,7 +123,7 @@ class CPTradeDataset(object):
 		[1] from_hdf
 		"""
 		if type(data) == pd.DataFrame:
-			self.from_dataframe(data)
+			self.from_dataframe(df=data, dtype=dtype)
 		elif type(data) == str:
 			fn, ftype = data.split('.')
 			if ftype == 'pickle':
@@ -87,6 +132,13 @@ class CPTradeDataset(object):
 				self.from_hdf(fn=data)
 			else:
 				raise ValueError('Uknown File Type: %s' % ftype)
+
+	@property 
+	def years(self):
+		return self.__years
+	@years.setter
+	def years(self, value):
+		self.__years = value
 
 	@property 
 	def num_years(self):
@@ -100,15 +152,35 @@ class CPTradeDataset(object):
 		loc = self.data.index.names.index('productcode')
 		return self.data.index.levshape[loc]
 
+	@property 
+	def classification(self):
+		return self.__classification
+
+	@property 
+	def revision(self):
+		return self.__revision
+
 	@property
 	def sitc_level(self):
-		return self.level
+		return self.__level
+
+	@property 
+	def interface(self):
+		return self.__interface
+
+	@property 
+	def complete_dataset(self):
+		return self.__complete_dataset
 
 	#-IO-#
 
-	def load_dataframe(self, df, dtype):
+	def from_dataframe(self, df, dtype):
 		"""
 		Populate Object from Pandas DataFrame
+		
+		Notes
+		-----
+		[1] Bring Attributes in as df.attribute
 		"""
 		#-Force Interface Variables-#
 		if type(df) == pd.DataFrame:
@@ -118,14 +190,22 @@ class CPTradeDataset(object):
 				if item not in columns: 
 					raise TypeError("Need %s to be specified in the incoming data" % item)
 			#-Set Attributes-#
-			self.data = df.set_index(self.interface[dtype][:-1]) 	#Index by all values except 'value'
+			self.__name = df.txf_name
+			self.__dtype = df.txf_dtype
+			self.__classification = df.txf_classification 
+			self.__revision = df.txf_revision
+				# self.__value_units = df.txf_value_units 						#Add in Later
+			self.__complete_dataset = df.txf_complete_dataset
+			self.__notes = df.txf_notes
 			#-Infer Years-#
-			self.years = list(df['year'].unique())
+			self.__years = list(df['year'].unique())
 			#-Infer Level-#
 			levels = df['productcode'].apply(lambda x: len(x)).unique()
 			if len(levels) > 1:
 				raise ValueError("Product Levels are not consistent lengths: %s" % levels)
-			self.level = levels[0]
+			self.__level = levels[0]
+			#-Set Index-#
+			self.data = df.set_index(self.interface[dtype][:-1]) 	#Index by all values except 'value'
 		else:
 			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface[dtype])
 
@@ -147,9 +227,9 @@ class CPTradeDataset(object):
 		if type(obj) != self.__class__:
 			raise ValueError("Pickle Object doesn't contain a %s object!\nIt's type is: %s" % (str(self.__class__).split('.')[-1].split("'")[0], str(obj.__class__).split('.')[-1].split("'")[0]))
 		#-Populate Object-#
-		self.data = obj.data
-		self.years = obj.years
-		self.level = obj.level
+		self.__data = obj.data
+		self.__years = obj.years
+		self.__level = obj.level
 
 	def to_hdf(self, fn):
 		"""
@@ -196,15 +276,17 @@ class CPTradeData(CPTradeDataset):
 	[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
 	"""
 
-	def __repr__(self):
-		""" Representation String Of Object """
-		string = "Class: %s\n" % (self.__class__) 							+ \
-				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" 	% (self.available_years)		+ \
-				 "Number of Importers: %s\n" % (self.num_importers) 		+ \
-				 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
-				 "Number of Products: %s\n" % (self.num_products) 			+ \
-				 "Number of Trade Flows: %s\n" % (self.data.shape[0])
-		return string
+	__dtype = 'Trade'
+
+	# def __repr__(self):
+	# 	""" Representation String Of Object """
+	# 	string = "Class: %s\n" % (self.__class__) 							+ \
+	# 			 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.source_available_years)		+ \
+	# 			 "Number of Importers: %s\n" % (self.num_importers) 		+ \
+	# 			 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
+	# 			 "Number of Products: %s\n" % (self.num_products) 			+ \
+	# 			 "Number of Trade Flows: %s\n" % (self.data.shape[0])
+	# 	return string
 
 	#-Properties-#
 
@@ -258,7 +340,7 @@ class CPTradeData(CPTradeDataset):
 	#-Data Import Methods-#
 
 	def from_dataframe(self, df):
-		self.load_dataframe(df, dtype='trade')
+		self.from_dataframe(df, dtype='trade')
 
 	#-Exports / Imports Data-#
 
@@ -287,19 +369,22 @@ class CPExportData(CPTradeDataset):
 
 	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
-	def __repr__(self):
-		""" Representation String Of Object """
-		string = "Class: %s\n" % (self.__class__) 							+ \
-				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.available_years)		+ \
-				 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
-				 "Number of Products: %s\n" % (self.num_products) 			+ \
-				 "Number of Export Flows: %s\n" % (self.data.shape[0])
-		return string
+
+	__dtype = 'Export'
+
+	# def __repr__(self):
+	# 	""" Representation String Of Object """
+	# 	string = "Class: %s\n" % (self.__class__) 							+ \
+	# 			 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.source_available_years)		+ \
+	# 			 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
+	# 			 "Number of Products: %s\n" % (self.num_products) 			+ \
+	# 			 "Number of Export Flows: %s\n" % (self.data.shape[0])
+	# 	return string
 
 	#-Data Import Methods-#
 
 	def from_dataframe(self, df):
-		self.load_dataframe(df, dtype='export')
+		self.from_dataframe(df, dtype='export')
 
 	#-Properties-#
 
@@ -347,14 +432,16 @@ class CPImportData(CPTradeDataset):
 	Interface: ['year', 'iiso3c', 'productcode', 'value']
 	"""	
 	
-	def __repr__(self):
-		""" Representation String Of Object """
-		string = "Class: %s\n" % (self.__class__) 							+ \
-				 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.available_years)		+ \
-				 "Number of Importers: %s\n" % (self.num_importers)			+ \
-				 "Number of Products: %s\n" % (self.num_products) 			+ \
-				 "Number of Import Flows: %s\n" % (self.data.shape[0])
-		return string
+	__dtype = 'Import'
+
+	# def __repr__(self):
+	# 	""" Representation String Of Object """
+	# 	string = "Class: %s\n" % (self.__class__) 							+ \
+	# 			 "Years: %s\n" % (self.__years) +  " [Available Years: %s]\n" % (self.__available_years)		+ \
+	# 			 "Number of Importers: %s\n" % (self.num_importers)			+ \
+	# 			 "Number of Products: %s\n" % (self.num_products) 			+ \
+	# 			 "Number of Import Flows: %s\n" % (self.data.shape[0])
+	# 	return string
 
 	#-Properties-#
 	
@@ -382,4 +469,4 @@ class CPImportData(CPTradeDataset):
 	#-Data Import Methods-#
 
 	def from_dataframe(self, df):
-		self.load_dataframe(df, dtype='import')
+		self.from_dataframe(df, dtype='import')
