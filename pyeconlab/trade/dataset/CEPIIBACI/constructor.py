@@ -945,7 +945,7 @@ class BACIConstructor(BACI):
 		if dataset_object:
 			self.to_dataset()
 	
-	def attach_attributes_to_dataset(df):
+	def attach_attributes_to_dataset(self, df):
 		""" Attach Attributes to the Dataset DataFrame for Transfer """
  		#-Attach Attributes to dataset object for transfer-#
 		df.txf_name 			= self.name
@@ -961,7 +961,7 @@ class BACIConstructor(BACI):
 		#-Prepare Data for Object Standard Input-#
 		data = self.dataset.reset_index()
 		data = data.rename_axis({'sitc3' : 'productcode'}, axis=1)
-		data = attach_attributes_to_dataset(data) 							#Alternatively we could create the object and then attach names directly!
+		data = self.attach_attributes_to_dataset(data) 							#Alternatively we could create the object and then attach names directly!
 		if self.dtype == "trade":
 			return BACITradeData(data)
 		elif self.dtype == "export":
@@ -970,8 +970,6 @@ class BACIConstructor(BACI):
 			return BACIImportData(data)
 		else:
 			raise ValueError("dtype (%s) is not 'trade', 'export' or 'import'" % self.dtype)	
-
-
 
 	#-----------------#
 	#---FUTURE WORK---#
