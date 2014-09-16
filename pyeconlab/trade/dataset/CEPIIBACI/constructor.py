@@ -105,7 +105,7 @@ class BACIConstructor(BACI):
 	country_datafl_fixed = bool
 
 
-	def __init__(self, source_dir, source_classification, ftype='csv', years=[], std_names=True, skip_setup=False, reduce_memory=False, verbose=True):
+	def __init__(self, source_dir, source_classification, ftype='csv', years=[], standard_names=True, skip_setup=False, reduce_memory=False, verbose=True):
 		""" 
 		Load RAW Data into Object
 
@@ -161,13 +161,13 @@ class BACIConstructor(BACI):
 		if ftype == 'rar':
 			self.load_raw_from_rar(verbose=verbose)
 		elif ftype == 'csv':
-			self.load_raw_from_csv(std_names=False, verbose=verbose)
+			self.load_raw_from_csv(standard_names=False, verbose=verbose)
 		elif ftype == 'hdf':
 			try:
 				self.load_raw_from_hdf(years=years, verbose=verbose)
 			except:
 				print "[INFO] Your source directory: %s does not contain h5 version.\nStarting to compile one now ...." % self.source_dir
-				self.load_raw_from_csv(std_names=False, verbose=verbose)
+				self.load_raw_from_csv(standard_names=False, verbose=verbose)
 				self.convert_raw_data_to_hdf(verbose=verbose) 				#Compute hdf file for next load
 				self.convert_raw_data_to_hdf_yearindex(verbose=verbose)		#Compute Year Index Version Also
 		else:
@@ -181,8 +181,8 @@ class BACIConstructor(BACI):
 			self.dataset = self.__raw_data.copy(deep=True) 					#[Default] pandas.DataFrame.copy(deep=True) is much more efficient than copy.deepcopy()
 
 		#-Standard Names Option-#
-		self.std_names = std_names
-		if self.std_names:
+		self.standard_names = standard_names
+		if self.standard_names:
 			self.use_standard_column_names(self.dataset, verbose=verbose)
 
 
@@ -222,11 +222,11 @@ class BACIConstructor(BACI):
 	#-IO-#
 	#----#
 
-	def load_raw_from_csv(self, std_names=False, deletions=True, verbose=False):
+	def load_raw_from_csv(self, standard_names=False, deletions=True, verbose=False):
 		""" 
 		Load Raw Data from CSV Files [Main Entry Point for Raw Data]
 
-		std_names : apply standard names [True/False] using interface dictionary
+		standard_names : apply standard names [True/False] using interface dictionary
 		deletions : apply deletions attribute 
 
 		Questions
@@ -245,7 +245,7 @@ class BACIConstructor(BACI):
 			for item in self.source_deletions[self.classification]:
 				if verbose: print "[DELETING] Column: %s" % item
 				del self.__raw_data[item]
-		if std_names: 														#Current Default is 'False' to keep raw_data in it's raw state
+		if standard_names: 														#Current Default is 'False' to keep raw_data in it's raw state
 			self.use_standard_column_names(self.__raw_data)
 
 	def load_raw_from_hdf(self, years=[], verbose=False):
@@ -269,7 +269,7 @@ class BACIConstructor(BACI):
 				if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
 				self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
 
-	def load_country_data(self, fix_source=True, std_names=True, verbose=True):
+	def load_country_data(self, fix_source=True, standard_names=True, verbose=True):
 		"""
 		Load Country Classification/Concordance File From Archive
 		Note: [1] Write a wrapper for self.classification selection?
@@ -283,10 +283,10 @@ class BACIConstructor(BACI):
 			print "[WARNING] Has the country_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.country_data_fn[self.classification]
 		self.country_data = pd.read_csv(fn)
-		if std_names:
+		if standard_names:
 			self.country_data.rename(columns={'i' : 'iso3n', 'iso3' : 'iso3c'}, inplace=True)
 
-	def load_product_data(self, fix_source=True, std_names=True, verbose=False):
+	def load_product_data(self, fix_source=True, standard_names=True, verbose=False):
 		"""
 		Load Product Code Classification File from Archive
 		"""
@@ -301,7 +301,7 @@ class BACIConstructor(BACI):
 			print "[WARNING] Has the product_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.product_data_fn[self.classification]
 		self.product_data = pd.read_csv(fn, dtype={'Code' : object})
-		if std_names:
+		if standard_names:
 			self.use_standard_column_names(self.product_data)
 
 	def use_standard_column_names(self, df, verbose=True):
@@ -313,6 +313,7 @@ class BACIConstructor(BACI):
 			for item in df.columns:
 				try: print "[CHANGING] Column: %s to %s" % (item, self.source_interface[item])
 				except: pass 																#Passing Items not Converted by self.source_interface
+		self.standard_names = True
 		df.rename(columns=self.source_interface, inplace=True)
 		#-Update Operations Attribute-#
 		update_operations(self, opstring)
@@ -347,7 +348,7 @@ class BACIConstructor(BACI):
 		if verbose: print "[INFO] Writing raw_data to %s" % hdf_fn
 		#-Construct HDF File-#
 		hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
-		if self.std_names == True:
+		if self.standard_names == True:
 			yid = 'year'
 		else:
 			yid = 't'
@@ -675,9 +676,9 @@ class BACIConstructor(BACI):
 		"""
 		warnings.warn("[WARNING] This method will reconstruct raw_data and dataset attributes!", UserWarning)
 		#-Ensure raw_data is source data-#
-		self.load_raw_from_csv(std_names=False, deletions=False, verbose=verbose)
-		self.load_country_data(std_names=False, verbose=verbose)
-		self.load_product_data(fix_source=True, std_names=False, verbose=verbose)
+		self.load_raw_from_csv(standard_names=False, deletions=False, verbose=verbose)
+		self.load_country_data(standard_names=False, verbose=verbose)
+		self.load_product_data(fix_source=True, standard_names=False, verbose=verbose)
 		#-Merge Datasets-#
 		self.dataset = self.raw_data
 		#-Countries-#
@@ -888,7 +889,7 @@ class BACIConstructor(BACI):
 		del data['quantity']
 		#-Import Country Codes to ISO3C-#
 		#-------------------------------#
-		self.load_country_data(fix_source=True, std_names=True, verbose=True)	#Using this due to fix required on source files and it's data is attached to self.country_data
+		self.load_country_data(fix_source=True, standard_names=True, verbose=True)	#Using this due to fix required on source files and it's data is attached to self.country_data
 		cntry_data = self.country_data[['iso3n', 'iso3c']]
 		#-Import Product Concordance-#
 		#----------------------------#
