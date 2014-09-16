@@ -1,6 +1,8 @@
 """
-BACI Dataset Metadata Class
+BACI Dataset Base Metadata Class
 """
+
+import numpy as np
 
 class BACI(object):
 	"""
@@ -30,6 +32,8 @@ class BACI(object):
 	source_raw_units_str 			= "US$1000's"
 	source_interface 				= {'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q' : 'quantity'}
 	source_deletions 				= {'HS92' : '', 'HS96' : '', 'HS02' : 'a'} 
+
+	#-Meta Data-#
 
 	#-Dataset Country Meta Files-#
 	country_data_fn = {
@@ -65,9 +69,9 @@ class BACI(object):
 
 	#-Deletions to Remove Non-Country Entries by ISO3N-#
 	country_only_iso3n_deletions = {
-		'HS92' : [536] 					#Check this!
-		'HS96' : [536]  				#Check this!
-		'HS02' : [536] 					#Neutral Zone, Documented meta/hs02_iso3n_to_iso3c.py
+		'HS92' : [536], 				#Check this!
+		'HS96' : [536],  				#Check this!
+		'HS02' : [536], 				#Neutral Zone, Documented meta/hs02_iso3n_to_iso3c.py
 	}
 
 	#-Documented Adjustments for Official to BACI HS6 ProductCodes-#

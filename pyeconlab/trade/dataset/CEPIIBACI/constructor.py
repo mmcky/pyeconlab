@@ -49,8 +49,9 @@ import string
 import pandas as pd
 import numpy as np
 
-from .meta import BACI
+from .base import BACI
 from .dataset import BACITradeData, BACIExportData, BACIImportData
+from pyeconlab.trade.dataset import CPTradeData, CPExportData, CPImportData
 
 from pyeconlab.country import ISO3166
 from pyeconlab.util import check_directory, check_operations, update_operations, from_idxseries_to_pydict, concord_data
@@ -83,24 +84,25 @@ class BACIConstructor(BACI):
 	#-Constructor Meta Data/Attributes-#
 
 	#-Protected Attributes-#
-	self.__raw_data 	= pd.DataFrame
-	self.__source_dir 	= str
+	__raw_data 	= pd.DataFrame
+	__source_dir 	= str
+	
 	#-Flexible Attributes-#
-	self.dataset 		= pd.DataFrame
-	self.dtype 			= str
-	self.name 			= str 
-	self.classification = str 
-	self.revision 		= str 
-	self.years 			= list 
-	self.notes 			= str
-	self.complete_dataset = bool
-	self.standard_names = bool
-	self.operations 	= str
+	dataset 		= pd.DataFrame
+	dtype 			= str
+	name 			= str 
+	classification = str 
+	revision 		= str 
+	years 			= list 
+	notes 			= str
+	complete_dataset = bool
+	standard_names 	= bool
+	operations 		= str
 
 	#-Specific Attributes to BACIConstructor-#
 
-	self.product_datafl_fixed = bool 
-	self.country_datafl_fixed = bool
+	product_datafl_fixed = bool 
+	country_datafl_fixed = bool
 
 
 	def __init__(self, source_dir, source_classification, ftype='csv', years=[], std_names=True, skip_setup=False, reduce_memory=False, verbose=True):
@@ -137,8 +139,8 @@ class BACIConstructor(BACI):
 		self.operations 	= u"" 
 		
 		#-Country, Product Source File Fixed Indicator-#
-		self.product_data_fixed = False 						#Should this be more sophisticated, this is a constructor so probably not
-		self.country_data_fixed = False
+		self.product_datafl_fixed = False 						#Should this be more sophisticated, this is a constructor so probably not
+		self.country_datafl_fixed = False
 
 		#-Parse Years-#
 		if verbose: print "[INFO] Fetching BACI Data from %s" % source_dir
@@ -188,6 +190,8 @@ class BACIConstructor(BACI):
 		string = "Class: %s\n" % (self.__class__) 							+ \
 				 "Years: %s\n" % (self.years)								+ \
 				 "Complete Dataset: %s\n" % (self.complete_dataset) 		+ \
+				 "# Raw Observations: %s\n" % (self.__raw_data.shape[0]) 	+ \
+				 "# Dataset Observations: %s\n" % (self.dataset.shape[0]) 	+ \
 				 "Source Last Checked: %s\n" % (self.source_last_checked)
 		return string
 	
@@ -234,13 +238,13 @@ class BACIConstructor(BACI):
 			fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.csv'
 			if verbose: print "[INFO] Loading Year: %s from file: %s" % (year, fn)
 			self.__raw_data = self.__raw_data.append(pd.read_csv(fn, dtype={'hs6' : str}))
-		self.__raw_data = self.__raw_data.reset_index() 											#Otherwise Each year has repeated obs numbers
+		self.__raw_data = self.__raw_data.reset_index() 					#Otherwise Each year has repeated obs numbers
 		del self.__raw_data['index']
 		if deletions:
 			for item in self.deletions[self.classification]:
 				if verbose: print "[DELETING] Column: %s" % item
 				del self.__raw_data[item]
-		if std_names:
+		if std_names: 														#Current Default is 'False' to keep raw_data in it's raw state
 			self.use_standard_column_names(self.__raw_data)
 
 	def load_raw_from_hdf(self, years=[], verbose=False):
@@ -269,12 +273,12 @@ class BACIConstructor(BACI):
 		Load Country Classification/Concordance File From Archive
 		Note: [1] Write a wrapper for self.classification selection?
 		"""
-		if fix_source and self.country_data_fixed == False:
+		if fix_source and self.country_datafl_fixed == False:
 			if self.classification == "HS92" or self.classification == "HS96":
 				self.fix_country_code_baci9296(verbose=verbose)
 			if self.classification == "HS02":
 				self.fix_country_code_baci02(verbose=verbose)
-		if self.country_data_fixed == False and self.classification == "HS02":
+		if self.country_datafl_fixed == False and self.classification == "HS02":
 			print "[WARNING] Has the country_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.country_data_fn[self.classification]
 		self.country_data = pd.read_csv(fn)
@@ -285,14 +289,14 @@ class BACIConstructor(BACI):
 		"""
 		Load Product Code Classification File from Archive
 		"""
-		if fix_source and self.product_data_fixed == False:
+		if fix_source and self.product_datafl_fixed == False:
 			if self.classification == "HS92":
 				self.fix_product_code_baci92(verbose=verbose)
 			if self.classification == "HS96":
 				self.fix_product_code_baci96(verbose=verbose)
 			if self.classification == "HS02":
 				self.fix_product_code_baci02(verbose=verbose)
-		if self.product_data_fixed == False and self.classification == "HS02":
+		if self.product_datafl_fixed == False and self.classification == "HS02":
 			print "[WARNING] Has the product_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.product_data_fn[self.classification]
 		self.product_data = pd.read_csv(fn, dtype={'Code' : object})
@@ -306,9 +310,9 @@ class BACIConstructor(BACI):
 		opstring = u"(use_standard_column_names)"
 		if verbose:
 			for item in df.columns:
-				try: print "[CHANGING] Column: %s to %s" % (item, self.interface[item])
-				except: pass 																#Passing Items not Converted by self.interface
-		df.rename(columns=self.interface, inplace=True)
+				try: print "[CHANGING] Column: %s to %s" % (item, self.source_interface[item])
+				except: pass 																#Passing Items not Converted by self.source_interface
+		df.rename(columns=self.source_interface, inplace=True)
 		#-Update Operations Attribute-#
 		update_operations(self, opstring)
 
@@ -420,10 +424,12 @@ class BACIConstructor(BACI):
 		#-Update File List to use adjusted File-#
 		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.country_data_fn[self.classification], fn)
 		self.country_data_fn[self.classification] = fn
-		self.country_data_fixed = True
+		self.country_datafl_fixed = True
 
 	def fix_country_code_baci02(self, verbose=True):
-		""" Fix issue with country_code_baci02 csv file """
+		""" 
+		Fix issue with country_code_baci02 csv file
+		"""
 		if verbose: print "[INFO] Fixing original HS02 country data file in source_dir: %s" % self.source_dir
 		if self.classification != "HS02":
 			raise ValueError("This method only runs on HS02 Data")
@@ -457,7 +463,7 @@ class BACIConstructor(BACI):
 		#-Update File List to use adjusted File-#
 		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.country_data_fn["HS02"], fn)
 		self.country_data_fn["HS02"] = fn
-		self.country_data_fixed = True
+		self.country_datafl_fixed = True
 
 	#-ProductCode File Fixes-#
 
@@ -476,7 +482,7 @@ class BACIConstructor(BACI):
 		#-Update File List to use adjusted File-#
 		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.product_data_fn["HS92"], fn)
 		self.product_data_fn["HS92"] = fn
-		self.product_data_fixed = True
+		self.product_datafl_fixed = True
 
 	def fix_product_code_baci96(self, verbose=True):
 		"""
@@ -507,7 +513,7 @@ class BACIConstructor(BACI):
 		#-Update File List to use adjusted File-#
 		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.product_data_fn["HS96"], fn)
 		self.product_data_fn["HS96"] = fn
-		self.product_data_fixed = True
+		self.product_datafl_fixed = True
 
 	def fix_product_code_baci02(self, verbose=True):
 		"""
@@ -543,7 +549,7 @@ class BACIConstructor(BACI):
 		#-Update File List to use adjusted File-#
 		if verbose: print "[INFO] Replacing internal reference from: %s to: %s" % (self.product_data_fn["HS02"], fn)
 		self.product_data_fn["HS02"] = fn
-		self.product_data_fixed = True
+		self.product_datafl_fixed = True
 
 	#-----------------------#
 	#-Operations on Dataset-#
@@ -568,7 +574,6 @@ class BACIConstructor(BACI):
 			[10, 74, 80, 129, 239, 275, 290, 334, 336, 471, 473, 492, 499, 527, 531, 534, 535, 568, 577, 581,636, 637, 688, 728, 729, 807, 837, 838, 839, 879, 899]
 		[2] IISO3N Codes Dropped: 
 			[10, 74, 80, 129, 221, 239, 275, 290, 334, 336, 471, 473, 492, 499, 527, 531, 534, 535, 568, 577, 581, 636, 637, 688, 697, 728, 729, 807, 837, 838, 839, 879, 899]
-
 		"""
 		edrop, idrop, spdrop = 0,0,0
 		init_obs = self.dataset.shape[0]
@@ -643,6 +648,10 @@ class BACIConstructor(BACI):
 		[1] Account for levels in special cases
 		[2] Consider Implimenting Aggregation for quantity
 		[3] Automate classification and level encoding
+
+		Note
+		----
+		[1] Eligible for a Generic Constructor
 		"""
 		#-Add Special Cases to the concordance-#
 		for k,v in  self.adjust_hs6_to_sitc[self.classification].items():
@@ -657,10 +666,9 @@ class BACIConstructor(BACI):
 	def merge_all_sourcefiles(self, rename_newvars=True, verbose=True):
 		"""
 		Merge all baciXX_YYYY.csv, country_code_baciXX.csv, product_code_baciXX.csv files using native column names
-		
 		Note
 		----
-		[1] Is this useful?
+		[1] Is this still useful? => Propose Deletion
 		[1] This can be used as a test against using the converted standard_names
 		[2] Should I rename incoming data? I think harmonised internal reader friendly columns names are the best solution
 		"""
@@ -697,7 +705,7 @@ class BACIConstructor(BACI):
 		"""
 		if not self.complete_dataset:
 			if not force: raise ValueError("This is not a complete dataset!")
-		if not self.country_data_fixed:
+		if not self.country_datafl_fixed:
 			self.fix_country_code_baci()
 		#-Set Filename-#
 		fl = '%s_iso3n_to_countryname.py' % (self.classification.lower())
@@ -941,9 +949,10 @@ class BACIConstructor(BACI):
 			raise ValueError("'data' must be 'trade', 'export', or 'import'")
 		#-Replace Dataset-#
 		self.dataset = data
+		self.dtype = dtype
 		#-Return Dataset Object-#
 		if dataset_object:
-			self.to_dataset()
+			return self.to_dataset()
 	
 	def attach_attributes_to_dataset(self, df):
 		""" Attach Attributes to the Dataset DataFrame for Transfer """
@@ -956,17 +965,23 @@ class BACIConstructor(BACI):
 		df.txf_notes 			= self.notes
 		return df
 
-	def to_dataset(self):
+	def to_dataset(self, generic=False):
 		""" Convert to a Dataset Object """
 		#-Prepare Data for Object Standard Input-#
 		data = self.dataset.reset_index()
 		data = data.rename_axis({'sitc3' : 'productcode'}, axis=1)
 		data = self.attach_attributes_to_dataset(data) 							#Alternatively we could create the object and then attach names directly!
 		if self.dtype == "trade":
+			if generic:
+				return CPTradeData(data)
 			return BACITradeData(data)
 		elif self.dtype == "export":
+			if generic:
+				return CPExportData(data)
 			return BACIExportData(data)
 		elif self.dtype == "import":
+			if generic:
+				return CPImportData(data)
 			return BACIImportData(data)
 		else:
 			raise ValueError("dtype (%s) is not 'trade', 'export' or 'import'" % self.dtype)	

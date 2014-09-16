@@ -8,6 +8,7 @@ Supporting Constructor
 Dependancies
 ------------
 [1] pyeconlab.trade => CPTradeDataset, CPTradeData, CPExportData, CPImportData
+[2] .base => BACI
 
 Product Classification
 ----------------------
@@ -17,9 +18,9 @@ Product Classification
 
 Types
 =====
-[1] Trade Dataset 	(Bilateral Trade Flows)
-[2] Export Dataset 	(Export Trade Flows)
-[3] Import Dataset 	(Import Trade Flows)
+[1] Trade Data 	(Bilateral Trade Flows)
+[2] Export Data 	(Export Trade Flows)
+[3] Import Data 	(Import Trade Flows)
 """
 
 import numpy as np
@@ -27,18 +28,20 @@ import pandas as pd
 import cPickle as pickle
 
 #-Generic Containers-#
-from .meta import BACI
+from .base import BACI
 from pyeconlab.trade.dataset import CPTradeDataset, CPTradeData, CPExportData, CPImportData
 
+#-These are Just Wrappers to Put a more appropriate Class Name Around Generic Dataset Objects and to provide source details	-#
+#-May want to hide some source details as they clutter the . namespace 														-#
 
-class BACITradeData(CPTradeData, BACI):
+class BACITradeData(BACI, CPTradeData):
 	""" BACI TRADE Dataset """
 	pass
 
-class BACIExportData(CPExportData, BACI):
+class BACIExportData(BACI, CPExportData):
 	""" BACI Export Dataset """
 	pass
 
-class BACIImportData(CPImportData, BACI):
+class BACIImportData(BACI, CPImportData):
 	""" BACI Import Dataset """
 	pass

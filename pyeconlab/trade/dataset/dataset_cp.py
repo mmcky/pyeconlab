@@ -3,9 +3,9 @@ Generic Country x Product Dataset Construction Classes
 
 Types
 =====
-[1] Trade Dataset 	(Bilateral Trade Flows)
-[2] Export Dataset 	(Export Trade Flows)
-[3] Import Dataset 	(Import Trade Flows)
+[1] TradeData 	(Bilateral Trade Flows)
+[2] ExportData 	(Export Trade Flows)
+[3] ImportData 	(Import Trade Flows)
 
 Notes
 =====
@@ -16,12 +16,12 @@ Notes
 Trade Datasets
 ==============
 1. Feenstra/NBER Data  							[NBERFeenstraWTF]
-2. BACI Data 									[TBD]
-3. CEPII Data 									[TBD]
+2. BACI Data 									[CEPIIBACI]
 
 Attribute Datasets
 ==================
 1. UNCTAD Revealed Capital,Labour, and Land 	[TBD]
+2. CEPII Datasets 								[TBD]
 
 Issues
 ======
@@ -44,13 +44,13 @@ import warnings
 
 class CPTradeDataset(object):
 	"""
-	Generic Country x Product Trade Data Object
+	Generic Country x Product Trade Data Object ['trade', 'export', 'import']
 	This Object Impliments a Standard Interface for Incoming Data allowing methods to be writen easily
 	"""
 
 	# - Dataset Attributes - #
 	__data 				= pd.DataFrame()
-	__dtype 			= None 					#'Trade', 'Export', 'Import'
+	__data_type 		= None 					#'Trade', 'Export', 'Import'
 	__level 			= None
 	__classification 	= None 					#'HS', 'SICT'
 	__revision 			= None  				#'1992', 2
@@ -77,6 +77,30 @@ class CPTradeDataset(object):
 	source_value_units_str 	= None
 	source_last_checked 	= None
 	
+	def __init__(self, data, data_type): 	
+		""" 
+		Fill Object with Data
+
+		Implimented Methods
+		-------------------
+		[1] from_dataframe
+		[2] from_pickle
+
+		Future Work
+		-----------
+		[1] from_hdf
+		"""
+		if type(data) == pd.DataFrame:
+			self.from_dataframe(data, data_type)
+		elif type(data) == str:
+			fn, ftype = data.split('.')
+			if ftype == 'pickle':
+				self.from_pickle(fn=data)
+			elif ftype == 'h5':
+				self.from_hdf(fn=data)
+			else:
+				raise ValueError('Uknown File Type: %s' % ftype)
+
 	def __repr__(self):
 		"""
 		Future Work: Add in Value Units?
@@ -94,7 +118,7 @@ class CPTradeDataset(object):
 		string = "Class: %s\n" % (self.__class__) 							+ \
 				 "-------\n" 										 		+ \
 				 "DATASET:\n" 										 		+ \
-				 "Name: %s (Type: %s)\n" % (self.__name, self.__dtype) 		+ \
+				 "Name: %s (Type: %s)\n" % (self.__name, self.__data_type) 		+ \
 				 "Classification: %s (L:%s) [R:%s]\n" % (self.__classification, self.__level, self.__revision) + \
 				 num_exporters 												+ \
 				 num_importers 												+ \
@@ -109,29 +133,7 @@ class CPTradeDataset(object):
 				 "Last Checked: %s" % (self.source_last_checked)
 		return string.replace("<Not Applicable>", "")
 
-	def __init__(self, data, dtype): 	
-		""" 
-		Fill Object with Data
-
-		Implimented Methods
-		-------------------
-		[1] from_dataframe
-		[2] from_pickle
-
-		Future Work
-		-----------
-		[1] from_hdf
-		"""
-		if type(data) == pd.DataFrame:
-			self.from_dataframe(df=data, dtype=dtype)
-		elif type(data) == str:
-			fn, ftype = data.split('.')
-			if ftype == 'pickle':
-				self.from_pickle(fn=data)
-			elif ftype == 'h5':
-				self.from_hdf(fn=data)
-			else:
-				raise ValueError('Uknown File Type: %s' % ftype)
+	#-Properties-#
 
 	@property 
 	def years(self):
@@ -174,7 +176,7 @@ class CPTradeDataset(object):
 
 	#-IO-#
 
-	def from_dataframe(self, df, dtype):
+	def from_dataframe(self, df, data_type):
 		"""
 		Populate Object from Pandas DataFrame
 		
@@ -186,12 +188,12 @@ class CPTradeDataset(object):
 		if type(df) == pd.DataFrame:
 			# - Check Incoming Data Conforms - #
 			columns = set(df.columns)
-			for item in self.interface[dtype]:
+			for item in self.interface[data_type.lower()]:
 				if item not in columns: 
 					raise TypeError("Need %s to be specified in the incoming data" % item)
 			#-Set Attributes-#
 			self.__name = df.txf_name
-			self.__dtype = df.txf_dtype
+			self.__data_type = data_type
 			self.__classification = df.txf_classification 
 			self.__revision = df.txf_revision
 				# self.__value_units = df.txf_value_units 						#Add in Later
@@ -205,9 +207,9 @@ class CPTradeDataset(object):
 				raise ValueError("Product Levels are not consistent lengths: %s" % levels)
 			self.__level = levels[0]
 			#-Set Index-#
-			self.data = df.set_index(self.interface[dtype][:-1]) 	#Index by all values except 'value'
+			self.data = df.set_index(self.interface[data_type.lower()][:-1]) 	#Index by all values except 'value'
 		else:
-			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface[dtype])
+			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface[data_type.lower()])
 
 	def to_pickle(self, fn):
 		""" Pickle Object """
@@ -245,10 +247,10 @@ class CPTradeDataset(object):
 
 	#-Methods-#
 
-	def check_interface(self, columns, dtype):
+	def check_interface(self, columns, data_type):
 		""" Checking Incoming Data Conforms to Interface """
 		columns = set(columns)
-		for item in self.interface[dtype]:
+		for item in self.interface[data_type.lower()]:
 			if item not in columns: 
 				raise TypeError("Need %s to be specified in the incoming data" % item)
 
@@ -265,6 +267,8 @@ class CPTradeDataset(object):
 		"""
 		raise NotImplementedError
 
+#-Specific Trade Data Object-#
+
 class CPTradeData(CPTradeDataset):
 	""" 
 	Generic Trade Dataset Object
@@ -276,17 +280,11 @@ class CPTradeData(CPTradeDataset):
 	[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
 	"""
 
-	__dtype = 'Trade'
+	__data_type = 'Trade'
 
-	# def __repr__(self):
-	# 	""" Representation String Of Object """
-	# 	string = "Class: %s\n" % (self.__class__) 							+ \
-	# 			 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.source_available_years)		+ \
-	# 			 "Number of Importers: %s\n" % (self.num_importers) 		+ \
-	# 			 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
-	# 			 "Number of Products: %s\n" % (self.num_products) 			+ \
-	# 			 "Number of Trade Flows: %s\n" % (self.data.shape[0])
-	# 	return string
+	def __init__(self, data):
+		""" Use Superclass init() with specified data_type """
+		CPTradeDataset.__init__(self, data, self.__data_type)
 
 	#-Properties-#
 
@@ -337,11 +335,6 @@ class CPTradeData(CPTradeDataset):
 			warnings.warn("'iiso3c' is not found in the data", UserWarning)
 		return self.data.index.levshape[loc]
 
-	#-Data Import Methods-#
-
-	def from_dataframe(self, df):
-		self.from_dataframe(df, dtype='trade')
-
 	#-Exports / Imports Data-#
 
 	def export_data(self, return_data=False):
@@ -362,29 +355,20 @@ class CPTradeData(CPTradeDataset):
 		if return_data:
 			return self.imports
 
+#-Export Data-#
 
 class CPExportData(CPTradeDataset):
 	""" 
 	Generic Export Dataset Object
-
 	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
 
-	__dtype = 'Export'
+	__data = pd.DataFrame()
+	__data_type = 'Export'
 
-	# def __repr__(self):
-	# 	""" Representation String Of Object """
-	# 	string = "Class: %s\n" % (self.__class__) 							+ \
-	# 			 "Years: %s\n" % (self.years) +  " [Available Years: %s]\n" % (self.source_available_years)		+ \
-	# 			 "Number of Exporters: %s\n" % (self.num_exporters)			+ \
-	# 			 "Number of Products: %s\n" % (self.num_products) 			+ \
-	# 			 "Number of Export Flows: %s\n" % (self.data.shape[0])
-	# 	return string
-
-	#-Data Import Methods-#
-
-	def from_dataframe(self, df):
-		self.from_dataframe(df, dtype='export')
+	def __init__(self, data):
+		""" Use Superclass init() with specified data_type """
+		CPTradeDataset.__init__(self, data, self.__data_type)
 
 	#-Properties-#
 
@@ -425,6 +409,7 @@ class CPExportData(CPTradeDataset):
 		return system
 
 
+#-Import Data-#
 
 class CPImportData(CPTradeDataset):
 	""" 
@@ -432,16 +417,12 @@ class CPImportData(CPTradeDataset):
 	Interface: ['year', 'iiso3c', 'productcode', 'value']
 	"""	
 	
-	__dtype = 'Import'
+	__data = pd.DataFrame()
+	__data_type = 'Import'
 
-	# def __repr__(self):
-	# 	""" Representation String Of Object """
-	# 	string = "Class: %s\n" % (self.__class__) 							+ \
-	# 			 "Years: %s\n" % (self.__years) +  " [Available Years: %s]\n" % (self.__available_years)		+ \
-	# 			 "Number of Importers: %s\n" % (self.num_importers)			+ \
-	# 			 "Number of Products: %s\n" % (self.num_products) 			+ \
-	# 			 "Number of Import Flows: %s\n" % (self.data.shape[0])
-	# 	return string
+	def __init__(self, data):
+		""" Use Superclass init() with specified data_type """
+		CPTradeDataset.__init__(self, data, self.__data_type)
 
 	#-Properties-#
 	
@@ -465,8 +446,3 @@ class CPImportData(CPTradeDataset):
 			warnings.warn("'iiso3c' is not found in the data", UserWarning)
 		return self.data.index.levshape[loc]
 
-
-	#-Data Import Methods-#
-
-	def from_dataframe(self, df):
-		self.from_dataframe(df, dtype='import')
