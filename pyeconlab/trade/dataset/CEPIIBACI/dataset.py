@@ -8,7 +8,7 @@ Supporting Constructor
 Dependancies
 ------------
 [1] pyeconlab.trade => CPTradeDataset, CPTradeData, CPExportData, CPImportData
-[2] .base => BACI
+[2] .base => BACI 
 
 Product Classification
 ----------------------
