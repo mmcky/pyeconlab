@@ -13,9 +13,6 @@ Purpose:
 	[2] Clean Datasets 
 	[3] Create Dataset Objects
 
-Current Work
-------------
-	[1] NBERFeenstraWTF
 """
 
 #-Generic Dataset Objects-#
@@ -23,8 +20,8 @@ from .dataset_c import CTradeDataset, CTradeData, CExportData, CImportData
 from .dataset_cp import CPTradeDataset, CPTradeData, CPExportData, CPImportData
 
 #-NBER Feenstra World Trade Flows-#
-from .NBERFeenstraWTF.constructor import NBERFeenstraWTFConstructor
-from .NBERFeenstraWTF.dataset import NBERFeenstraWTF, NBERFeenstraWTFTrade, NBERFeenstraWTFExport, NBERFeenstraWTFImport
+from .NBERWTF.constructor import NBERWTFConstructor
+from .NBERWTF.dataset import NBERWTF, NBERWTFTrade, NBERWTFExport, NBERWTFImport
 
 #-BACI World Trade Flows-#
 from .CEPIIBACI.base import BACI

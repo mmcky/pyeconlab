@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-NBERFeenstraWTF Constructor
+NBERWTF Constructor
 
 Compile NBERFeenstra RAW data Files and Perform Data Preparation Tasks
 
 It is the CORE responsibility of this module to clean, prepare and investigate the data.
-The NATURE of the data shouldn't be changed in this class. For example, routines for collapsing the bilateral flows to exports should be contained in NBERFeenstraWTF 
+The NATURE of the data shouldn't be changed in this class. For example, routines for collapsing the bilateral flows to exports should be contained in NBERWTF 
 
 Conventions
 -----------
@@ -15,11 +15,11 @@ dataset 	: Contains the Modified Dataset
 Notes
 -----
 A) Load Times
-	[1] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~41s] 		From a complevel=9 file (Filesize: 148Mb)
-	[2] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~34.5s]   	From a complevel=0 file (FileSize: 2.9Gb)
-	[3] a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') [~14min 23s]
+	[1] a = NBERWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~41s] 		From a complevel=9 file (Filesize: 148Mb)
+	[2] a = NBERWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='hdf') [~34.5s]   	From a complevel=0 file (FileSize: 2.9Gb)
+	[3] a = NBERWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta') [~14min 23s]
 
-B) Convert Times (from a = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta'))
+B) Convert Times (from a = NBERWTFConstructor(source_dir=SOURCE_DATA_DIR, ftype='dta'))
 	[1] a.convert_raw_data_to_hdf(complevel=0) [1min 21seconds]
 	[2] a.convert_raw_data_to_hdf(complevel=9) [2min 54seconds]
 
@@ -41,7 +41,7 @@ import pandas as pd
 import numpy as np
 import countrycode as cc
 
-from .dataset import NBERFeenstraWTFTrade, NBERFeenstraWTFExport, NBERFeenstraWTFImport 
+from .dataset import NBERWTFTrade, NBERWTFExport, NBERWTFImport 
 from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
 							countryname_concordance, concord_data, random_sample, find_row, assert_merged_series_items_equal
 from pyeconlab.trade.classification import SITC
@@ -54,7 +54,7 @@ META_PATH = check_directory(os.path.join(this_dir, "meta"))
 #-Concordances-#
 from pyeconlab.country import iso3n_to_iso3c, iso3n_to_name 			#Why does this import prevent nosetests from running?				
 
-class NBERFeenstraWTFConstructor(object):
+class NBERWTFConstructor(object):
 	"""
 	Data Constructor / Compilation Object for Feenstra NBER World Trade Data
 	Years: 	1962 to 2000
@@ -161,7 +161,7 @@ class NBERFeenstraWTFConstructor(object):
 		[3] Properties
 		[4] Supplementary Data (Loading Data)
 		[5] Operations on Dataset (Adjusting self._dataset, cleaning tasks etc)
-		[6] Construct Datasets (NBERFeenstraWTF)
+		[6] Construct Datasets (NBERWTF)
 		[7] Supporting Functions
 		[8] Generate Meta Data Files For Inclusion into Project Package (meta/)
 		[9] Converters (hd5 Files etc.)
@@ -171,7 +171,7 @@ class NBERFeenstraWTFConstructor(object):
 	Notes:
 	------
 		[1] There should only be ONE assignment in __init__ to the __raw_data attribute [Is there a way to enforce this?]
-			Any modification prior to returning an NBERFeenstraWTF object should be carried out on "._dataset"
+			Any modification prior to returning an NBERWTF object should be carried out on "._dataset"
 		[2] All Methods in this Class should operate on **NON** Indexed Data
 		[3] This Dataset Requires ~25GB of RAM
 
@@ -195,7 +195,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	# - Dataset Attributes - #
 
-	_name 				= u'NBERFeenstraWTF'
+	_name 				= u'NBERWTF'
 	classification 		= u'SITC'
 	revision 			= 2
 	source_web 			= u"http://cid.econ.ucdavis.edu/nberus.html"
@@ -244,7 +244,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		#-Parse Skip Setup-#
 		if skip_setup == True:
-			print "[INFO] Skipping Setup of NBERFeenstraWTFConstructor!"
+			print "[INFO] Skipping Setup of NBERWTFConstructor!"
 			self.__raw_data 	= None 												#Allows to be assigned later on
 			return None
 		
@@ -406,7 +406,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	@property 
 	def dataset(self):
-		""" Dataset contains the Exportable Result to NBERFeenstraWTF """
+		""" Dataset contains the Exportable Result to NBERWTF """
 		try:
 			return self._dataset 
 		except: 											#-Raw Data Not Yet Copied-#
@@ -1154,7 +1154,7 @@ class NBERFeenstraWTFConstructor(object):
 		[1] Write Tests
 		[2] Make the Reporting More Informative
 		"""
-		from pyeconlab.trade.dataset.NBERFeenstraWTF.meta import iso3c_recodes_for_1962_2000
+		from pyeconlab.trade.dataset.NBERWTF.meta import iso3c_recodes_for_1962_2000
 		from pyeconlab.util import concord_data
 
 		#-Parse Complete Dataset Check-#
@@ -2032,10 +2032,10 @@ class NBERFeenstraWTFConstructor(object):
 
 	def to_nberfeenstrawtf(self, data_type, verbose=True):
 		"""
-		Construct NBERFeenstraWTF Object with Common Core Object Names
+		Construct NBERWTF Object with Common Core Object Names
 		Note: This is constructed from the ._dataset attribute
 
-		This will export the cleaned bilateral data to the NBERFeenstraWTF object. 
+		This will export the cleaned bilateral data to the NBERWTF object. 
 
 		Arguments 
 		---------
@@ -2049,7 +2049,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		Notes
 		-----
-		[1] It will be the responsibility of NBERFeenstraWTF to export to ProductLevelExportSystems etc.
+		[1] It will be the responsibility of NBERWTF to export to ProductLevelExportSystems etc.
 
 		Future Work 
 		-----------
@@ -2064,11 +2064,11 @@ class NBERFeenstraWTFConstructor(object):
 		self.attach_attributes_to_dataset()
 
 		if data_type == 'trade':
-			return NBERFeenstraWTFTrade(self.dataset)
+			return NBERWTFTrade(self.dataset)
 		elif data_type == 'export' or data_type == 'exports':
-			return NBERFeenstraWTFExport(self.dataset)
+			return NBERWTFExport(self.dataset)
 		elif data_type == 'import' or data_type == 'imports':
-			return NBERFeenstraWTFImport(self.dataset)
+			return NBERWTFImport(self.dataset)
 		else:
 			raise ValueError("data_type must be either 'trade', 'export(s)', or 'import(s)'")
 
@@ -3015,7 +3015,7 @@ class NBERFeenstraWTFConstructor(object):
 
 	def generate_countryname_concordance_files(self, verbose=False):
 		"""
-		Generate a Global CountryName Concordance File for NBERFeenstraWTF Dataset
+		Generate a Global CountryName Concordance File for NBERWTF Dataset
 
 		STATUS: **ON HOLD** 
 				(Given this saves no time (and memory isn't binding) this function is currently ON HOLD)

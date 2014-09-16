@@ -29,7 +29,7 @@ from .dataset import 	CTradeDataset, CTradeData, CExportData, CImportData, 	\
 
 #-Specific Datasets-#
 from .dataset.CEPIIBACI import BACIConstructor, BACITradeData, BACIExportData, BACIImportData
-from .dataset.NBERFeenstraWTF import NBERFeenstraWTFConstructor, NBERFeenstraWTF, NBERFeenstraWTFTrade, NBERFeenstraWTFExport, NBERFeenstraWTFImport
+from .dataset.NBERWTF import NBERWTFConstructor, NBERWTF, NBERWTFTrade, NBERWTFExport, NBERWTFImport
 
 # - Systems - #
 from .systems.ProductLevelExportSystem import ProductLevelExportSystem
