@@ -39,6 +39,7 @@ Future Work
 import pandas as pd
 import cPickle as pickle
 import warnings
+import matplotlib.pyplot as plt
 
 #-Country x Product Trade Dataset-#
 
@@ -49,7 +50,8 @@ class CPTradeDataset(object):
 	"""
 
 	# - Dataset Attributes - #
-	__data 				= pd.DataFrame()
+	__data 				= pd.DataFrame()		#Holds Data Indexed by Year, Country, Product
+	__dyn_data 			= pd.DataFrame() 		#Holds Data Shaped with Years in Columns
 	__data_type 		= None 					#'Trade', 'Export', 'Import'
 	__level 			= None
 	__classification 	= None 					#'HS', 'SICT'
@@ -77,7 +79,11 @@ class CPTradeDataset(object):
 	source_value_units_str 	= None
 	source_last_checked 	= None
 	
-	def __init__(self, data, data_type): 	
+	#-Internals-#
+	__attr_export 	= set(['trade', 'export', 'exports', 'ex'])
+	__attr_import	= set(['trade', 'import', 'imports', 'im'])
+	 
+	def __init__(self, data, data_type, prep_dynamic=True): 	
 		""" 
 		Fill Object with Data
 
@@ -100,6 +106,11 @@ class CPTradeDataset(object):
 				self.from_hdf(fn=data)
 			else:
 				raise ValueError('Uknown File Type: %s' % ftype)
+
+		#-Parse Prepare Dynamic Data Options-#
+		if prep_dynamic:
+			self.__dyn_data = self.data.unstack(level='year')
+			self.__dyn_data.columns = self.dynamic_data.columns.droplevel() 	#remove 'value' label
 
 	def __repr__(self):
 		"""
@@ -144,6 +155,14 @@ class CPTradeDataset(object):
 	#-Properties-#
 
 	@property 
+	def data(self):
+		return self.__data
+
+	@property 
+	def dynamic_data(self):
+		return self.__dyn_data
+
+	@property 
 	def years(self):
 		return self.__years
 	@years.setter
@@ -181,6 +200,24 @@ class CPTradeDataset(object):
 	@property 
 	def complete_dataset(self):
 		return self.__complete_dataset
+
+	#-Data Extraction-#
+
+	@property 
+	def exporters(self):
+		""" List of Exporters """
+		if self.data_type in self.__attr_export:
+			return self.data.index.get_level_values(level='eiso3c').unique()
+		else:
+			raise ValueError("%s is data that does not contain exporter characteristics" % self.data_type)
+
+	@property 
+	def importers(self):
+		""" List of Importers """
+		if self.data_type in self.__attr_import:
+			return self.data.index.get_level_values(level='iiso3c').unique()
+		else:
+			raise ValueError("%s is data that does not contain exporter characteristics" % self.data_type)
 
 	#-IO-#
 
@@ -286,6 +323,14 @@ class CPTradeDataset(object):
 		Subsitute Country Names for Regions and Collapse.sum()
 		"""
 		raise NotImplementedError
+
+
+	#-Plots-#
+	def plot_cp_value(self, c, p):
+		""" Plot Country, Product Time Series """
+		plot = self.dynamic_data.ix[(c,p)].plot(title="Country: %s; Product: %s" % (c,p))
+		return plot
+
 
 #-Specific Trade Data Object-#
 
