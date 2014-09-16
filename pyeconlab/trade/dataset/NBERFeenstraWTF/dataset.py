@@ -52,7 +52,7 @@ class NBERFeenstraWTF(CPTradeDataset):
 #-Trade-#
 #-------#
 
-class NBERFeenstraWTFTrade(CPTradeData, NBERFeenstraWTF):
+class NBERFeenstraWTFTrade(NBERFeenstraWTF, CPTradeData):
 	"""
 	NBERFeenstraWTF Bilateral World TRADE Data
 	
@@ -101,38 +101,22 @@ class NBERFeenstraWTFTrade(CPTradeData, NBERFeenstraWTF):
 #-Export-#
 #--------#
 
-class NBERFeenstraWTFExport(CPExportData, NBERFeenstraWTF):
+class NBERFeenstraWTFExport(NBERFeenstraWTF, CPExportData):
 	"""
 	NBERFeenstraWTF EXPORT World Trade Data
 	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
-
-	#-Data-#
-
-	@property 
-	def data(self):
-		return self.__data
-	@data.setter
-	def data(self, values):
-		self.__data = values
+	pass
 
 	
 #--------#
 #-Import-#
 #--------#
 
-class NBERFeenstraWTFImport(CPImportData, NBERFeenstraWTF):
+class NBERFeenstraWTFImport(NBERFeenstraWTF, CPImportData):
 	"""
 	NBERFeenstraWTF IMPORT World Trade Data
 	Interface: ['year', 'iiso3c', 'productcode', 'value']
 	"""	
-	
-	#-Data-#
-
-	@property 
-	def data(self):
-		return self.__data
-	@data.setter
-	def data(self, values):
-		self.__data = values
+	pass
 

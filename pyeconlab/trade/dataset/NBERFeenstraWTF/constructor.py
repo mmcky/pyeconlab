@@ -1718,7 +1718,7 @@ class NBERFeenstraWTFConstructor(object):
 		"""
 		raise NotImplementedError
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, dtype, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Level 3
 		Note: SC Reduce the Need to Debug many other routines for the time being. 
@@ -1726,7 +1726,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		STATUS: tests/test_constructor_SC_CNTRY_SR2L3_Y62to00.py
 
-		dtype 				: 	'trade', 'export', 'import'
+		data_type 				: 	'trade', 'export', 'import'
 
 		Data Settings
 		-------------
@@ -1788,13 +1788,13 @@ class NBERFeenstraWTFConstructor(object):
 		self.level = 3
 		#-Country Adjustment-#
 		df = df.loc[(df.exporter != "World") & (df.importer != "World")]
-			#-Exports (can include NES on importer side)-#
-		if dtype == 'export' or dtype == 'exports':
+		#-Exports (can include NES on importer side)-#
+		if data_type == 'export' or data_type == 'exports':
 			df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
 			df = df.loc[(df.eiso3c != '.')]
 			df = df.groupby(['year', 'eiso3c', 'sitc3']).sum()['value'].reset_index()
-			#-Imports (can include NES on importer side)-#
-		elif dtype == 'import' or dtype == 'imports':
+		#-Imports (can include NES on importer side)-#
+		elif data_type == 'import' or data_type == 'imports':
 			df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
 			df = df.loc[(df.iiso3c != '.')]
 			df = df.groupby(['year','iiso3c', 'sitc3']).sum()['value'].reset_index()
@@ -1829,12 +1829,12 @@ class NBERFeenstraWTFConstructor(object):
 			from pyeconlab.util import concord_data
 			from .meta import iso3c_recodes_for_1962_2000
 			#-Export-#
-			if dtype == 'export' or dtype == 'exports':
+			if data_type == 'export' or data_type == 'exports':
 				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 				df = df[df['eiso3c'] != '.']
 				df = df.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
 			#-Import-#
-			elif dtype == 'import' or dtype == 'imports':
+			elif data_type == 'import' or data_type == 'imports':
 				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 				df = df[df['iiso3c'] != '.']
 				df = df.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
@@ -1851,11 +1851,11 @@ class NBERFeenstraWTFConstructor(object):
 			from pyeconlab.util import concord_data
 			from .meta import incomplete_iso3c_for_1962_2000
 			#-Export-#
-			if dtype == 'export' or dtype == 'exports':
+			if data_type == 'export' or data_type == 'exports':
 				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 				df = df[df['eiso3c'] != '.']
 			#-Import-#
-			elif dtype == 'import' or dtype == 'imports':
+			elif data_type == 'import' or data_type == 'imports':
 				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False)) 	#issue_error = false returns x if no match
 				df = df[df['iiso3c'] != '.']
 			#-Trade-#
@@ -1882,81 +1882,81 @@ class NBERFeenstraWTFConstructor(object):
 			print report
 		self._dataset = df
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, dtype, dataset_object=True, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data_type, dataset_object=True, verbose=True):
 		"""
 		Complete Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset A]
 		A => dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
-		dtype 	: 	'trade', 'export', 'import'
+		data_type 	: 	'trade', 'export', 'import'
 		dataset_object : True/False [Default: True]
 
 		Note
 		---- 
-		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype='export'/'import') 
+		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
 			as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype=dtype, dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		if dataset_object:
 			self.notes = "Computed with options dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False"
-			obj = self.to_nberfeenstrawtf(dtype=dtype)
+			obj = self.to_nberfeenstrawtf(data_type=data_type)
 			return obj
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, dtype, dataset_object=True, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data_type, dataset_object=True, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00()	[Dataset B]
 		B => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
-		dtype 	: 	'trade', 'export', 'import'
+		data_type 	: 	'trade', 'export', 'import'
 		dataset_object : True/False [Default: True]
 
 		Note
 		---- 
-		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype='export'/'import') 
+		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
 			as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype=dtype, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		if dataset_object:
 			self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False"
-			obj = self.to_nberfeenstrawtf(dtype=dtype)
+			obj = self.to_nberfeenstrawtf(data_type=data_type)
 			return obj
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, dtype, dataset_object=True, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data_type, dataset_object=True, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset C]
 		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
 
-		dtype 	: 	'trade', 'export', 'import'
+		data_type 	: 	'trade', 'export', 'import'
 		dataset_object : True/False [Default: True]
 
 		Note
 		---- 
-		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype='export'/'import') 
+		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
 			as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype=dtype, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
 		if dataset_object:
 			self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False"
-			obj = self.to_nberfeenstrawtf(dtype=dtype)
+			obj = self.to_nberfeenstrawtf(data_type=data_type)
 			return obj
 
-	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, dtype, dataset_object=True, verbose=True):
+	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data_type, dataset_object=True, verbose=True):
 		"""
 		Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset D]
 		C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
 
-		dtype 	: 	'trade', 'export', 'import'
+		data_type 	: 	'trade', 'export', 'import'
 		dataset_object : True/False [Default: True] 
 
 		Note
 		---- 
-		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype='export'/'import') 
+		[1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
 			as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 		"""
-		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(dtype=dtype, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
+		self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
 		if dataset_object:
 			self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True"
-			obj = self.to_nberfeenstrawtf(dtype=dtype)
+			obj = self.to_nberfeenstrawtf(data_type=data_type)
 			return obj
 
 	#-Dataset Construction Using Internal Methods-#
@@ -2020,7 +2020,17 @@ class NBERFeenstraWTFConstructor(object):
 	#-PyEconLab Object Interfaces-#
 	#-----------------------------#
 
-	def to_nberfeenstrawtf(self, dtype, verbose=True):
+	def attach_attributes_to_dataset(self):
+		#-Attach Transfer Attributes-#
+		self._dataset.txf_name 				= self._name
+		self._dataset.txf_data_type 		= self.data_type
+		self._dataset.txf_classification 	= self.classification
+		self._dataset.txf_revision 			= self.revision 
+		self._dataset.txf_complete_dataset 	= self.complete_dataset
+		self._dataset.txf_notes 			= self.notes
+		return self._dataset
+
+	def to_nberfeenstrawtf(self, data_type, verbose=True):
 		"""
 		Construct NBERFeenstraWTF Object with Common Core Object Names
 		Note: This is constructed from the ._dataset attribute
@@ -2029,7 +2039,7 @@ class NBERFeenstraWTFConstructor(object):
 
 		Arguments 
 		---------
-		dtype 	: 	'trade', 'export', 'import'
+		data_type 	: 	'trade', 'export', 'import'
 
 		Object Interface's
 		------------------
@@ -2044,31 +2054,23 @@ class NBERFeenstraWTFConstructor(object):
 		Future Work 
 		-----------
 		[1] Add attribute to automatically determine what type of dataset is being exported 
-		[2] Turn dtype into a self.dtype attribute!
+		[2] Turn data_type into a self.data_type attribute!
 		"""
 
- 		def attach_attributes(df, dtype):
-	 		#-Attach Transfer Attributes-#
-			self._dataset.txf_name 				= self._name
-			self._dataset.txf_dtype 			= dtype
-			self._dataset.txf_classification 	= self.classification
-			self._dataset.txf_revision 			= self.revision 
-			self._dataset.txf_complete_dataset 	= self.complete_dataset
-			self._dataset.txf_notes 			= self.notes
-			return df
+		self.data_type = data_type
 
 		sitcl = 'sitc%s' % self.level
 		self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
-		attach_attributes(self.dataset, dtype)
+		self.attach_attributes_to_dataset()
 
-		if dtype == 'trade':
-			return NBERFeenstraWTFTrade(self.dataset, dtype)
-		elif dtype == 'export' or dtype == 'exports':
-			return NBERFeenstraWTFExport(self.dataset, dtype)
-		elif dtype == 'import' or dtype == 'imports':
-			return NBERFeenstraWTFImport(self.dataset, dtype)
+		if data_type == 'trade':
+			return NBERFeenstraWTFTrade(self.dataset)
+		elif data_type == 'export' or data_type == 'exports':
+			return NBERFeenstraWTFExport(self.dataset)
+		elif data_type == 'import' or data_type == 'imports':
+			return NBERFeenstraWTFImport(self.dataset)
 		else:
-			raise ValueError("dtype must be either 'trade', 'export(s)', or 'import(s)'")
+			raise ValueError("data_type must be either 'trade', 'export(s)', or 'import(s)'")
 
 	def to_dynamic_productleveltradesystem(self, verbose=True):
 		"""

@@ -89,7 +89,7 @@ class BACIConstructor(BACI):
 	
 	#-Flexible Attributes-#
 	dataset 		= pd.DataFrame
-	dtype 			= str
+	data_type 			= str
 	name 			= str 
 	classification = str 
 	revision 		= str 
@@ -132,7 +132,7 @@ class BACIConstructor(BACI):
 
 		#-Assign Default Attributes-#
 		self.name 			= u"BACI Trade Dataset"
-		self.dtype 			= u"trade"
+		self.data_type 			= u"trade"
 		self.classification = source_classification
 		self.revision 		= source_classification[-2:] 		#Last two digits	
 		self.notes 			= ""
@@ -238,7 +238,7 @@ class BACIConstructor(BACI):
 		for year in self.years:
 			fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.csv'
 			if verbose: print "[INFO] Loading Year: %s from file: %s" % (year, fn)
-			self.__raw_data = self.__raw_data.append(pd.read_csv(fn, dtype={'hs6' : str}))
+			self.__raw_data = self.__raw_data.append(pd.read_csv(fn, data_type={'hs6' : str}))
 		self.__raw_data = self.__raw_data.reset_index() 					#Otherwise Each year has repeated obs numbers
 		del self.__raw_data['index']
 		if deletions:
@@ -300,7 +300,7 @@ class BACIConstructor(BACI):
 		if self.product_datafl_fixed == False and self.classification == "HS02":
 			print "[WARNING] Has the product_code_baci02 data been adjusted in the source_dir!"
 		fn = self.source_dir + self.product_data_fn[self.classification]
-		self.product_data = pd.read_csv(fn, dtype={'Code' : object})
+		self.product_data = pd.read_csv(fn, data_type={'Code' : object})
 		if standard_names:
 			self.use_standard_column_names(self.product_data)
 
@@ -372,7 +372,7 @@ class BACIConstructor(BACI):
 		for year in years:
 			csv_fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.csv'
 			if verbose: print "[INFO] Converting file: %s to file: %s" % (csv_fn, hdf_fn)
-			hdf.put('Y'+str(year), pd.read_csv(csv_fn, dtype={'hs6' : str}), format=format)
+			hdf.put('Y'+str(year), pd.read_csv(csv_fn, data_type={'hs6' : str}), format=format)
 		if verbose: print hdf
 		hdf.close()
 		return hdf_fn
@@ -841,7 +841,7 @@ class BACIConstructor(BACI):
 
 	#-Self Contained-#
 
-	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, dtype, dataset_object=True, source_institution='un', verbose=True):
+	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, data_type, dataset_object=True, source_institution='un', verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset at the Country x Product Level (SITC Level 3)
 		Note: SC methods reduce the Need to Debug other routines and methods. 
@@ -849,7 +849,7 @@ class BACIConstructor(BACI):
 
 		Source Classification: HS96
 
-		dtype 				: 	'trade', 'export', 'import'
+		data_type 				: 	'trade', 'export', 'import'
 								'export' will include values from a country to any region (including NES, and Nuetral Zone etc.)
 								'import' will include values to a country from any region (including NES, and Nuetral Zone etc.)
 
@@ -903,7 +903,7 @@ class BACIConstructor(BACI):
 		data['value'] = data['value']*1000
 		#-Collapse Trade Data based on data option-#
 		#------------------------------------------#
-		if dtype == "trade":
+		if data_type == "trade":
 			#-Merge in ISO3C-#
 			#----------------#
 			data = merge_iso3c_and_replace_iso3n(data, cntry_data, column='eiso3n')
@@ -917,7 +917,7 @@ class BACIConstructor(BACI):
 			del data['hs6']
 			data = data.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()
 			print "[Returning] BACI HS96 Source => TRADE data for SITCR2 Level 3 with ISO3C Countries"
-		elif dtype == "export" or dtype == "exports":
+		elif data_type == "export" or data_type == "exports":
 			#-Export Level-#
 			#--------------#
 			del data['iiso3n']
@@ -932,7 +932,7 @@ class BACIConstructor(BACI):
 			del data['hs6']
 			data = data.groupby(['year', 'eiso3c', 'sitc3']).sum()
 			print "[Returning] BACI HS96 Source => EXPORT data for SITCR2 Level 3 with ISO3C Countries"
-		elif dtype == "import" or dtype == "imports":
+		elif data_type == "import" or data_type == "imports":
 			#-Import Level-#
 			#--------------#
 			del data['eiso3n']
@@ -951,7 +951,7 @@ class BACIConstructor(BACI):
 			raise ValueError("'data' must be 'trade', 'export', or 'import'")
 		#-Replace Dataset-#
 		self.dataset = data
-		self.dtype = dtype
+		self.data_type = data_type
 		#-Return Dataset Object-#
 		if dataset_object:
 			return self.to_dataset()
@@ -960,7 +960,7 @@ class BACIConstructor(BACI):
 		""" Attach Attributes to the Dataset DataFrame for Transfer """
  		#-Attach Attributes to dataset object for transfer-#
 		df.txf_name 			= self.name
-		df.txf_dtype 			= self.dtype
+		df.txf_data_type 			= self.data_type
 		df.txf_classification 	= self.classification
 		df.txf_revision 		= self.revision
 		df.txf_complete_dataset = self.complete_dataset
@@ -973,20 +973,20 @@ class BACIConstructor(BACI):
 		data = self.dataset.reset_index()
 		data = data.rename_axis({'sitc3' : 'productcode'}, axis=1)
 		data = self.attach_attributes_to_dataset(data) 							#Alternatively we could create the object and then attach names directly!
-		if self.dtype == "trade":
+		if self.data_type == "trade":
 			if generic:
 				return CPTradeData(data)
 			return BACITradeData(data)
-		elif self.dtype == "export":
+		elif self.data_type == "export":
 			if generic:
 				return CPExportData(data)
 			return BACIExportData(data)
-		elif self.dtype == "import":
+		elif self.data_type == "import":
 			if generic:
 				return CPImportData(data)
 			return BACIImportData(data)
 		else:
-			raise ValueError("dtype (%s) is not 'trade', 'export' or 'import'" % self.dtype)	
+			raise ValueError("data_type (%s) is not 'trade', 'export' or 'import'" % self.data_type)	
 
 	#-----------------#
 	#---FUTURE WORK---#
