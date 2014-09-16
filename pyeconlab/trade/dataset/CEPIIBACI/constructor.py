@@ -130,14 +130,15 @@ class BACIConstructor(BACI):
 		#-Assign Source Directory-#
 		self.__source_dir 	= check_directory(source_dir) 		#check_directory() performs basic tests on the specified directory
 
-		#-Assign Attributes-#
+		#-Assign Default Attributes-#
 		self.name 			= u"BACI Trade Dataset"
 		self.dtype 			= u"trade"
 		self.classification = source_classification
 		self.revision 		= source_classification[-2:] 		#Last two digits	
 		self.notes 			= ""
 		self.operations 	= u"" 
-		
+		self.complete_dataset = False
+
 		#-Country, Product Source File Fixed Indicator-#
 		self.product_datafl_fixed = False 						#Should this be more sophisticated, this is a constructor so probably not
 		self.country_datafl_fixed = False
@@ -241,7 +242,7 @@ class BACIConstructor(BACI):
 		self.__raw_data = self.__raw_data.reset_index() 					#Otherwise Each year has repeated obs numbers
 		del self.__raw_data['index']
 		if deletions:
-			for item in self.deletions[self.classification]:
+			for item in self.source_deletions[self.classification]:
 				if verbose: print "[DELETING] Column: %s" % item
 				del self.__raw_data[item]
 		if std_names: 														#Current Default is 'False' to keep raw_data in it's raw state
