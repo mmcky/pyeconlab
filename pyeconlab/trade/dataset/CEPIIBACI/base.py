@@ -24,6 +24,9 @@ class BACI(object):
 
 	#-Source Attributes-#
 	source_name 					= u'CEPII BACI Trade Dataset'
+	source_classification 			= u"HS"
+	source_revision 				= {'HS92' : '1992', 'HS96' : '1996', 'HS02' : '2002'} 
+	source_level 					= 6
 	source_available_years 			= {'HS92' : xrange(1995, END_YEAR['HS92']+1, 1), 'HS96' : xrange(1998, END_YEAR['HS96']+1, 1), 'HS02' : xrange(2003, END_YEAR['HS02']+1,1)} 
 	source_available_classification = ['HS92', 'HS96', 'HS02'] 
 	source_web 						= u"http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1"

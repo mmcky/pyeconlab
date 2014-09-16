@@ -136,11 +136,12 @@ class CPTradeDataset(object):
 				 "Number of Products: %s\n" % (self.num_products) 			+ \
 				 "Number of Trade Flows: %s\n" % (self.data.shape[0])   	+ \
 				 "Years: %s\n" % (self.__years)								+ \
-				 "Complete Dataset: %s\n" % (self.__complete_dataset) 		+ \
 				 "Dataset Notes: %s\n" % (self.__notes) 					+ \
 				 "-------\n" 										 		+ \
 				 "SOURCE:\n"	 											+ \
 				 "%s (%s)\n" % (self.source_name, self.source_web) 			+ \
+				 "Classification: %s (L:%s) [R:%s]\n" % (self.source_classification, self.source_level, self.source_revision) 	+ \
+				 "Complete Source Dataset: %s\n" % (self.__complete_dataset) + \
 				 "Last Checked: %s" % (self.source_last_checked)
 		return string.replace("<Not Applicable>", "")
 
@@ -244,6 +245,7 @@ class CPTradeDataset(object):
 				# self.__value_units = df.txf_value_units 						#Add in Later
 			self.__complete_dataset = df.txf_complete_dataset
 			self.__notes = df.txf_notes
+			self.source_revision = df.txf_source_revision
 			#-Infer Years-#
 			self.__years = list(df['year'].unique())
 			#-Infer Level-#

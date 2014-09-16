@@ -130,9 +130,12 @@ class BACIConstructor(BACI):
 		#-Assign Source Directory-#
 		self.__source_dir 	= check_directory(source_dir) 		#check_directory() performs basic tests on the specified directory
 
+		#-Source Attributes-#
+		self.source_revision = self.source_revision[source_classification] 	#Overright with Appropriate Revision based on source_classification
+
 		#-Assign Default Attributes-#
-		self.name 			= u"BACI Trade Dataset"
-		self.data_type 			= u"trade"
+		self.name 			= u"BACI Dataset"
+		self.data_type 		= u"trade"
 		self.classification = source_classification
 		self.revision 		= source_classification[-2:] 		#Last two digits	
 		self.notes 			= ""
@@ -875,11 +878,6 @@ class BACIConstructor(BACI):
 				data.drop(data.loc[(data.eiso3c.isnull())].index, inplace=True)
 			return data
 
-		def merge_sitcr2_level3(data, concord):
-			" Merge and Collapse hs6 to sitc r2 level 3"
-			#-Special Adjustments-#
-			raise NotImplementedError
-
 		#-Start from RawData-#
 		#--------------------#
 		data = self.raw_data 
@@ -916,6 +914,9 @@ class BACIConstructor(BACI):
 			data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
 			del data['hs6']
 			data = data.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()
+			self.classification = 'SITC' 																		#duplication could be reduced here using a function
+			self.revision = 2
+			self.level = 3
 			print "[Returning] BACI HS96 Source => TRADE data for SITCR2 Level 3 with ISO3C Countries"
 		elif data_type == "export" or data_type == "exports":
 			#-Export Level-#
@@ -931,6 +932,9 @@ class BACIConstructor(BACI):
 			data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
 			del data['hs6']
 			data = data.groupby(['year', 'eiso3c', 'sitc3']).sum()
+			self.classification = 'SITC' 																		#duplication could be reduced here using a function
+			self.revision = 2
+			self.level = 3
 			print "[Returning] BACI HS96 Source => EXPORT data for SITCR2 Level 3 with ISO3C Countries"
 		elif data_type == "import" or data_type == "imports":
 			#-Import Level-#
@@ -946,12 +950,16 @@ class BACIConstructor(BACI):
 			data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
 			del data['hs6']
 			data = data.groupby(['year', 'iiso3c', 'sitc3']).sum()
+			self.classification = 'SITC' 																		#duplication could be reduced here using a function
+			self.revision = 2
+			self.level = 3
 			print "[Returning] BACI HS96 Source => IMPORT data for SITCR2 Level 3 with ISO3C Countries"
 		else:
 			raise ValueError("'data' must be 'trade', 'export', or 'import'")
 		#-Replace Dataset-#
 		self.dataset = data
 		self.data_type = data_type
+		self.notes = u"HS96L6 to SITCR2L3 => Computed with options: dataset_object=%s, source_institution=%s" % (dataset_object, source_institution)
 		#-Return Dataset Object-#
 		if dataset_object:
 			return self.to_dataset()
@@ -960,11 +968,12 @@ class BACIConstructor(BACI):
 		""" Attach Attributes to the Dataset DataFrame for Transfer """
  		#-Attach Attributes to dataset object for transfer-#
 		df.txf_name 			= self.name
-		df.txf_data_type 			= self.data_type
+		df.txf_data_type 		= self.data_type
 		df.txf_classification 	= self.classification
 		df.txf_revision 		= self.revision
 		df.txf_complete_dataset = self.complete_dataset
 		df.txf_notes 			= self.notes
+		df.txf_source_revision 	= self.source_revision
 		return df
 
 	def to_dataset(self, generic=False):

@@ -41,6 +41,7 @@ import pandas as pd
 import numpy as np
 import countrycode as cc
 
+from .base import NBERWTF
 from .dataset import NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData 
 from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
 							countryname_concordance, concord_data, random_sample, find_row, assert_merged_series_items_equal
@@ -54,7 +55,7 @@ META_PATH = check_directory(os.path.join(this_dir, "meta"))
 #-Concordances-#
 from pyeconlab.country import iso3n_to_iso3c, iso3n_to_name 			#Why does this import prevent nosetests from running?				
 
-class NBERWTFConstructor(object):
+class NBERWTFConstructor(NBERWTF):
 	"""
 	Data Constructor / Compilation Object for Feenstra NBER World Trade Data
 	Years: 	1962 to 2000
@@ -2028,6 +2029,7 @@ class NBERWTFConstructor(object):
 		self._dataset.txf_revision 			= self.revision 
 		self._dataset.txf_complete_dataset 	= self.complete_dataset
 		self._dataset.txf_notes 			= self.notes
+		self._dataset.txf_source_revision 	= self.source_revision
 		return self._dataset
 
 	def to_nberfeenstrawtf(self, data_type, generic=False, verbose=True):
