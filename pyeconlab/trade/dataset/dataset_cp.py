@@ -133,6 +133,14 @@ class CPTradeDataset(object):
 				 "Last Checked: %s" % (self.source_last_checked)
 		return string.replace("<Not Applicable>", "")
 
+	#-Class Properties-#
+	@classmethod
+	def load_pickle(cls, fn):
+		fl = open(fn, 'rb')
+		cls = pickle.load(fl)
+		fl.close()
+		return cls
+
 	#-Properties-#
 
 	@property 
@@ -212,26 +220,38 @@ class CPTradeDataset(object):
 			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface[data_type.lower()])
 
 	def to_pickle(self, fn):
-		""" Pickle Object """
-		with open(fn, 'w') as f:
-			pickle.dump(self, f)
-		f.close()
+		""" 
+		Pickle Object
+		Notes
+		-----
+		This can be restored from:
+			[1] the pickle file 			
+								import cPickle
+								fl = open(<fl>, 'rb')
+								obj = cPickle.load(filename)
+								fl.close()
+			[2] the class method
+								import pyeconlab as ec
+								ec.BACIExportData.load_pickle(fn=<filename>)
+			[3] the from_pickle method
+						 		import pyeconlab as ec
+								ec.BACIExportData(data=<pickle filename>)
+		"""
+		fl = open(fn, 'wb')	
+		pickle.dump(self, fl, 2)
+		fl.close()
 
 	def from_pickle(self, fn):
 		""" 
 		Load Object from Pickle
 		Notes
 		-----
-		[1] Load Object from Pickle and assign current object with data. All non-derived items should be transfered.  
+		[1] Load Object from Pickle and assign current object with data.
 		"""
-		fl = open(fn, 'r')
+		fl = open(fn, 'rb')
 		obj = pickle.load(fl)
-		if type(obj) != self.__class__:
-			raise ValueError("Pickle Object doesn't contain a %s object!\nIt's type is: %s" % (str(self.__class__).split('.')[-1].split("'")[0], str(obj.__class__).split('.')[-1].split("'")[0]))
-		#-Populate Object-#
-		self.__data = obj.data
-		self.__years = obj.years
-		self.__level = obj.level
+		fl.close()
+		self.__dict__.update(obj.__dict__)
 
 	def to_hdf(self, fn):
 		"""
@@ -271,10 +291,8 @@ class CPTradeDataset(object):
 
 class CPTradeData(CPTradeDataset):
 	""" 
-	Generic Trade Dataset Object
-	
+	Country x Product bilateral TRADE Dataset Object
 	Interface: ['year', 'eiso3c', 'iiso3c', 'productcode', 'value']
-
 	Future Work:
 	-----------
 	[1] Implement an interface for Quantity Data ['year', 'exporteriso3c', 'importeriso3c', 'productcode', 'value', 'quantity'], 
@@ -359,7 +377,7 @@ class CPTradeData(CPTradeDataset):
 
 class CPExportData(CPTradeDataset):
 	""" 
-	Generic Export Dataset Object
+	Country x Product EXPORT Dataset Object
 	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
 
@@ -413,7 +431,7 @@ class CPExportData(CPTradeDataset):
 
 class CPImportData(CPTradeDataset):
 	""" 
-	Generic Import Dataset Object
+	Country x Product IMPORT Dataset Object
 	Interface: ['year', 'iiso3c', 'productcode', 'value']
 	"""	
 	

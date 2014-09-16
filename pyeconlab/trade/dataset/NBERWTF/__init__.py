@@ -3,7 +3,7 @@ Dataset Package: NBER World Trade Flows
 """
 
 from .constructor import NBERWTFConstructor
-from .dataset import NBERWTF, NBERWTFTrade, NBERWTFExport, NBERWTFImport
+from .dataset import NBERWTF, NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData
 
 #-Meta Data-#
 

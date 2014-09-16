@@ -21,7 +21,7 @@ from .dataset_cp import CPTradeDataset, CPTradeData, CPExportData, CPImportData
 
 #-NBER Feenstra World Trade Flows-#
 from .NBERWTF.constructor import NBERWTFConstructor
-from .NBERWTF.dataset import NBERWTF, NBERWTFTrade, NBERWTFExport, NBERWTFImport
+from .NBERWTF.dataset import NBERWTF, NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData
 
 #-BACI World Trade Flows-#
 from .CEPIIBACI.base import BACI

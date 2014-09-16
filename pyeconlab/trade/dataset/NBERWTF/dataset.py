@@ -1,5 +1,7 @@
 """
-NBERWTF Dataset Object
+NBERWTF Dataset Wrapper Objects
+
+Note: This just provides a more appropriate object name OR something very specific to NBERWTF
 
 Supporting Constructor
 ----------------------
@@ -30,33 +32,74 @@ from pyeconlab.trade.dataset import CPTradeDataset, CPTradeData, CPExportData, C
 #-Trade-#
 #-------#
 
-class NBERWTFTrade(NBERWTF, CPTradeData):
+class NBERWTFTradeData(NBERWTF, CPTradeData):
 	"""
 	NBERWTF Bilateral World TRADE Data
 	Interfaces: ['year', 'eiso3c', 'iiso3c', 'productcode', 'value']
 	"""
-	pass
+	#-Class Properties-#
+
+	@property 
+	def data(self):
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values
+
+	@property 
+	def exports(self):
+		try:
+			return self.__exports
+		except:
+			self.export_data()
+			return self.__exports
+	@exports.setter
+	def exports(self, values):
+		self.__exports = values
+
+	@property 
+	def imports(self):
+		try:
+			return self.__imports
+		except:
+			self.import_data()
+			return self.__imports
+	@imports.setter
+	def imports(self, values):
+		self.__imports = values
 
 #--------#
 #-Export-#
 #--------#
 
-class NBERWTFExport(NBERWTF, CPExportData):
+class NBERWTFExportData(NBERWTF, CPExportData):
 	"""
 	NBERWTF EXPORT World Trade Data
 	Interface: ['year', 'eiso3c', 'productcode', 'value']
 	"""
-	pass
+	
+	@property 
+	def data(self):
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values
 
 	
 #--------#
 #-Import-#
 #--------#
 
-class NBERWTFImport(NBERWTF, CPImportData):
+class NBERWTFImportData(NBERWTF, CPImportData):
 	"""
 	NBERWTF IMPORT World Trade Data
 	Interface: ['year', 'iiso3c', 'productcode', 'value']
 	"""	
-	pass
+	
+	@property 
+	def data(self):
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values
 

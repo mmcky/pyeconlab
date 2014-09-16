@@ -34,14 +34,65 @@ from pyeconlab.trade.dataset import CPTradeDataset, CPTradeData, CPExportData, C
 #-These are Just Wrappers to Put a more appropriate Class Name Around Generic Dataset Objects and to provide source details	-#
 #-May want to hide some source details as they clutter the . namespace 														-#
 
+#-Trade-#
+
 class BACITradeData(BACI, CPTradeData):
 	""" BACI TRADE Dataset """
-	pass
+	__data = pd.DataFrame()
+
+	#-Class Properties-#
+
+	@property 
+	def data(self):
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values
+
+	@property 
+	def exports(self):
+		try:
+			return self.__exports
+		except:
+			self.export_data()
+			return self.__exports
+	@exports.setter
+	def exports(self, values):
+		self.__exports = values
+
+	@property 
+	def imports(self):
+		try:
+			return self.__imports
+		except:
+			self.import_data()
+			return self.__imports
+	@imports.setter
+	def imports(self, values):
+		self.__imports = values
+
+#-Exports-#
 
 class BACIExportData(BACI, CPExportData):
 	""" BACI Export Dataset """
-	pass
+	__data = pd.DataFrame()
+
+	@property 
+	def data(self):
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values
+
+#-Imports-#
 
 class BACIImportData(BACI, CPImportData):
 	""" BACI Import Dataset """
-	pass
+	__data = pd.DataFrame()
+
+	@property 
+	def data(self):
+		return self.__data
+	@data.setter
+	def data(self, values):
+		self.__data = values

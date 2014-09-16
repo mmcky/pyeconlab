@@ -9,7 +9,9 @@ from __future__ import division
 #----------#
 
 #-Specific-#
-from pyeconlab.trade import NBERWTFConstructor, BACIConstructor
+#-NBERWTF-#
+from pyeconlab.trade import NBERWTFConstructor, NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData
+from pyeconlab.trade import BACIConstructor, BACITradeData, BACIExportData, BACIImportData
 
 #-General-#
 from pyeconlab.trade import CTradeDataset, CTradeData, CExportData, CImportData, 	\

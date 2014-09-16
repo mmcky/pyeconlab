@@ -41,7 +41,7 @@ import pandas as pd
 import numpy as np
 import countrycode as cc
 
-from .dataset import NBERWTFTrade, NBERWTFExport, NBERWTFImport 
+from .dataset import NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData 
 from pyeconlab.util import 	from_series_to_pyfile, check_directory, recode_index, merge_columns, check_operations, update_operations, from_idxseries_to_pydict, \
 							countryname_concordance, concord_data, random_sample, find_row, assert_merged_series_items_equal
 from pyeconlab.trade.classification import SITC
@@ -2030,7 +2030,7 @@ class NBERWTFConstructor(object):
 		self._dataset.txf_notes 			= self.notes
 		return self._dataset
 
-	def to_nberfeenstrawtf(self, data_type, verbose=True):
+	def to_nberfeenstrawtf(self, data_type, generic=False, verbose=True):
 		"""
 		Construct NBERWTF Object with Common Core Object Names
 		Note: This is constructed from the ._dataset attribute
@@ -2047,14 +2047,9 @@ class NBERWTFConstructor(object):
 		'export' 	:	['year', 'eiso3c', 'sitc[1-4]', 'value']
 		'import'	: 	['year', 'iiso3c', 'sitc[1-4]', 'value']
 
-		Notes
-		-----
-		[1] It will be the responsibility of NBERWTF to export to ProductLevelExportSystems etc.
-
 		Future Work 
 		-----------
-		[1] Add attribute to automatically determine what type of dataset is being exported 
-		[2] Turn data_type into a self.data_type attribute!
+		[1] Turn data_type into a self.data_type attribute!
 		"""
 
 		self.data_type = data_type
@@ -2064,11 +2059,17 @@ class NBERWTFConstructor(object):
 		self.attach_attributes_to_dataset()
 
 		if data_type == 'trade':
-			return NBERWTFTrade(self.dataset)
+			if generic:
+				return CPTradeData(self.dataset)
+			return NBERWTFTradeData(self.dataset)
 		elif data_type == 'export' or data_type == 'exports':
-			return NBERWTFExport(self.dataset)
+			if generic:
+				return CPExportData(self.dataset)
+			return NBERWTFExportData(self.dataset)
 		elif data_type == 'import' or data_type == 'imports':
-			return NBERWTFImport(self.dataset)
+			if generic:
+				return CPImportData(self.dataset)
+			return NBERWTFImportData(self.dataset)
 		else:
 			raise ValueError("data_type must be either 'trade', 'export(s)', or 'import(s)'")
 
