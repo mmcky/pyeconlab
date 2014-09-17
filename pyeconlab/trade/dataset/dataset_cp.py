@@ -130,7 +130,7 @@ class CPTradeDataset(object):
 							 "SOURCE:\n"	 											+ \
 							 "%s (%s)\n" % (self.source_name, self.source_web) 			+ \
 							 "Classification: %s (L:%s) [R:%s]\n" % (self.source_classification, self.source_level, self.source_revision) 	+ \
-							 "Complete Source Dataset: %s\n" % (self.__complete_dataset) + \
+							 "Complete Source Dataset: %s\n" % (self.complete_dataset) + \
 							 "Last Checked: %s" % (self.source_last_checked)
 		else:
 			msg_source = "<Not Applicable>"
@@ -171,8 +171,28 @@ class CPTradeDataset(object):
 		return self.__data_type
 
 	@property 
-	def dynamic_data(self):
-		return self.__dyn_data
+	def name(self):
+		return self.__name
+
+	@property 
+	def classification(self):
+		return self.__classification
+
+	@property 
+	def revision(self):
+		return self.__revision
+
+	@property
+	def level(self):
+		return self.__level
+
+	@property 
+	def interface(self):
+		return self.__interface
+
+	@property 
+	def complete_dataset(self):
+		return self.__complete_dataset
 
 	@property 
 	def years(self):
@@ -180,6 +200,24 @@ class CPTradeDataset(object):
 	@years.setter
 	def years(self, value):
 		self.__years = value
+
+	@property 
+	def units_value(self):
+		return self.__units_value
+
+	@property
+	def units_value_str(self):
+		return self.__units_value_str
+
+	@property 
+	def dynamic_data(self):
+		return self.__dyn_data
+
+	@property 
+	def notes(self):
+		return self.__notes
+
+	#-Derived Properties-#
 
 	@property 
 	def num_years(self):
@@ -192,26 +230,6 @@ class CPTradeDataset(object):
 		""" Number of Products """
 		loc = self.data.index.names.index('productcode')
 		return self.data.index.levshape[loc]
-
-	@property 
-	def classification(self):
-		return self.__classification
-
-	@property 
-	def revision(self):
-		return self.__revision
-
-	@property
-	def sitc_level(self):
-		return self.__level
-
-	@property 
-	def interface(self):
-		return self.__interface
-
-	@property 
-	def complete_dataset(self):
-		return self.__complete_dataset
 
 	#-Data Extraction-#
 
@@ -325,12 +343,18 @@ class CPTradeDataset(object):
 			if item not in columns: 
 				raise TypeError("Need %s to be specified in the incoming data" % item)
 
-	def merge(self, other, year_conflict='average'):
+	def merge(self, other, year_conflict='average', debug=False):
 		""" 
 		Merge With Another CPDataset
 		year_conflict 	: 	['average'], 'left', 'right'
+
+		Future Work:
+		-----------
+		[1] Class Checking ... Currently using an assert on index names
+		[2] Country Options are located in Export and Import Sub Classes
 		"""
 		#-Add __class__ checking for eligible merging-#
+		#-Year Information-#
 		lyrs = set(self.data.index.get_level_values(level='year'))
 		ryrs = set(other.data.index.get_level_values(level='year'))
 		intersection = sorted(list(lyrs.intersection(ryrs)))
@@ -339,12 +363,11 @@ class CPTradeDataset(object):
 		#-Check Indexing-#
 		assert self.data.index.names == other.data.index.names, "Data is not indexed in the same manner! Are these compatible Classes?" 
 		data = self.data.merge(other.data, how='outer', left_index=True, right_index=True)
-		# for idx, s in data.iterrows():
 		s = pd.Series() 																			#Probably a better way to do this, but this will do for now
 		for year, df in data.groupby(level='year'):
 			if year in intersection:
 				if year_conflict == 'average':
-					s = s.append((df['value_x'] + df['value_y']) / 2)
+					s = s.append(df[['value_x', 'value_y']].mean(axis=1))
 				elif year_conflict == 'left':
 					s = s.append(df['value_x'])
 				elif year_conflict == 'right':
@@ -357,16 +380,18 @@ class CPTradeDataset(object):
 		#-Return TradeDataset-#
 		value = pd.DataFrame(s, columns=['value'])
 		data = data.merge(value, how='left', left_index=True, right_index=True).reset_index()
+		if debug:
+			return data
 		del data['value_x']
 		del data['value_y']
 		#-Write Attributes for New object-#
-		data.txf_name = self.__name + ' merged with ' + other.__name
-		data.txf_classification = self.__classification 	#Must be the Same to Merge
-		data.txf_revision = self.__revision
+		data.txf_name = self.name + ' merged with ' + other.name
+		data.txf_classification = self.classification 	#Must be the Same to Merge
+		data.txf_revision = self.revision
 		data.txf_complete_dataset = False 
-		data.txf_notes = self.__name + ": " + self.__notes + "\n" + other.__name + ": " + other.__notes
-		data.txf_source_revision = self.__name + ": " + str(self.source_revision) + "\n" + other.__name + ": " + str(other.source_revision)
-		data.txf_units_value_str = self.__units_value_str
+		data.txf_notes = self.name + ": " + self.notes + "\n" + other.name + ": " + other.notes
+		data.txf_source_revision = self.name + ": " + str(self.source_revision) + "\n" + other.name + ": " + str(other.source_revision)
+		data.txf_units_value_str = self.units_value_str
 		if self.data_type.lower() == "export":
 			return CPExportData(data)
 		elif self.data_type.lower() == "import":
@@ -517,6 +542,71 @@ class CPExportData(CPTradeDataset):
 		except:
 			warnings.warn("'eiso3c' is not found in the data", UserWarning)
 		return self.data.index.levshape[loc]
+
+
+	def merge(self, other, year_conflict='average', countries='inner', debug=False):
+		""" 
+		Merge With Another CPExportDataset
+		
+		year_conflict 	: 	['average'], 'left', 'right'
+		countries 		: 	['outer'], 'inner', 'left', 'right', own list
+
+		Future Work:
+		-----------
+		[1] Class Checking ... Currently using an assert on index names
+		[2] Can this call super for year merge? This will split the function up and will make debugging a bit more difficult, for now I am happy with code duplication
+		"""
+		#-Country Option-#
+		clhs = set(self.exporters)
+		crhs = set(other.exporters)
+		#-Year Information-#
+		lyrs = set(self.data.index.get_level_values(level='year'))
+		ryrs = set(other.data.index.get_level_values(level='year'))
+		intersection = sorted(list(lyrs.intersection(ryrs)))
+		years = sorted(list(lyrs.union(ryrs)))
+		print "[INFO] %s years are in conflict through the merge. The year_conflict behaviour is: %s" % (intersection, year_conflict)
+		#-Check Indexing-#
+		assert self.data.index.names == other.data.index.names, "Data is not indexed in the same manner! Are these compatible Classes?" 
+		data = self.data.merge(other.data, how='outer', left_index=True, right_index=True)
+		s = pd.Series() 																			#Probably a better way to do this, but this will do for now
+		for year, df in data.groupby(level='year'):
+			if year in intersection:
+				if year_conflict == 'average':
+					s = s.append(df[['value_x', 'value_y']].mean(axis=1))
+				elif year_conflict == 'left':
+					s = s.append(df['value_x'])
+				elif year_conflict == 'right':
+					s = s.append(df['value_y'])
+				continue
+			if year in ryrs:
+				s = s.append(df['value_y'])
+			else:
+				s = s.append(df['value_x'])
+		#-Return TradeDataset-#
+		value = pd.DataFrame(s, columns=['value'])
+		data = data.merge(value, how='left', left_index=True, right_index=True).reset_index()
+		if debug:
+			return data
+		del data['value_x']
+		del data['value_y']
+		#-Country Selection-#
+		if countries == "inner":
+			data = data[data['eiso3c'].isin(clhs.intersection(crhs))]
+		elif countries == "left":
+			data = data[data['eiso3c'].isin(clhs)]
+		elif countries == "right":
+			data = data[data['eiso3c'].isin(crhs)]
+		elif countries == "outer":
+			pass #-Default-#
+		#-Write Attributes for New object-#
+		data.txf_name = self.name + ' merged with ' + other.name
+		data.txf_classification = self.classification 	#Must be the Same to Merge
+		data.txf_revision = self.revision
+		data.txf_complete_dataset = False 
+		data.txf_notes = self.name + ": " + self.notes + "\n" + other.name + ": " + other.notes
+		data.txf_source_revision = self.name + ": " + str(self.source_revision) + "\n" + other.name + ": " + str(other.source_revision)
+		data.txf_units_value_str = self.units_value_str
+		return CPExportData(data)
 
 	def to_dynamic_productlevelexportsystem(self, verbose=True):
 		"""
