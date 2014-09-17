@@ -209,7 +209,8 @@ class NBERWTFConstructor(NBERWTF):
 	_fn_prefix			= u'wtf'
 	_fn_postfix			= u'.dta'
 	_source_dir 		= None
-	_raw_units 			= 1000
+	_units_value 		= 1000
+	_units_value_str 	= "$1000's"
 	_file_interface 	= [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot', u'value', u'quantity']
 	notes 				= ""
 
@@ -1307,8 +1308,8 @@ class NBERWTFConstructor(NBERWTF):
 		op_string = u"(change_value_units)"
 		if check_operations(self, op_string): return None
 		#-Core-#
-		if verbose: print "[INFO] Setting Values to be in $'s not %s$'s" % (self._raw_units)
-		self._dataset['value'] = self.dataset['value'] * self._raw_units
+		if verbose: print "[INFO] Setting Values to be in $'s not %s$'s" % (self._units_value)
+		self._dataset['value'] = self.dataset['value'] * self._units_value
 		#-OpString-#
 		update_operations(self, op_string)
 
@@ -1867,6 +1868,9 @@ class NBERWTFConstructor(NBERWTF):
 				df = df[df['eiso3c'] != '.']
 			df = df.reset_index()
 			del df['index']
+		#-adjust units from 1000's to $'s-#
+		#df['value'] = df['value']*1000 		#Currently keeping units in 1000's similar to BACI
+		#self._units_value_str = "$'s"
 		#-Report-#
 		if report:
 			rdf = self.raw_data
@@ -2030,6 +2034,7 @@ class NBERWTFConstructor(NBERWTF):
 		self._dataset.txf_complete_dataset 	= self.complete_dataset
 		self._dataset.txf_notes 			= self.notes
 		self._dataset.txf_source_revision 	= self.source_revision
+		self._dataset.txf_units_value_str 	= self._units_value_str
 		return self._dataset
 
 	def to_nberfeenstrawtf(self, data_type, generic=False, verbose=True):

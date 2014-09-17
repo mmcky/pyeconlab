@@ -23,6 +23,6 @@ class NBERWTF(object):
 	source_revision 		= 2
 	source_level 			= 4
 	source_web 				= u"http://cid.econ.ucdavis.edu/nberus.html"
-	source_raw_units 		= 1000
-	source_raw_units_str 	= u'US$1000\'s'
+	source_units_value 		= 1000
+	source_units_value_str 	= u'US$1000\'s'
 	source_last_checked 	= np.datetime64('2014-07-04')

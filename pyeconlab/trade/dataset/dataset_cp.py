@@ -58,8 +58,8 @@ class CPTradeDataset(object):
 	__revision 			= None  				#'1992', 2
 	__name 				= ""
 	__years 			= None
-	__value_units 		= None
-	__value_units_str 	= ""
+	__units_value 		= None
+	__units_value_str 	= ""
 	__complete_dataset 	= False	
 	__interface 		= {
 						 'trade' : ['year', 'eiso3c', 'iiso3c', 'productcode', 'value'], 
@@ -136,6 +136,7 @@ class CPTradeDataset(object):
 				 "Number of Products: %s\n" % (self.num_products) 			+ \
 				 "Number of Trade Flows: %s\n" % (self.data.shape[0])   	+ \
 				 "Years: %s\n" % (self.__years)								+ \
+				 "Value Units: %s\n" % (self.__units_value_str) 			+ \
 				 "Dataset Notes: %s\n" % (self.__notes) 					+ \
 				 "-------\n" 										 		+ \
 				 "SOURCE:\n"	 											+ \
@@ -246,6 +247,7 @@ class CPTradeDataset(object):
 			self.__complete_dataset = df.txf_complete_dataset
 			self.__notes = df.txf_notes
 			self.source_revision = df.txf_source_revision
+			self.__units_value_str = df.txf_units_value_str
 			#-Infer Years-#
 			self.__years = list(df['year'].unique())
 			#-Infer Level-#
@@ -312,6 +314,13 @@ class CPTradeDataset(object):
 		for item in self.interface[data_type.lower()]:
 			if item not in columns: 
 				raise TypeError("Need %s to be specified in the incoming data" % item)
+
+	def merge(self, other):
+		""" Merge With Another CPDataset """
+		#-Addi __class__ checking for eligible merging-#
+		assert self.data.index.names == other.data.index.names, "Data is not indexed in the same manner! Are these compatible Classes?" 
+		
+		raise NotImplementedError
 
 	#-Country / Aggregates Filters-#
 

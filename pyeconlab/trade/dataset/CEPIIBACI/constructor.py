@@ -89,9 +89,9 @@ class BACIConstructor(BACI):
 	
 	#-Flexible Attributes-#
 	dataset 		= pd.DataFrame
-	data_type 			= str
+	data_type 		= str
 	name 			= str 
-	classification = str 
+	classification 	= str 
 	revision 		= str 
 	years 			= list 
 	notes 			= str
@@ -141,6 +141,7 @@ class BACIConstructor(BACI):
 		self.notes 			= ""
 		self.operations 	= u"" 
 		self.complete_dataset = False
+		self.units_value_str = self.source_units_value_str
 
 		#-Country, Product Source File Fixed Indicator-#
 		self.product_datafl_fixed = False 						#Should this be more sophisticated, this is a constructor so probably not
@@ -898,7 +899,8 @@ class BACIConstructor(BACI):
 			concordance[k] = v
 		#-Change Value Units-#
 		#--------------------#
-		data['value'] = data['value']*1000
+		# data['value'] = data['value']*1000 							#currently keeping value units in 1000's (similar to nber)
+		# self.units_value_str = "$'s"
 		#-Collapse Trade Data based on data option-#
 		#------------------------------------------#
 		if data_type == "trade":
@@ -974,6 +976,7 @@ class BACIConstructor(BACI):
 		df.txf_complete_dataset = self.complete_dataset
 		df.txf_notes 			= self.notes
 		df.txf_source_revision 	= self.source_revision
+		df.txf_units_value_str 	= self.units_value_str
 		return df
 
 	def to_dataset(self, generic=False):

@@ -31,8 +31,8 @@ class BACI(object):
 	source_available_classification = ['HS92', 'HS96', 'HS02'] 
 	source_web 						= u"http://www.cepii.fr/cepii/en/bdd_modele/presentation.asp?id=1"
 	source_last_checked 			= np.datetime64('2014-09-03')
-	source_raw_units 				= 1000
-	source_raw_units_str 			= "US$1000's"
+	source_units_value 				= 1000
+	source_units_value_str 			= "US$1000's"
 	source_interface 				= {'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q' : 'quantity'}
 	source_deletions 				= {'HS92' : '', 'HS96' : '', 'HS02' : 'a'} 
 
