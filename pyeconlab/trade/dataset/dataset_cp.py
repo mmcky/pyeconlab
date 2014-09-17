@@ -125,6 +125,16 @@ class CPTradeDataset(object):
 		except:
 			num_importers = "<Not Applicable>"
 
+		if self.source_name != None:
+			msg_source =	 "-------\n" 										 		+ \
+							 "SOURCE:\n"	 											+ \
+							 "%s (%s)\n" % (self.source_name, self.source_web) 			+ \
+							 "Classification: %s (L:%s) [R:%s]\n" % (self.source_classification, self.source_level, self.source_revision) 	+ \
+							 "Complete Source Dataset: %s\n" % (self.__complete_dataset) + \
+							 "Last Checked: %s" % (self.source_last_checked)
+		else:
+			msg_source = "<Not Applicable>"
+
 		#-Construct REPR-#
 		string = "Class: %s\n" % (self.__class__) 							+ \
 				 "-------\n" 										 		+ \
@@ -138,12 +148,7 @@ class CPTradeDataset(object):
 				 "Years: %s\n" % (self.__years)								+ \
 				 "Value Units: %s\n" % (self.__units_value_str) 			+ \
 				 "Dataset Notes: %s\n" % (self.__notes) 					+ \
-				 "-------\n" 										 		+ \
-				 "SOURCE:\n"	 											+ \
-				 "%s (%s)\n" % (self.source_name, self.source_web) 			+ \
-				 "Classification: %s (L:%s) [R:%s]\n" % (self.source_classification, self.source_level, self.source_revision) 	+ \
-				 "Complete Source Dataset: %s\n" % (self.__complete_dataset) + \
-				 "Last Checked: %s" % (self.source_last_checked)
+				 msg_source 
 		return string.replace("<Not Applicable>", "")
 
 	#-Class Properties-#
@@ -320,12 +325,54 @@ class CPTradeDataset(object):
 			if item not in columns: 
 				raise TypeError("Need %s to be specified in the incoming data" % item)
 
-	def merge(self, other):
-		""" Merge With Another CPDataset """
-		#-Addi __class__ checking for eligible merging-#
+	def merge(self, other, year_conflict='average'):
+		""" 
+		Merge With Another CPDataset
+		year_conflict 	: 	['average'], 'left', 'right'
+		"""
+		#-Add __class__ checking for eligible merging-#
+		lyrs = set(self.data.index.get_level_values(level='year'))
+		ryrs = set(other.data.index.get_level_values(level='year'))
+		intersection = sorted(list(lyrs.intersection(ryrs)))
+		years = sorted(list(lyrs.union(ryrs)))
+		print "[INFO] %s years are in conflict through the merge. The year_conflict behaviour is: %s" % (intersection, year_conflict)
+		#-Check Indexing-#
 		assert self.data.index.names == other.data.index.names, "Data is not indexed in the same manner! Are these compatible Classes?" 
-		
-		raise NotImplementedError
+		data = self.data.merge(other.data, how='outer', left_index=True, right_index=True)
+		# for idx, s in data.iterrows():
+		s = pd.Series() 																			#Probably a better way to do this, but this will do for now
+		for year, df in data.groupby(level='year'):
+			if year in intersection:
+				if year_conflict == 'average':
+					s = s.append((df['value_x'] + df['value_y']) / 2)
+				elif year_conflict == 'left':
+					s = s.append(df['value_x'])
+				elif year_conflict == 'right':
+					s = s.append(df['value_y'])
+				continue
+			if year in ryrs:
+				s = s.append(df['value_y'])
+			else:
+				s = s.append(df['value_x'])
+		#-Return TradeDataset-#
+		value = pd.DataFrame(s, columns=['value'])
+		data = data.merge(value, how='left', left_index=True, right_index=True).reset_index()
+		del data['value_x']
+		del data['value_y']
+		#-Write Attributes for New object-#
+		data.txf_name = self.__name + ' merged with ' + other.__name
+		data.txf_classification = self.__classification 	#Must be the Same to Merge
+		data.txf_revision = self.__revision
+		data.txf_complete_dataset = False 
+		data.txf_notes = self.__name + ": " + self.__notes + "\n" + other.__name + ": " + other.__notes
+		data.txf_source_revision = self.__name + ": " + str(self.source_revision) + "\n" + other.__name + ": " + str(other.source_revision)
+		data.txf_units_value_str = self.__units_value_str
+		if self.data_type.lower() == "export":
+			return CPExportData(data)
+		elif self.data_type.lower() == "import":
+			return CPImportData(data)
+		elif self.data_type.lower() == "trade":
+			return CPTradeData(data)
 
 	#-Country / Aggregates Filters-#
 
