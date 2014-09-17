@@ -147,6 +147,7 @@ class CPTradeDataset(object):
 		return string.replace("<Not Applicable>", "")
 
 	#-Class Properties-#
+
 	@classmethod
 	def load_pickle(cls, fn):
 		fl = open(fn, 'rb')
@@ -159,6 +160,10 @@ class CPTradeDataset(object):
 	@property 
 	def data(self):
 		return self.__data
+
+	@property 
+	def data_type(self):
+		return self.__data_type
 
 	@property 
 	def dynamic_data(self):
@@ -208,7 +213,7 @@ class CPTradeDataset(object):
 	@property 
 	def exporters(self):
 		""" List of Exporters """
-		if self.data_type in self.__attr_export:
+		if self.data_type.lower() in self.__attr_export:
 			return self.data.index.get_level_values(level='eiso3c').unique()
 		else:
 			raise ValueError("%s is data that does not contain exporter characteristics" % self.data_type)
@@ -216,10 +221,10 @@ class CPTradeDataset(object):
 	@property 
 	def importers(self):
 		""" List of Importers """
-		if self.data_type in self.__attr_import:
+		if self.data_type.lower() in self.__attr_import:
 			return self.data.index.get_level_values(level='iiso3c').unique()
 		else:
-			raise ValueError("%s is data that does not contain exporter characteristics" % self.data_type)
+			raise ValueError("%s is data that does not contain importer characteristics" % self.data_type)
 
 	#-IO-#
 

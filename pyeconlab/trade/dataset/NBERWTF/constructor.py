@@ -243,6 +243,7 @@ class NBERWTFConstructor(NBERWTF):
 		"""
 		#-Assign Source Directory-#
 		self._source_dir 	= check_directory(source_dir) 	# check_directory() performs basic tests on the specified directory
+		self.data_type 		= u"trade"
 
 		#-Parse Skip Setup-#
 		if skip_setup == True:
@@ -1885,6 +1886,7 @@ class NBERWTFConstructor(NBERWTF):
 			for year in self.years:
 				report += "This dataset in year: %s captures %s percent of Total 'World' Values\n" % (year, int(y.ix[year]['%']))
 			print report
+		self.data_type = data_type
 		self._dataset = df
 
 	def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data_type, dataset_object=True, verbose=True):
