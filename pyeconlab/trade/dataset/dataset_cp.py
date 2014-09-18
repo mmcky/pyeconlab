@@ -41,6 +41,8 @@ import cPickle as pickle
 import warnings
 import matplotlib.pyplot as plt
 
+from pyeconlab.util import concord_data
+
 #-Country x Product Trade Dataset-#
 
 class CPTradeDataset(object):
@@ -234,6 +236,11 @@ class CPTradeDataset(object):
 	#-Data Extraction-#
 
 	@property 
+	def productcodes(self):
+		""" List of ProductCodes """
+		return self.data.index.get_level_values(level="productcode").unique()
+
+	@property 
 	def exporters(self):
 		""" List of Exporters """
 		if self.data_type.lower() in self.__attr_export:
@@ -401,6 +408,30 @@ class CPTradeDataset(object):
 
 	#-Country / Aggregates Filters-#
 
+	def country_aggregates(self, members, issue_error='.', verbose=True):
+		"""
+		Aggregate Qualifying Countries from Members Dictionary
+		"""
+		df = self.data.reset_index()
+		for cntry in members.keys():
+			try:
+				df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(members, x, issue_error=issue_error)) 	#issue_error = false returns x if no match
+			except:
+				pass #-eiso3c not found-#
+			try:
+				df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(members, x, issue_error=issue_error)) 	#issue_error = false returns x if no match
+			except:
+				pass #-iiso3c not found-#
+		#-Collapse Items-#
+		idx = ['year']
+		for item in ['eiso3c', 'iiso3c']:
+			if item in df.columns:
+				idx.append(item)
+		idx.append('productcode')
+		if verbose: print "[INFO] Collapsing on index: %s" % idx
+		df = df.groupby(idx).sum()
+		self.data = df 
+
 	def geo_aggregates(self, members):
 		"""
 		Geographic Aggregates
@@ -414,6 +445,7 @@ class CPTradeDataset(object):
 
 
 	#-Plots-#
+
 	def plot_cp_value(self, c, p):
 		""" Plot Country, Product Time Series """
 		plot = self.dynamic_data.ix[(c,p)].plot(title="Country: %s; Product: %s" % (c,p))

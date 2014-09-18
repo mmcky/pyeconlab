@@ -845,7 +845,7 @@ class BACIConstructor(BACI):
 
 	#-Self Contained-#
 
-	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, data_type, dataset_object=True, source_institution='un', report=False, verbose=True):
+	def construct_dataset_SC_CP_SITCR2L3_Y1998to2012(self, data_type, dataset_object=True, source_institution='un', report=True, verbose=True):
 		"""
 		Construct a Self Contained (SC) Direct Action Dataset at the Country x Product Level (SITC Level 3)
 		Note: SC methods reduce the Need to Debug other routines and methods. 
@@ -964,7 +964,7 @@ class BACIConstructor(BACI):
 		self.notes = u"HS96L6 to SITCR2L3 => Computed with options: dataset_object=%s, source_institution=%s" % (dataset_object, source_institution)
 		#-Report-#
 		if report:
-			rdf = self.raw_data
+			rdf = self.raw_data.rename(columns={'t' : 'year', 'v' : 'value'})
 			#-Year Values-#
 			rdfy = rdf.groupby(['year']).sum()['value'].reset_index()
 			dfy = data.reset_index().groupby(['year']).sum()['value'].reset_index()

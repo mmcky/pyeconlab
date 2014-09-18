@@ -208,9 +208,6 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
 	return outer
 
 
-
-
-
 # ------------------------- #
 # - Row Finding Functions - #
 # ------------------------- #
@@ -225,6 +222,31 @@ def find_row(df, row):
 		df = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]
 	return df
 
+
+# ------------------------ #
+# - Comparison Functions - #
+# ------------------------ #
+
+def compare_idx_items(left, right, left_column, right_column, tol=100, return_merged=False):
+	""" Compare Two Indexed Series or Columns """
+	assert left.index.names == right.index.names, "Objects much share the same Index"
+	merged = left.merge(right, how='outer', left_index=True, right_index=True, sort=True)
+	merged = merged.rename(columns={left_column : 'left', right_column : 'right'})
+	merged['diff'] = abs(merged['left'] - merged['right'])
+	merged['eq'] = 	merged['diff'] <= tol 
+	merged['lgr'] = merged['left'] > merged['right']
+	merged['rgl'] = merged['left'] < merged['right']
+	#-Stats-#
+	eq = merged['eq'].describe()
+	lgr = merged['lgr'].describe()
+	rgl = merged['rgl'].describe()
+	report = "Comparison between Left: (%s) and Right: (%s)\n" 				% (left_column, right_column) 								+ \
+	 		 "Number of Equal values: %s (%s percent) [Tolerance: %s]\n" 	% (int(eq['mean']*eq['count']), int(eq['mean']*100), tol) 	+ \
+	 		 "Number of Left > Right: %s (%s percent) [No Tolerance]\n" 	% (int(lgr['mean']*lgr['count']), int(lgr['mean']*100)) 	+ \
+	 		 "Number of Left < Right: %s (%s percent) [No Tolerance]\n" 	% (int(rgl['mean']*rgl['count']), int(rgl['mean']*100))
+	print report
+	if return_merged:
+		return merged
 
 # --------------------- #
 # - Duplicates Report - #
