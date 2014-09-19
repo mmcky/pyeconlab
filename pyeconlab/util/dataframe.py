@@ -227,11 +227,13 @@ def find_row(df, row):
 # - Comparison Functions - #
 # ------------------------ #
 
-def compare_idx_items(left, right, left_column, right_column, tol=100, return_merged=False):
+def compare_idx_items(left, right, left_column, right_column, tol=100, return_merged=False, dropna=False):
 	""" Compare Two Indexed Series or Columns """
 	assert left.index.names == right.index.names, "Objects much share the same Index"
 	merged = left.merge(right, how='outer', left_index=True, right_index=True, sort=True)
 	merged = merged.rename(columns={left_column : 'left', right_column : 'right'})
+	if dropna:
+		merged = merged.dropna()
 	merged['diff'] = abs(merged['left'] - merged['right'])
 	merged['eq'] = 	merged['diff'] <= tol 
 	merged['lgr'] = merged['left'] > merged['right']

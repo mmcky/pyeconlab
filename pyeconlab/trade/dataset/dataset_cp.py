@@ -167,6 +167,13 @@ class CPTradeDataset(object):
 	@property 
 	def data(self):
 		return self.__data
+	
+	def set_data(self, value, force=False):
+		""" Force Assign New Dataset """
+		if force:
+			self.__data = value
+		else:
+			raise ValueError("'force' must be manually set using the force flag")
 
 	@property 
 	def data_type(self):
@@ -218,6 +225,9 @@ class CPTradeDataset(object):
 	@property 
 	def notes(self):
 		return self.__notes
+	@notes.setter
+	def notes(self, value):
+		self.__notes += value 
 
 	#-Derived Properties-#
 
