@@ -40,6 +40,7 @@ import gc
 import pandas as pd
 import numpy as np
 import countrycode as cc
+import cPickle as pickle
 
 from .base import NBERWTF
 from .dataset import NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData 
@@ -2819,6 +2820,22 @@ class NBERWTFConstructor(NBERWTF):
 		if verbose: print hdf
 		hdf.close()
 
+	#---------#
+	#-Pickles-#
+	#---------#
+
+	def to_pickle(self, fn, data='dataset', verbose=False):
+		"""
+		Send self.raw_data or self.dataset to a pickle file
+		"""
+		fl = open(fn, 'wb')	
+		if data == 'dataset':
+			pickle.dump(self.dataset, fl)
+		elif data == 'raw_data' or data == 'raw':
+			pickle.dump(self.raw_data, fl)
+		else:
+			raise ValueError("data must be either 'dataset' or 'raw_data'")
+		fl.close()
 
 	# - Issues with Raw Data - #
 	# ------------------------ #

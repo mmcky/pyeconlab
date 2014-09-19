@@ -48,6 +48,7 @@ import warnings
 import string
 import pandas as pd
 import numpy as np
+import cPickle as pickle
 
 from .base import BACI
 from .dataset import BACITradeData, BACIExportData, BACIImportData
@@ -380,6 +381,23 @@ class BACIConstructor(BACI):
 		if verbose: print hdf
 		hdf.close()
 		return hdf_fn
+
+	#---------#
+	#-Pickles-#
+	#---------#
+
+	def to_pickle(self, fn, data='dataset', verbose=False):
+		"""
+		Send self.raw_data or self.dataset to a pickle file
+		"""
+		fl = open(fn, 'wb')	
+		if data == 'dataset':
+			pickle.dump(self.dataset, fl)
+		elif data == 'raw_data' or data == 'raw':
+			pickle.dump(self.raw_data, fl)
+		else:
+			raise ValueError("data must be either 'dataset' or 'raw_data'")
+		fl.close()
 
 	#-------------------#
 	#-Fix Source Issues-#
