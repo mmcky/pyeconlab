@@ -85,7 +85,7 @@ class CPTradeDataset(object):
 	__attr_export 	= set(['trade', 'export', 'exports', 'ex'])
 	__attr_import	= set(['trade', 'import', 'imports', 'im'])
 	 
-	def __init__(self, data, data_type, prep_dynamic=True): 	
+	def __init__(self, data, data_type, prep_dynamic=False): 	
 		""" 
 		Fill Object with Data
 
@@ -301,7 +301,7 @@ class CPTradeDataset(object):
 				raise ValueError("Product Levels are not consistent lengths: %s" % levels)
 			self.__level = levels[0]
 			#-Set Index-#
-			self.data = df.set_index(self.interface[data_type.lower()][:-1]) 	#Index by all values except 'value'
+			self.set_data(df.set_index(self.interface[data_type.lower()][:-1]), force=True) 	#Index by all values except 'value'
 		else:
 			raise TypeError("data must be a dataframe that contains the following interface columns:\n\t%s" % self.interface[data_type.lower()])
 
@@ -440,7 +440,7 @@ class CPTradeDataset(object):
 		idx.append('productcode')
 		if verbose: print "[INFO] Collapsing on index: %s" % idx
 		df = df.groupby(idx).sum()
-		self.data = df 
+		self.set_data(df, force=True) 
 
 	def geo_aggregates(self, members):
 		"""
@@ -484,7 +484,10 @@ class CPTradeData(CPTradeDataset):
 	@property 
 	def data(self):
 		return self.__data
-	
+	# @data.setter
+	# def data(self, values):
+	# 	self.__data = values
+
 	def set_data(self, value, force=False):
 		""" Force Assign New Dataset """
 		if force:

@@ -45,9 +45,16 @@ class BACITradeData(BACI, CPTradeData):
 	@property 
 	def data(self):
 		return self.__data
-	@data.setter
-	def data(self, values):
-		self.__data = values
+	# @data.setter
+	# def data(self, values):
+	# 	self.__data = values
+
+	def set_data(self, value, force=False):
+		""" Force Assign New Dataset """
+		if force:
+			self.__data = value
+		else:
+			raise ValueError("'force' must be manually set using the force flag")
 
 	@property 
 	def exports(self):
@@ -80,9 +87,16 @@ class BACIExportData(BACI, CPExportData):
 	@property 
 	def data(self):
 		return self.__data
-	@data.setter
-	def data(self, values):
-		self.__data = values
+	# @data.setter
+	# def data(self, values):
+	# 	self.__data = values
+
+	def set_data(self, value, force=False):
+		""" Force Assign New Dataset """
+		if force:
+			self.__data = value
+		else:
+			raise ValueError("'force' must be manually set using the force flag")
 
 #-Imports-#
 
@@ -93,6 +107,13 @@ class BACIImportData(BACI, CPImportData):
 	@property 
 	def data(self):
 		return self.__data
-	@data.setter
-	def data(self, values):
-		self.__data = values
+	# @data.setter
+	# def data(self, values):
+	# 	self.__data = values
+
+	def set_data(self, value, force=False):
+		""" Force Assign New Dataset """
+		if force:
+			self.__data = value
+		else:
+			raise ValueError("'force' must be manually set using the force flag")

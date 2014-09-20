@@ -368,6 +368,12 @@ class NBERWTFConstructor(NBERWTF):
 		else:
 			raise ValueError("Raw Dataset must be complete - currently %s years have been loaded" % self.years)
 
+	@property 
+	def exporters_iso3c(self):
+		if not check_operations(self, "(add_iso3c)"): 							#Check if Operation has been conducted
+				self.add_iso3c(verbose=True)
+		return self.dataset.eiso3c.unique()
+
 	@property
 	def importers(self):
 		""" Returns List of Importers (from Raw Data) """
@@ -451,6 +457,14 @@ class NBERWTFConstructor(NBERWTF):
 			return False
 		return True
 
+	@property 
+	def yearly_world_values(self):
+		rdf = self.raw_data
+		rdf = rdf.loc[(rdf.importer=="World") & (rdf.exporter == "World")]
+		#-Year Values-#
+		rdfy = rdf[['year', 'value']].groupby(['year']).sum()
+		return rdfy
+		
 
 	def stats(self, dataset=True, basic=False, extended=False, dlimit=10):
 		""" Print Some Basic Statistics about the Dataset or RAW DATA """

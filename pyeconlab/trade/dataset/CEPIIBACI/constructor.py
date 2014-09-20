@@ -223,6 +223,13 @@ class BACIConstructor(BACI):
 	def source_dir(self):
 		return self.__source_dir
 
+
+	@property 
+	def yearly_world_values(self):
+		rdf = self.raw_data.rename(columns={'t' : 'year', 'v' : 'value'})
+		rdfy = rdf[['year', 'value']].groupby('year').sum()
+		return rdfy
+
 	#----#
 	#-IO-#
 	#----#
@@ -1030,6 +1037,15 @@ class BACIConstructor(BACI):
 			return BACIImportData(data)
 		else:
 			raise ValueError("data_type (%s) is not 'trade', 'export' or 'import'" % self.data_type)	
+
+
+	#---------------------#
+	#---COMPARISON WORK---#
+	#---------------------#
+
+	def compare_dataset_with_raw(self, verbose=True):
+		""" Compare Yearly Values with Initial Raw Data """
+		pass
 
 	#-----------------#
 	#---FUTURE WORK---#
