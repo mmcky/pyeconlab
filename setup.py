@@ -23,6 +23,7 @@ setup(
                'pyeconlab.trade.concordance',
                'pyeconlab.trade.systems',
   			       'pyeconlab.wdi',
+               'pyeconlab.wdi.meta',
   			  ], 
   package_data =  { 'pyeconlab.country' : ['data/*.xls', 'data/*.xml'],
                     'pyeconlab.trade.dataset.CEPIIBACI.meta' : ['meta/*.py', 'meta/curated/*.csv'],

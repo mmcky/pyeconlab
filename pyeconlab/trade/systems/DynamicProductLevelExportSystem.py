@@ -944,7 +944,7 @@ class DynamicProductLevelExportSystem(object):
 			result[year] = self.ples[year].country_shares(series_name)
 		return result
 
-	def rca_matrices(self, years=None, series_name='export', fill_na=False, clear_temp=True, complete_data=False, decomposition=False, verbose=False):
+	def rca_matrices(self, years=None, series_name='export', fillna=False, clear_temp=True, complete_data=False, decomposition=False, verbose=False):
 		'''
 			Compute Revealed Comparative Advantage (RCA) Matrices for ProductLevelExportSystem
 			RCA - Belassa Definition (REF - ?)
@@ -960,7 +960,7 @@ class DynamicProductLevelExportSystem(object):
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing RCA matrix for year: %s" % year
-			self.ples[year].rca_matrix(series_name, fill_na, clear_temp, complete_data, decomposition, verbose) 		
+			self.ples[year].rca_matrix(series_name, fillna, clear_temp, complete_data, decomposition, verbose) 		
 
 	def rca_decomposition_tables(self):
 		'''
@@ -971,7 +971,7 @@ class DynamicProductLevelExportSystem(object):
 			rca_decomposition_tables[year] = self.ples[year].rca_decomposition_table()
 		return rca_decomposition_tables
 
-	def srca_matrices(self, years=None, series_name='export', fill_na=False, clear_temp=True, verbose=False):
+	def srca_matrices(self, years=None, series_name='export', fillna=False, clear_temp=True, verbose=False):
 		'''
 			Compute Symmetric RCA Matrices by applying transformation: (RCA-1)/(RCA+1) {Log Estimate}
 		'''
@@ -979,7 +979,7 @@ class DynamicProductLevelExportSystem(object):
 		result = dict()
 		for year in years:
 			if verbose: print "Computing Symmetric RCA Matrix for year: %s" % year
-			result[year] = self.ples[year].srca_matrix(series_name, fill_na, clear_temp, verbose)
+			result[year] = self.ples[year].srca_matrix(series_name, fillna, clear_temp, verbose)
 		return result
 
 	##########################################################
@@ -1338,14 +1338,18 @@ class DynamicProductLevelExportSystem(object):
 	## -- Panel Methods -- ##	
 	#########################
 
-	def dyn_global_panel(self, fillna=False, series_name='export', verbose=False):
+	def dynamic_global_panel(self, fillna=False, series_name='export', verbose=False):
 		'''
 			Ensure Global Panel For Dynamic Analysis
 			
 			Options:
 			-------
 				[1] fillna 	: 	fill np.nan objects with 0
+
+			Future Work 
+			[1] Add inplace option
 		'''
+		warnings.warn("[WARNING] This returns a new dynamic system ... not inplace", UserWarning) 
 		data = self.get_data(rtype='wide')
 		data = data.stack().unstack(level='productcode').stack(dropna=False).unstack(level='year').stack(dropna=False) 		#Long Data Series
 		data.name = series_name

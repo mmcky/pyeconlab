@@ -699,7 +699,7 @@ class ProductLevelExportSystem(object):
 	## -- International Trade Computables -- ##
 	###########################################
 
-	def rca_matrix(self, series_name='export', fill_na=False, clear_temp=True, complete_data=False, decomposition=False, verbose=False):
+	def rca_matrix(self, series_name='export', fillna=False, clear_temp=True, complete_data=False, decomposition=False, verbose=False):
 		'''
 			Generate Revealed Comparative Advantage (RCA) Matrix (Shape: Country x Product)
 			Measure: Balassa (1965) Trade Liberalisation and Revealed Comparative Advantage
@@ -707,7 +707,7 @@ class ProductLevelExportSystem(object):
 			Options:
 			--------
 				[1] series_name 	=> 	Allow specification of the series_name [Default: 'export']
-				[2] fill_na 		=> 	True/False [Default: False]
+				[2] fillna 		=> 	True/False [Default: False]
 				[3] clear_temp 		=> 	Delete Data generated in temp
 				[4] complete_data 	=> 	Allows for ALL RCA values to be computed using a complete trade system. (i.e. TotWorldTrade is represented by the sample)
 				[5] decomposition 	=> 	Saves Numerator (self.rca_num) and Denominator (self.rca_den) Values [Default: False]
@@ -779,7 +779,7 @@ class ProductLevelExportSystem(object):
 			tmp_used = ['rca_num', 'rca_den', 'rca']
 		## -- Rearrange Data -- ##
 		rca = self.temp['rca'].unstack(level=['productcode']).sort_index(axis=0).sort_index(axis=1)   #Added pd.DataFrame() so that this returns a DF rather than a Series
-   		if fill_na: rca = rca.fillna(0.0)   
+   		if fillna: rca = rca.fillna(0.0)   
 		# - Flush Used Items in Temp File - #
 		if clear_temp: 
 			for item in tmp_used:
@@ -817,10 +817,10 @@ class ProductLevelExportSystem(object):
 		rca_table.name = 'RCA-DecompositionTable'
 		return rca_table
 
-	def symmetric_rca_matrix(self, series_name='export', fill_na=False, clear_temp=True, verbose=False):
-		return self.rsca_matrix(series_name=series_name, fill_na=fill_na, clear_temp=clear_temp, verbose=verbose)
+	def symmetric_rca_matrix(self, series_name='export', fillna=False, clear_temp=True, verbose=False):
+		return self.rsca_matrix(series_name=series_name, fillna=fillna, clear_temp=clear_temp, verbose=verbose)
 
-	def srca_matrix(self, series_name='export', fill_na=False, clear_temp=True, verbose=False):
+	def srca_matrix(self, series_name='export', fillna=False, clear_temp=True, verbose=False):
 		'''
 			Computes the Symmetric RCA Measure (RCA - 1)/(RCA + 1) where -1.0 < RSCA < +1.0. 
 			Ref:  (Dalum, Laursen, Villumsen, 1998) "Structural Change in OECD Export Specialisation Patterns: dec-specialisation and 'stickiness'"
