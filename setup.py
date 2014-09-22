@@ -22,6 +22,7 @@ setup(
                'pyeconlab.trade.classification',
                'pyeconlab.trade.concordance',
                'pyeconlab.trade.systems',
+               'pyeconlab.trade.util',
   			       'pyeconlab.wdi',
                'pyeconlab.wdi.meta',
   			  ], 

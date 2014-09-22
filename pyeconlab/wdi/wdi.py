@@ -64,7 +64,7 @@ class WDI(object):
 	def __init__(self, source_dir, verbose=True): 								#Default - Verbosely setup WDI Object
 		self.source_dir = source_dir
 		## -- Load Data -- ##
-		self.data = pd.read_csv(self.source_dir + 'WDI_Data.csv') 						#Assume Relative Reference to File given as FN
+		self.data = pd.read_csv(self.source_dir + 'WDI_Data.csv', dtype={'year' : int}) 						#Assume Relative Reference to File given as FN
 		self.from_df(self.data)
 		self.start_year = self.data.columns[0]
 		self.end_year = self.data.columns[-1]
@@ -191,6 +191,10 @@ class WDI(object):
 				df = data
 			else:
 				df = df.merge(data, left_index=True, right_index=True)
+		#-Ensure Years are Integers-#
+		df = df.reset_index()
+		df['year'] = df['year'].apply(lambda x: int(x))
+		df = df.set_index(['iso3c', 'year'])
 		return df
 
 	def year_data(self, year, verbose=False):

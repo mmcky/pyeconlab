@@ -139,3 +139,21 @@ def from_long_to_dict(panel_long, out_shape='wide', shape='cp', verbose=False):
                 print "ERROR: Shape must be cp or pp"
         data_dict[year].name = data_name
     return data_dict
+
+###---------------------###
+###---Reindex Methods---###
+###---------------------###
+
+def reindex_dynamic_dataframe(df, year_pairs='years', verbose=False):
+    ''' Converts a dynamicaly referenced Dataframe (i.e. '1962-1963') to a dataframe with index to_year and from_year
+    '''
+    new_index = []
+    for item in df.index:
+        (years, country, productcode) = item
+        from_year = years.split('-')[0]
+        to_year = years.split('-')[1]
+        new_index.append((int(from_year), int(to_year), country, productcode))
+    new_index = pd.MultiIndex.from_tuples(new_index, names=['from_year', 'to_year', 'country', 'productcode'])
+    new_df = df.copy()
+    new_df.index = new_index
+    return new_df
