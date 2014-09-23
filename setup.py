@@ -23,6 +23,7 @@ setup(
                'pyeconlab.trade.concordance',
                'pyeconlab.trade.systems',
                'pyeconlab.trade.util',
+               'pyeconlab.trade.research',
   			       'pyeconlab.wdi',
                'pyeconlab.wdi.meta',
   			  ], 
