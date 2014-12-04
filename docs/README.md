@@ -9,6 +9,27 @@ Currently this is a built document. The following command should be issued at th
 
 **Note:** ``-f`` may need to be specified to overwrite the generated rst pages
 
+Docstring Reminders
+-------------------
+
+To conform with ``NumPy`` documentation the following should be followed. 
+
+Notes should we added as sphinx directives
+
+```
+.. note:: Deprecated in PyEconLab 0.1
+	`function` will be removed in PyEconLab 0.2, as it will be replaced by `newfunction`
+```
+
+Parameters for Functions and Methods
+
+```
+Parameters
+----------
+x : type
+    Description of parameter `x`.
+```
+
 Future Work
 -----------
   1. Construct a ``make.py`` file for building the documentation (similar to Pandas). This may or may not replace the sphinx MakeFile
