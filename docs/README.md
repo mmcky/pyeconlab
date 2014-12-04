@@ -9,6 +9,21 @@ Currently this is a built document. The following command should be issued at th
 
 **Note:** ``-f`` may need to be specified to overwrite the generated rst pages
 
+``PyEconLab`` Docstring Style
+-----------------------------
+
+The ``PyEconLab`` style largely follows that of ``numpydoc`` and other scientific python items. 
+However during development it can be helpful to have a few extra fields (i.e. Future Work).
+This can be added using a RestructuredText comment until we develop a custom version of ``sphinxext.napoleon``. 
+
+```
+.. 	Future Work
+	-----------
+	#. Item 1 should be written here etc. 
+```
+
+Note this is ignored when compiling the documentation using Sphinx
+
 Docstring Reminders
 -------------------
 
