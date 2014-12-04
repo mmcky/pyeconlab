@@ -14,7 +14,7 @@ Docstring Reminders
 
 To conform with ``NumPy`` documentation the following should be followed. 
 
-Notes should we added as sphinx directives
+Deprecation Warnings should we added as sphinx ``note`` directive
 
 ```
 .. note:: Deprecated in PyEconLab 0.1
@@ -30,6 +30,35 @@ x : type
     Description of parameter `x`.
 ```
 
+You cannot use section titles within docstrings. Sphinx and Autodoc will drop these when compiling the docstring.
+Instead you may use:
+
+```
+**Notes**:
+  This is an example note
+```
+
+**Note**: This looks nice in the read-the-docs theme
+
+or alternatively use a sphinx directive
+
+```
+.. note::
+	This is an example note
+```
+
+**Note**: This ends up being very pronounced in the read-the-docs theme - and useful for setting warnings or important notes in the documentation
+
+or if using the ``sphinxcontrib-napoleon`` extension then you can use special [section headers](https://pypi.python.org/pypi/sphinxcontrib-napoleon#sections) like
+
+```
+Notes
+-----
+#. This is an examle note
+```
+
+**Note**: This is the most similar to the current convention used in ``pyeconlab`` and is the most straighforward to implement
+
 Future Work
 -----------
   1. Construct a ``make.py`` file for building the documentation (similar to Pandas). This may or may not replace the sphinx MakeFile
@@ -39,3 +68,4 @@ References
   1. [NumPy Documentation Style Guide](<https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>)
   1. [Markdown Syntax](http://daringfireball.net/projects/markdown/syntax)
   1. [RestructuredText Quick Reference](http://docutils.sourceforge.net/docs/user/rst/quickref.html)
+  1. [Sphinx DocString Tutorial](http://thomas-cokelaer.info/tutorials/sphinx/docstring_python.html)

@@ -6,6 +6,8 @@ Python Economics Laboratory
 
 This package contains methods and routines for conducting research with a primary focus on the field of Economics. The current primary focus is on trade and most develpment is occuring in the trade supackage. However in the future other subpackages can be added as research agenda develops. 
 
+Import Convention: ``import pyeconlab as el``
+
 Usage
 -----
 
@@ -86,3 +88,21 @@ Data
 ----
 
 This project only currently supports RAW data that resides outside of the package (due to the large size of most datasets)however data such as Concordances & Aggregations are included (typically found in the relevant subpackage as a csv file). Data files should be encoded in (.csv) to be tool neutral, relatively efficient, and simple!
+
+References
+----------
+
+This is a collection of useful references:
+
+Python Standards
+
+  1. [Docstring Conventions - PEP 257](https://www.python.org/dev/peps/pep-0257/)
+  1. [Style Guide for Python Code - PEP 8](https://www.python.org/dev/peps/pep-0008/)
+
+Scientific Python
+
+  1. [NumPy Documentation](https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt)
+
+Code Checking
+
+  1. [Flake8 (pyflake, pep8)](https://pypi.python.org/pypi/flake8)
