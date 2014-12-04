@@ -13,14 +13,13 @@ class CountryCodes(object):
 
     Notes
     -----
-    Interface: data attribute must contain => ['iso3c', 'iso3n', 'countryname']
-
+    #. Interface -> data attribute must contain ['iso3c', 'iso3n', 'countryname']
     #. For country data that isn't standard (like iso3c, iso3n etc.) then individual classes or methods will need to be implemented in a Child Object.
 
-    Future Work
-    -----------
-    1. Improve Error Handling
-    2. Improve interface enforcement
+    ..  Future Work
+        -----------
+        1. Improve Error Handling
+        2. Improve interface enforcement
 
     """
 
