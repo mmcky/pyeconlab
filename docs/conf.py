@@ -31,9 +31,13 @@ import os
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    #'numpydoc',
     'sphinxcontrib.napoleon',
+    'sphinx.ext.todo',
 ]
+
+#Extension Options
+[extensions]
+todo_include_todos=True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
