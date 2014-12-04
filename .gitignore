@@ -1,6 +1,7 @@
 # Directories #
 ###############
-/build
+build/
+docs/_build/
 
 # Temp Files #
 ##############
