@@ -1,6 +1,9 @@
 """
-	Subpackage: Trade Classification
-	--------------------------------
+Subpackage: Trade Classification
+--------------------------------
+
+This provides the API to the Trade Classification Subpackage
+
 """
 
 from sitc import SITC, SITCR1, SITCR2, SITCR3, SITCR4

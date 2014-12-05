@@ -4,21 +4,21 @@ HS Trade Classifications
 
 This package contains HS trade classification details. This includes items such as Codes and Names. 
 If you are looking for conversion between trade classification tables (i.e. SITCR2-HS2002). 
-This information is contained in trade concordance
+This information is contained in the ``pyeconlab.trade.concordance`` subpackage
 
-Data Files:
+Data Files
 ----------
 see data/README.md
 
-Notes:
-------
-[1] Could have implemented a generic ProductCode Class but I think this approach is easier to understand and edit etc.
+Notes
+-----
+1. Could have implemented a generic ProductCode Class but I think this approach is easier to understand and edit etc.
 
-Future Work:
+Future Work
 -----------
-[1] Add Metadata to the HS objects (i.e. applicable_years, data_available_years etc.)
-[2] Find out what year data/H4.txt applies.
-[3] Add source_institution option to Revision Functions
+1. Add Metadata to the HS objects (i.e. applicable_years, data_available_years etc.)
+2. Find out what year data/H4.txt applies.
+3. Add source_institution option to Revision Functions
 
 """
 
@@ -27,25 +27,30 @@ import pandas as pd
 
 from pyeconlab.util import check_directory
 
-# - Data in data/ - #
+#-Data in `data/`-#
 this_dir, this_filename = os.path.split(__file__)
 DATA_PATH = check_directory(os.path.join(this_dir, "data"))
 
 class HS(object):
 	"""
-	HS Object
-	"""
+	HS Classification Object
 
+	Provides an interface to the HS Trade Classification System
+
+	Parameters
+	----------
+	revision 	: 	int
+					Specify HS Revision Number [1992, 1996, 2002, 2007]
+
+	source_institution 	: 	str, optional(default="un")
+							Provide source institution string (i.e. "un"). 
+							See data/README.md for more information
+
+	"""
+	
 	def __init__(self, revision, source_institution='un', verbose=False):
 		"""
-		Load SITC Classification Data
-		
-		Arguments
-		---------
-		revision 			: 	[1992, 1996, 2002, 2007] 		[HS Revision Number]
-		source_institution 	:	['un', 'wits'] 					[Default: 'un']
-								See data/README.md for more information
-
+		Load HS Classification Data
 		"""
 		#-Attributes-@
 		self.revision 			= 	revision
@@ -63,16 +68,15 @@ class HS(object):
 			self.source_web = u"http://wits.worldbank.org/referencedata.html"
 			self.data = pd.read_csv(DATA_PATH + 'un/' + 'H'+str(self.revision_map[revision])+'.txt')
 		#-Source: World Bank - WITS-#
-		elif source_institution == 'wits':
-			raise NotImplementedError('wits not yet implemented')
+		elif source_institution == 'wits': 	
+			raise NotImplementedError('wits not yet implemented')	#-Update Error Once Implemented-#
 		else:
-			raise ValueError("source_institution must be 'un' or 'wits'")
-		#-Run Some Standard Methods-#
+			raise ValueError("source_institution must be 'un'")
+		#-Run Some Standard Methods to Populate attributes-#
 		self.construct_level()
 		self.construct_description()
 
 	def __repr__(self):
-		""" Representation String """
 		obstring 	= 	"HS Revision: %s\n" % self.revision 	+\
 						"-----------------\n"					+\
 						"Level 1 Codes: %s\n" % len(self.L1) 	+\
@@ -114,7 +118,14 @@ class HS(object):
 		return self.data[self.data['level'] == 6]
 
 	def get_level(self, level):
-		""" Return Level Data based on a specified level """
+		""" 
+		Return Level Data based on a specified level
+
+		Parameters
+		----------
+		level 	: 	int
+					Specify which level of the HS system (1 to 6)
+		"""
 		if level == 1:
 			return self.L1
 		elif level == 2:
@@ -149,9 +160,9 @@ class HS(object):
 		"""
 		Construct a Full Description from ShortDescription and LongDescription
 
-		Note:
-		-----
-		[1] Currently this doesn't look necessary. ShortDescription contains enough of the information
+		Warnings
+		--------
+		1. Currently this doesn't look necessary. ShortDescription contains enough of the information
 		"""
 		self.data['Description'] = self.data[['ShortDescription']]
 
@@ -162,15 +173,33 @@ class HS(object):
 	def description(self, code):
 		""" 
 		Return Code Description String
+
+		Parameters
+		----------
+		code 	: 	<verify this> str or int
+					Supply Code of desired HS item
+
+		Returns
+		-------
+		value 	: 	str
+					Description of the HS Code
+
 		"""
 		return self.data[self.data['Code'] == code]['Description'].values[0] 		
 
 
 	def code_description_dict(self, level=None):
 		""" 
-		Return a {Code: Description} Dictionary
-		level 	: 	Can be Specified [1,2,3,4,5 or 6]
-					[Default is to return the entire dictionary of ALL levels]
+		Return a Dictionary of HS Codes and Descriptions
+
+		Parameters
+		----------
+		level 	: 	int, optional(default=None)
+					Specify a specific Level [1,2,3,4,5 or 6] otherwise it will return ALL levels
+		Returns
+		-------
+		dictionary 	: 	dict
+						A dictionary of HS Codes to Descriptions
 		"""
 		if type(level) == int:
 			data = self.get_level(level)
