@@ -327,6 +327,7 @@ def mark_duplicates(df, on=None, level=None):
     on      :   list(str), optional(default=None)
                 specify columns to check for duplicates. Default performs duplicates over entire dataframe
     level   :   specify levels to check for duplicates
+
     """
     if type(on) == list:
         #-Duplicates by Columns-#
@@ -356,6 +357,7 @@ def random_sample(df, sample_size = 1000):
             DataFrame to extract random rows from.
     sample_size     :   int, optional(default=1000)
                         Determines the size of the Random Sample
+
     """
     rows = np.random.choice(df.index.values, sample_size)
     return df.ix[rows]
@@ -378,6 +380,7 @@ def update_operations(self, add_op_string):
     Notes
     -----
     1. If no ``operations`` attribute is found then it constructs the attribute.
+
     """
     try:
         if type(self.operations) == str or type(self.operations) == unicode:
@@ -577,12 +580,18 @@ def compute_number_of_spells(wide_df, inplace=False):
     Compute Number of Spells in a Wide DataFrame for Each Row
     This is based on identifying unique codes in a series. 
 
-    Columns : Time Data
+    Parameters
+    -----------
+    wide_df 	: 	pd.DataFrame(Time Columns)
+    				DataFrame containing Columns indexed by Time (i.e. Years)
+    Notes
+    -----
+    1. 	The Columns must contain time data ::
+    	DataFrame = index, year_t .. year_T
+    2. 	continuous spells can be computed using compute_number_of_continuous_spells() method.
 
-    Note
-    ----
-    [1] continuous spells can be computed using compute_number_of_continuous_spells() method.
     """
+    #-Helper Functions-#
     def num_spells(x):
         """ Compute the spells in each row """
         t = list(x.dropna().unique())
@@ -603,16 +612,27 @@ def compute_number_of_spells(wide_df, inplace=False):
 def compute_number_of_continuous_spells(wide_df, inplace=False):
     """
     Compute Number of Continuous Spells in a Wide DataFrame for Each Row
-    Columns : Time Data
 
-    This function needs to account for non-adjacent np.nan occurances to compute the number of continuous spells. 
-    Perhaps parsing each row and adjusting np.nan() occurances to be [-1, -1, val, -2, ... -n etc.] for [np.nan, np.nan, 4, np.nan,]
-    This could be done using compute_spell_lengths?
-
-    Future Work
+    Parameters
     -----------
-    [1] Add Tests
+    wide_df 	: 	pd.DataFrame(Time Columns)
+    				DataFrame containing Columns indexed by Time (i.e. Years)
+	inplace 	: 	bool, optional(default=False)
+					Performs the Operation In Place on the Incoming DataFrame
+
+    Notes
+    -----
+    1. 	The Columns must contain time data ::
+    	index, year_t .. year_T
+    2. 	[Improvement] This function needs to account for non-adjacent np.nan occurances to compute the number of continuous spells. 
+    	Perhaps parsing each row and adjusting np.nan() occurances to be [-1, -1, val, -2, ... -n etc.] for [np.nan, np.nan, 4, np.nan,]
+    	This could be done using compute_spell_lengths?
+
+    .. 	Future Work
+    	-----------
+    	[1] Add Tests
     """
+    #-Helper Function-#
     def num_spells(s):
         """ Compute the spells in each row """
         uniq_codes = list(s.dropna().unique())
@@ -629,7 +649,6 @@ def compute_number_of_continuous_spells(wide_df, inplace=False):
             if item != s[next_idx]:
                 spell += 1          #increment spell
         return s
-
     #-Options-#
     if not inplace:
         wide_df = wide_df.copy(deep=True)
@@ -639,17 +658,27 @@ def compute_number_of_continuous_spells(wide_df, inplace=False):
 
 def compute_spell_lengths(wide_df, incremental=False, inplace=False):
     """
-    Compute Spell Lengths for Wide DataFrames
-    Columns : Time Data
+    Compute Spell Lengths for Wide Time Based DataFrames
 
-    Usage
+	Parameters
+    -----------
+    wide_df 	: 	pd.DataFrame(Time Columns)
+    				DataFrame containing Columns indexed by Time (i.e. Years)
+    incremental : 	bool, optional(default=False)
+    				If True it returns an incremental count [1, 2, 3 ... ] of the spell lengths.
+    				If False it returns the final length of each spell
+	inplace 	: 	bool, optional(default=False)
+					Performs the Operation In Place on the Incoming DataFrame
+    Notes
     -----
     [1] Useful for computing dynamic or intertemporal data in computing length of spells across years in a wide dataframe
     
-    Future Work
-    -----------
-    [1] Add Tests
+    .. 	Future Work
+    	-----------
+    	[1] Add Tests
+
     """
+    #-Helper Functions-#
     def spell_len(s):
         spell = 1
         for idx, item in s.iteritems():
@@ -690,7 +719,6 @@ def compute_spell_lengths(wide_df, incremental=False, inplace=False):
                 group = []
                 group_items = []
         return s
-
     #-Options-#
     if not inplace:
         wide_df = wide_df.copy(deep=True)
@@ -703,23 +731,8 @@ def compute_spell_lengths(wide_df, incremental=False, inplace=False):
 
 
 
-
-
-
 # ----------- #
 # - IN WORK - #
 # ----------- #
 
-
-
-
-def change_message(old_idx, recode):
-    """
-    Prepare a change message
-
-    Parameters
-    ----------
-    old_idx : set(old index)
-    recode  : dict('FROM' : 'TO')
-    """
-    pass
+#-None-#
