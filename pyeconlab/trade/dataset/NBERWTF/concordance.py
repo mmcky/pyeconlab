@@ -1,11 +1,15 @@
-'''
-	NBER Feenstra Concordances
-	1:1 Relationship Dictionaries
+"""
+NBER Feenstra Special Concordances
+==================================
 
-	Notes:
-	------
-	[1] ISO3C 	=> 	ISO 3166-1-alpha3
-'''
+This module contains special concordances used in NBER Feenstra Analysis
+
+STATUS: IN-WORK
+
+Notes
+------
+1. ISO3C 	=> 	ISO 3166-1-alpha3
+"""
 
 # ------------------------------------- #
 # - Manually Constructed Concordances - #

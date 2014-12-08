@@ -1,5 +1,9 @@
 """
-Dataset Package: NBER World Trade Flows
+pyeconlab.trade.dataset.NBERWTF: NBER World Trade Flows
+=======================================================
+
+API for NBER World Trade Flows Subpackage
+
 """
 
 from .constructor import NBERWTFConstructor
