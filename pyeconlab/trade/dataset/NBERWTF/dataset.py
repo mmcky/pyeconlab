@@ -1,22 +1,25 @@
 """
 NBERWTF Dataset Wrapper Objects
-
-Note: This just provides a more appropriate object name OR something very specific to NBERWTF
+================================
 
 Supporting Constructor
 ----------------------
-	[1] NBERFeenstraConstructor
+1. NBERFeenstraConstructor
+
+Types
+-----
+1. Trade Dataset 	(Bilateral Trade Flows)
+2. Export Dataset 	(Export Trade Flows)
+3. Import Dataset 	(Import Trade Flows)
+
+Notes
+-----
+1. This just provides a more appropriate object name and specific information to NBERWTF
 
 Dependancies
 ------------
-	[1] pyeconlab.trade
-		CPTradeDataset, CPTradeData, CPExportData, CPImportData
-
-Types
-=====
-[1] Trade Dataset 	(Bilateral Trade Flows)
-[2] Export Dataset 	(Export Trade Flows)
-[3] Import Dataset 	(Import Trade Flows)
+1. pyeconlab.trade CPTradeDataset, CPTradeData, CPExportData, CPImportData
+2. pyeconlab.trade.NBERWTF for contextual information
 
 """
 
@@ -35,7 +38,9 @@ from pyeconlab.trade.dataset import CPTradeDataset, CPTradeData, CPExportData, C
 class NBERWTFTradeData(NBERWTF, CPTradeData):
 	"""
 	NBERWTF Bilateral World TRADE Data
+
 	Interfaces: ['year', 'eiso3c', 'iiso3c', 'productcode', 'value']
+
 	"""
 	#-Class Properties-#
 
@@ -82,9 +87,11 @@ class NBERWTFTradeData(NBERWTF, CPTradeData):
 class NBERWTFExportData(NBERWTF, CPExportData):
 	"""
 	NBERWTF EXPORT World Trade Data
-	Interface: ['year', 'eiso3c', 'productcode', 'value']
-	"""
 	
+	Interface: ['year', 'eiso3c', 'productcode', 'value']
+
+	"""
+
 	@property 
 	def data(self):
 		return self.__data
@@ -107,7 +114,9 @@ class NBERWTFExportData(NBERWTF, CPExportData):
 class NBERWTFImportData(NBERWTF, CPImportData):
 	"""
 	NBERWTF IMPORT World Trade Data
+	
 	Interface: ['year', 'iiso3c', 'productcode', 'value']
+	
 	"""	
 	
 	@property 
