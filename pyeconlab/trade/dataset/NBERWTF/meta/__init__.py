@@ -36,3 +36,9 @@ incomplete_iso3c_for_1962_2000 = intertemporal.incomplete_iso3c_for_1962_2000
 # - Deletion Objects - #
 # -------------------- #
 from .deletions import sitc4_deletions, sitc3_deletions
+
+# --------------- #
+# - Fix Objects - #
+# --------------- #
+
+from .fixes import fix_exporter_to_iso3n, fix_ecode_to_iso3n, fix_exporter_to_iso3c, fix_importer_to_iso3n, fix_icode_to_iso3n, fix_importer_to_iso3c

@@ -486,7 +486,7 @@ class NBERWTFConstructor(NBERWTF):
         
         Notes 
         -----
-        1: Is this ever going to be used? Consider DEPRECATED?
+        1. Is this ever going to be used? Consider DEPRECATED?
         """
         if type(self._dataset) == pd.DataFrame:
             if force == False:
@@ -639,12 +639,15 @@ class NBERWTFConstructor(NBERWTF):
     def load_raw_from_hdf(self, years=[], verbose=True):
         """
         Load HDF Version of RAW Dataset from a source_directory
-        Note:   To construct your own hdf version requires to initially load from NBER supplied RAW dta files
-                Then use Constructor method ``convert_source_dta_to_hdf()``
+        
+        Note   
+        -----        
+        1. To construct your own hdf version requires to initially load from NBER supplied RAW dta files. Then use Constructor method ``convert_source_dta_to_hdf()``
 
-        Notes
-        -----
-        [1] Move to Generic Class of DatasetConstructors?
+        ..  Questions
+            ---------
+            1. Move to a Generic Class of DatasetConstructors?
+
         """
         self.__raw_data     = pd.DataFrame() 
         if years == [] or years == self._available_years:                       #years assigned prior to loading data
@@ -678,22 +681,24 @@ class NBERWTFConstructor(NBERWTF):
         
         Parameters
         ----------
-        years           :   Apply Year Filter
-        return_dataset  :   Returns a reference to the data in supp_data dictionary
+        years           :   list(int), optional(default=[])
+                            Apply a year filter. Default behaviour is ALL years
+        return_dataset  :   bool, optional(default=False)
+                            Returns a reference to the data in supp_data dictionary
 
-        File Pattern: 
-        -------------
-        CHINA_HK??.dta (?? = 88,89,...,00)
+        Notes
+        -----
+            File Pattern: CHINA_HK??.dta (?? = 88,89,...,00)
 
-        Returns:
+        Returns
         -------
         self._supp_data['chn_hk_adjust']    :   pd.DataFrame    
 
-        Future Work:
-        -----------
-            [1] Currently this method uses the source_dir that is defined when the object is initialised. 
+        ..  Future Work:
+            -----------
+            1.  Currently this method uses the source_dir that is defined when the object is initialised. 
                 Could add in the option to specify a different source_dir but this probably won't get used. Not Wasting Time Now
-            [2] Modify this so that only the intersection between available years and years. 
+            2.  Modify this so that only the intersection between available years and years. 
         """
         # - Attributes of China Hong-Kong Adjustment - #
         fn_prefix   = u'china_hk'
@@ -732,24 +737,22 @@ class NBERWTFConstructor(NBERWTF):
         """
         Load NBERFeenstra Bilateral Trade Flows (summed across SITC commodities)
 
-        File: 
+        Notes
         -----
-        WTF_BILAT.dta
+        1. File: WTF_BILAT.dta ::
 
-        Variables:
-        ---------
+            Variables
+            ---------
             ICode       :   Importer country code
             ECode       :   Exporter country code
             Importers   :   Importer country name
             Exporter    :   Exporter country name
             Value??     :   Thousands of US dollars where ?? = 62, 63,...,00
         
-        DataShape: Wide
+            DataShape: Wide
 
-        Notes:
-        -----
-        [1] Can use this Supplementary Data to check Aggregations and how different they are etc.
-        [2] This corresponds to a CountryLevelExportSystem()
+        2. Can use this Supplementary Data to check Aggregations and how different they are etc.
+        3. This corresponds to a CountryLevelExportSystem()
         
         """
         fn = u'WTF_BILAT.dta'
@@ -778,9 +781,16 @@ class NBERWTFConstructor(NBERWTF):
         """
         Reduce a dataset to a specified list of columns
 
+        Parameters
+        ----------
+        to      :   list, optional(default=['year', 'iiso3c', 'eiso3c', 'sitc4', 'value'])
+                    Supply a list to reduce the dataset to the specified columns
+        rtrn    :   bool, optional(default=False)
+                    Return reference to the internal dataset
+
         Note
         ----
-        [1] This is an idea candidate for a constructor superclass so that it is inherited
+        1. This is an ideal candidate for a constructor superclass so that it is inherited
         """
         opstring = u"(reduce_to(to=%s))" % to
         if verbose: print "[INFO] Reducing Dataset from %s to %s" % (list(self.dataset.columns), to)
@@ -794,13 +804,14 @@ class NBERWTFConstructor(NBERWTF):
         Replace/Adjust China and Hong Kong Data to account for China Shipping via Hong Kong
         This will merge in the Hong Kong / China Adjustments provided with the dataset for the years 1988 to 2000.
 
-        Note
-        ----
-        [1] This method requires no operations to have been done previously on the dataset.  
+        Notes
+        -----
+        1. This method requires no operations to have been done previously on the dataset.  
+
         """
         op_string = u'(adjust_raw_china_hongkongdata)'
         if check_operations(self, op_string):                           #Check if Operation has been conducted
-                return None
+            return None
         #-Merge Settings-#
         if self.operations != '':
             raise ValueError("This method requires no previous operations to have been performed on the dataset!")
@@ -856,21 +867,21 @@ class NBERWTFConstructor(NBERWTF):
     def standardise_data(self, force=False, verbose=False):
         """
         Run Appropriate Set of Standardisation over the Dataset
-        
-        Actions
-        -------
-            [1] Trade Values in $'s 
-            [2] Add ISO3C Codes and Well Formatted CountryNames ('exportername', 'importername')
-            [3] Marker for Standard SITC Revision 2 Codes
+
+        The actions conducted in the method are:
+        1. Trade Values in $'s 
+        2. Add ISO3C Codes and Well Formatted CountryNames ('exportername', 'importername')
+        3. Marker for Standard SITC Revision 2 Codes
 
         Notes
         -----
-        [1] Raw Dataset has Non-Standard SITC rev2 Codes so adding a marker to identify 'official' codes
+        1. Raw Dataset has Non-Standard SITC rev2 Codes so adding a marker to identify 'official' codes
 
-        Future Work
-        -----------
-        [1] Remove this and use subfunctions in __init__ to be more explicit?
-        [2] Is this needed? Delete?
+        ..  Future Work
+            -----------
+            1. Remove this and use subfunctions in __init__ to be more explicit?
+            2. Is this needed? Delete?
+
         """
         op_string = u"(standardise_data)"
         #-Check if Operation has been conducted-#
@@ -888,83 +899,17 @@ class NBERWTFConstructor(NBERWTF):
     # - Operations on Country Codes - #
     # ------------------------------- #
 
-    #Move These to Meta Data#
-
-    fix_exporter_to_iso3n =     {
-                                    'Asia NES'  : 896,
-                                    'Italy'     : 381,
-                                    'Norway'    : 579,
-                                    'Switz.Liecht' : 757,
-                                    'Samoa'     : 882,
-                                    'Taiwan'    : 158,
-                                    'USA'       : 842,
-                                }
-
-    fix_ecode_to_iso3n =        {                                       
-                                    '450000'    : 896,
-                                    '533800'    : 381,
-                                    '555780'    : 579,
-                                    '557560'    : 757,
-                                    '728882'    : 882,
-                                    '458960'    : 158,
-                                    '218400'    : 842,
-                                }
-    # Checked With: 
-    # df = a.raw_data
-    # df.loc[df.exporter==<item from fix_exporter_to_iso3n>].ecode.unique()
-
-
-    fix_exporter_to_iso3c =     {
-                                    'Asia NES'  : '.',
-                                    'Italy'     : 'ITL',
-                                    'Norway'    : 'NOR',
-                                    'Switz.Liecht' : 'CHE',
-                                    'Samoa'     : 'WSM',
-                                    'Taiwan'    : 'TWN',        #Note this is also 480 (Other Asia, NES)
-                                    'USA'       : 'USA',
-                                }
-
-    # Note: These are technically duplicates, but does it help to keep the logic separable?
-
-    fix_importer_to_iso3n =     { 
-                                    'Asia NES'  : 896,
-                                    'Italy'     : 381,
-                                    'Norway'    : 579,
-                                    'Samoa'     : 882,
-                                    'Switz.Liecht' : 757,
-                                    'Taiwan'    : 158,
-                                    'USA'       : 842,
-                                }
-
-    fix_icode_to_iso3n =        { 
-                                    '450000'    : 896,
-                                    '533800'    : 381,
-                                    '555780'    : 579,
-                                    '728882'    : 882,
-                                    '557560'    : 757,
-                                    '458960'    : 158,
-                                    '218400'    : 842,
-                                }
-    # Checked With: 
-    # df = a.raw_data
-    # df.loc[df.importer==<item from fix_importer_to_iso3n>].icode.unique()
-
-    fix_importer_to_iso3c =     {
-                                    'Asia NES'  : '.',
-                                    'Italy'     : 'ITL',
-                                    'Norway'    : 'NOR',
-                                    'Samoa'     : 'WSM',
-                                    'Switz.Liecht' : 'CHE',
-                                    'Taiwan'    : 'TWN',
-                                    'USA'       : 'USA',
-
-                                }
+    from .meta import fix_exporter_to_iso3n, fix_ecode_to_iso3n, fix_exporter_to_iso3c, fix_importer_to_iso3n, fix_icode_to_iso3n, fix_importer_to_iso3c    #-Move to Top of File-#?
 
     @property 
     def fix_countryname_to_iso3n(self):
         """ 
         Compute a joint dictionary of exporter and importer adjustments
-        Usage: A joint dictionary can reduce errors by ensuring both exporters and importers are encoded the same way
+        
+        Notes
+        -----
+        1. A joint dictionary can reduce errors by ensuring both exporters and importers are encoded the same way
+
         """
         try:
             return self.__fix_countryname_to_iso3n
@@ -990,16 +935,22 @@ class NBERWTFConstructor(NBERWTF):
     def split_countrycodes(self, dataset=True, apply_fixes=True, iso3n_only=False, force=False, verbose=True):
         """
         Split CountryCodes into components ('icode', 'ecode')
-        XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+        Code structure ::   
 
-        dataset             : True/False [The only function that can act on RAW DATA]
-        apply_fixes         : adjusts iso3n numbers to match updated codes. 
-        iso3n_only          : Removes iregion and imod
-        force               : force this to run regardless of op_string
+            XXYYYZ => UN-REGION [2] + ISO3N [3] + Modifier [1]
+
+        Parameters
+        ----------
+        dataset         :   bool, optional(default=True)
+                            Use the dataset attribute (otherwise use raw_data)
+        apply_fixes     :   bool, optional(default=True)
+                            A djusts iso3n numbers to match updated codes. 
+        iso3n_only      :   Removes iregion and imod
+        force           :   force this to run regardless of op_string
 
         Notes
         -----
-        [1] Should this be done more efficiently? (i.e. over a single pass of the data) 
+        1.  Should this be done more efficiently? (i.e. over a single pass of the data) 
             Current timeit result: 975ms per loop for 1 year
         """
         #-Set Data from Dataset OR Raw Data-#
@@ -1042,15 +993,19 @@ class NBERWTFConstructor(NBERWTF):
         """ 
         Apply Custom Fixes for ISO3N Numbers
         
-        match_on    : allows matching on 'countryname' (i.e. exporter, importer) or 'countrycode' (i.e. ecode, icode)
+        Parameters
+        ----------
+        match_on    :   str, optional(default='countrycode')   
+                        allows matching on 'countryname' (i.e. exporter, importer) or 'countrycode' (i.e. ecode, icode)
 
-        Note
-        ----
-        [1] Currently uses attribute fix_countryname_to_iso3n, fix_icode_to_iso3n, fix_ecode_to_iso3n (will move to meta)
+        Notes
+        -----
+        1. Currently uses attribute fix_countryname_to_iso3n, fix_icode_to_iso3n, fix_ecode_to_iso3n (will move to meta)
 
-        Future Work 
-        -----------
-        [1] Write Tests
+        ..  Future Work 
+            -----------
+            1. Write Tests
+
         """
         #-Op String-#
         op_string = u"(apply_iso3n_custom_fixes)"
@@ -1092,20 +1047,21 @@ class NBERWTFConstructor(NBERWTF):
         However there are other ways by matching on countrynames etc.
         Some of these concordances can be found in './meta'
 
-        Alternatives
-        ------------
-        [1] build_countrynameconcord_add_iso3ciso3n()
-
-        Requires
-        --------
-        [1] split_countrycodes()
-        [2] iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
-
-        Notes
+        Notes 
         -----
-        [1] This matches all UN iso3n codes which aren't just a collection of countries. 
+        1. See also: build_countrynameconcord_add_iso3ciso3n()
+        2. Requires :: 
+
+            1. split_countrycodes()
+            2. iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
+        
+        3.  This matches all UN iso3n codes which aren't just a collection of countries. 
             For example, this concordance includes items such as 'WLD' for World
-        [2] Should cleanup of iso3n and iregion imod occur here? Should this collapse (sum)?
+        
+        ..  Questions
+            ---------
+            1.  Should cleanup of iso3n and iregion imod occur here? Should this collapse (sum)?
+
         """
         #-OpString-#
         op_string = u"(add_iso3c)"
@@ -1125,17 +1081,19 @@ class NBERWTFConstructor(NBERWTF):
         """
         Add Standard Country Names
 
-        source_institution  :   Allows to specify which institution data to use in the match between iso3n and countryname
-                                [Default: 'un']
-
-        Requires
-        --------
-        [1] split_countrycodes()
-        [2] iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
+        Parameters
+        ----------
+        source_institution  :   str, optional(default='un')
+                                Allows to specify which institution data to use in the match between iso3n and countryname
 
         Notes
         -----
-        [1] This matches all UN iso3n codes which aren't all countries. 
+        1. Requires ::
+       
+            [1] split_countrycodes()
+            [2] iso3n_to_iso3c (#Check if Manual Adjustments are Required: nberfeenstrawtf(iso3n)_to_iso3c_adjust)
+
+        2.  This matches all UN iso3n codes which aren't all countries. 
             These include items such as 'WLD' for World
         """
         #-OpString-#
@@ -1157,20 +1115,21 @@ class NBERWTFConstructor(NBERWTF):
         """
         Filter Dataset for Countries Only AND returns a reference to dataset attribute
 
-        Requires
-        --------
-        [1] add_iso3c()
+        Notes
+        -----
+        1. Requires ::
 
-        Note
-        ----
-        [1] This uses the iso3c codes to filter on countries only
-        [2] Write Tests to check the sum of a countries exports and compare to Corresponding World Export Line
-        [3] Build a Report for Dropped countrycodes
-        [4] This leaves in old countries that may no longer currently exist!
+            add_iso3c()
+
+        2. This uses the iso3c codes to filter on countries only
+        3. This leaves in old countries that may no longer currently exist!
 
         Future Work
         -----------
-        [1] Rewrite these to use .loc method?
+        1. Rewrite these to use .loc method?
+        2. Write Tests to check the sum of a countries exports and compare to Corresponding World Export Line
+        3. Build a Report for Dropped countrycodes
+
         """
         #-OpString-#
         op_string = u"(countries_only)"
@@ -1216,14 +1175,24 @@ class NBERWTFConstructor(NBERWTF):
         """
         Filter Dataset for World Exports Only and returns a reference to the dataset attribute
 
-        Requires
-        --------
-        [1] add_iso3c()
+        Parameters
+        ----------
+        error_code  :   str, optional(default='.')
+                        Specify an error code
+        rtrn        :   bool, optional(default=False)
+                        Return the dataset 
 
-        Future Work
-        -----------
-        [1] Build a Report
-        [1] Add inplace option to return a dataframe rather than right to dataset?
+        Notes
+        -----
+        1. Requires ::
+            
+            add_iso3c()
+
+        ..  Future Work
+            -----------
+            1. Build a Report
+            2. Add inplace option to return a dataframe rather than right to dataset?
+
         """
         #-OpString-#
         op_string = u"(world_only)"
@@ -1243,10 +1212,18 @@ class NBERWTFConstructor(NBERWTF):
         """
         Adjust Country Codes to be Inter-temporally Consistent
 
-        Future Work
-        -----------
-        [1] Write Tests
-        [2] Make the Reporting More Informative
+        Parameters
+        ----------
+        force   :       bool, optional(default=False)
+                        Force operations over an incomplete dataset
+        dropvars    :   list, optional(default=['icode', 'importer', 'ecode', 'exporter', 'iiso3n', 'eiso3n'])
+                        Specify which variables to drop
+
+        ..  Future Work
+            -----------
+            1. Write Tests
+            2. Make the Reporting More Informative
+
         """
         from pyeconlab.trade.dataset.NBERWTF.meta import iso3c_recodes_for_1962_2000
         from pyeconlab.util import concord_data
@@ -1291,30 +1268,34 @@ class NBERWTFConstructor(NBERWTF):
     def countryname_concordance_using_cc(self, concord_vars=('countryname', 'iso3c'), target_dir=None, force=False, verbose=False):
         """
         Compute a Country Name Concordance using package: pycountrycode
-        
+
+        It is better to use ISO3N Codes that are built into icode and ecode. Therefore STOP work on this approach.
+        Current Concordances can be found in "./meta"
+
+        Warnings
+        --------
+        1. pycountrycode is no longer supported!
+
         Returns:
         --------
         pd.DataFrame(countryname,iso3c,iso3n) and/or writes a file
-            
-        Dependencies:
-        -------------
-        [1] PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
-            Note: pycountrycode has an issue with converting iso3n to iso3c so currently use country names
-            vincentarelbundock/pycountrycode Issue #24
 
         Notes
         -----
-        [1] It is better to use ISO3N Codes that are built into icode and ecode
-            Therefore STOP work on this approach.
-            Current Concordances can be found in "./meta"
+        1. Dependencies ::
 
-        Future Work:
-        ------------
-        [1] Build my own version of pycountrycode so that this work is internalised to this package and doesn't depend on PyCountryCode
-            I would like Time Varying Definitions of Country Codes, In addition to Time Varying Aggregates like LDC, MDC, etc.
-        [2] Add Option to Write Concordance to a py file or csv etc
-        [3] Write Some Error Checking tests
-        [4] Turn this Routine into a utility function and remove code duplication
+            PyCountryCode [https://github.com/vincentarelbundock/pycountrycode]
+            Note: pycountrycode has an issue with converting iso3n to iso3c so currently use country names
+            vincentarelbundock/pycountrycode Issue #24
+
+        ..  Future Work:
+            ------------
+            1. Build my own version of pycountrycode so that this work is internalised to this package and doesn't depend on PyCountryCode
+                I would like Time Varying Definitions of Country Codes, In addition to Time Varying Aggregates like LDC, MDC, etc.
+            2. Add Option to Write Concordance to a py file or csv etc
+            3. Write Some Error Checking tests
+            4. Turn this Routine into a utility function and remove code duplication
+
         """
         #-Parse Complete Dataset Check-#
         if self.complete_dataset != True:
@@ -1353,12 +1334,22 @@ class NBERWTFConstructor(NBERWTF):
     def collapse_to_valuesonly(self, subidx=None, return_duplicates=False, verbose=False):
         """
         Adjust Dataset For Export Values that are defined multiple times due to Quantity Unit Codes ('unit')
-        Note: This will remove 'quantity', 'unit' ('dot'?)
+       
+        Parameters
+        ----------
+        subidx  :   str, optional(default=None)
+                    Specify sub index, otherwise method will construct appropriate subindex 
+        return_duplicates   :   bool, optional(default=False)
+                                Return dubplicates for debugging
 
-        Questions
-        ---------
-        1. Does this need to be performed before adjust_china_hongkongdata (as this might match multiple times!)?
-        2. Write Tests
+        Notes:
+        ------
+        1. This will remove 'quantity', 'unit' ('dot'?)
+
+        ..  Questions
+            ---------
+            1. Does this need to be performed before adjust_china_hongkongdata (as this might match multiple times!)?
+            2. Write Tests
 
         """
         #-Find Appropriate idx-#
@@ -1408,7 +1399,14 @@ class NBERWTFConstructor(NBERWTF):
     def add_sitcr2_official_marker(self, level=4, source_institution='un', verbose=False):
         """ 
         Add an Official SITCR2 Marker to Dataset
-        source_institution  :   allows to specify where SITC() retrieves data [Default: 'un']
+
+        Parameters
+        ----------
+        level               :   int, optional(default=4)
+                                Specify SITC Revision 2 Level
+        source_institution  :   str, optional(default='un')
+                                allows to specify where SITC() retrieves data [Default: 'un']
+
         """
         #-OpString-#
         op_string = u"(add_sitcr2_official_marker)"
@@ -1433,9 +1431,15 @@ class NBERWTFConstructor(NBERWTF):
         """
         Add a Product Code for a specified level between 1 and 3 for 'sitc4'
 
-        Note
-        ----
-        [1] This could be simplified by using sitcl = 'sitc%s' % level string 
+        Parameters
+        ----------
+        level   :   int
+                    Specify Productcode Level
+
+        Notes
+        -----
+        1. This could be simplified by using sitcl = 'sitc%s' % level string 
+
         """
         if level == 1:
             op_string = u"(add_productcode_level1)"
@@ -1463,21 +1467,24 @@ class NBERWTFConstructor(NBERWTF):
         """
         Collapse the Dataset to a Higher Level of Aggregation 
 
-        level   :   [1,2,3]
-                    Default: 3
-        subidx  :   Specify a Column Filter
+        Parameters
+        ----------
+        level   :   int, optional(default=3)
+                    Specify SITC Level (1 to 3)
+        subidx  :   str, optional(default='default')
+                    Specify a Column Filter
                     [Default: Builds a SubIDX from self.dataset.columns]
                     Alternatives:   ['year', 'icode', 'importer', 'ecode', 'exporter', 'sitc4', 'dot', 'value']
                                     ['year', 'iiso3c', 'eiso3c', 'sitc4', 'value']
 
-        Note
-        ----
-        [1] This is a good candidate to be in a superclass
-        [2] Why restrict to the default subidx?
+        Notes
+        -----
+        1. This is a good candidate to be in a superclass
+        2. Why restrict to the default subidx?
 
-        Future Work
-        -----------
-        [1] Infer the level and then aggregate based on that inference rather than relying on sitc4 data as the baseline. 
+        ..  Future Work
+            -----------
+            1. Infer the level and then aggregate based on that inference rather than relying on sitc4 data as the baseline. 
         """
         if verbose: print "[INFO] Cannot Aggregate Quantity due to units. Discarding 'quantity'"
         op_string = u"(collapse_to_productcode_level%s)" % level
@@ -1512,13 +1519,13 @@ class NBERWTFConstructor(NBERWTF):
         """
         This method deletes any known issues with the raw_data associated with productcodes
 
-        Requirements
-        ------------
-        self.level == 4
-
         Notes
         -----
-        [1] SITC4 Deletions is Documented in meta subpackage
+        1. Requires ::
+
+            self.level == 4
+
+        2. SITC4 Deletions is Documented in meta subpackage
 
         """
         from .meta import sitc4_deletions
@@ -1548,13 +1555,12 @@ class NBERWTFConstructor(NBERWTF):
                 444     = $200 but no 4441 or 4442 defined then 
                 444A    = $200 
 
-        Note
-        ----
-        [1] The A and X codes are not used for the adjusted SITC codes of the 35 countries for
-        which specific corrections and adjustments were made, as described in Section 5.
-
-        [1] To obtain comparable inter-temporal codes requires adjustments to the data. A concordance is required
-        to bring the specially constructed product codes to data in future years.
+        Notes
+        -----
+        1.  The A and X codes are not used for the adjusted SITC codes of the 35 countries for
+            which specific corrections and adjustments were made, as described in Section 5.
+        2.  To obtain comparable inter-temporal codes requires adjustments to the data. A concordance is required
+            to bring the specially constructed product codes to data in future years.
 
         """
         op_string = u"(add_productcode_alpha_indicator)"
@@ -1570,13 +1576,17 @@ class NBERWTFConstructor(NBERWTF):
         """
         Drop Productcodes that contain an alpha code 'A', 'X'
 
-        Note
-        ----
-        [1] The A and X codes are not used for the adjusted SITC codes of the 35 countries for
-        which specific corrections and adjustments were made, as described in Section 5.
+        Parameters
+        ----------
+        cleanup     :   bool, optional(default=True)
+                        Clean up SITCA and SITCX identifiers that were added to the dataset
 
-        [1] To obtain comparable inter-temporal codes requires adjustments to the data. A concordance is required
-        to bring the specially constructed product codes to data in future years.
+        Notes
+        -----
+        1.  The A and X codes are not used for the adjusted SITC codes of the 35 countries for
+            which specific corrections and adjustments were made, as described in Section 5.
+        2.  To obtain comparable inter-temporal codes requires adjustments to the data. A concordance is required
+            to bring the specially constructed product codes to data in future years.
         """
         op_string = u"(drop_alpha_productcodes)"
         if check_operations(self, op_string): return None
@@ -1600,16 +1610,24 @@ class NBERWTFConstructor(NBERWTF):
         """ 
         Compute the Value of Codes that Contain AX and the percentage of that Groups Value based on an aggregated level
 
-        level   :   specify a higher level of aggregation [0,1,2,3]
-                    [Default: 3]
-
-        Required Columns: 'SITC#' #=[1,2,3]; 'year', 'value'
+        Parameters
+        ----------
+        level   :   int, optional(default=3)
+                    Specify a higher level of aggregation [0,1,2,3] 
 
         Notes
         -----
-        [1] At the SITCL3 the maximum value contained in AX codes is 4% (mean: 0.2%)
+        1. Required Columns ::
+
+            'SITC#' #=[1,2,3]; 'year', 'value'
+
+        2.  At the SITCL3 the maximum value contained in AX codes is 4% (mean: 0.2%)
             There isn't a huge loss of data by deleting them. These values should be included in the SITCL3 Dataset
-        [2] Should I unstack 'year'
+
+        ..  Questions
+            ---------
+            1.  Should I unstack 'year'?
+
         """
         #-Required Items-#
         self.add_iso3c()                                                            # ISO3C
@@ -1636,16 +1654,20 @@ class NBERWTFConstructor(NBERWTF):
         """ 
         Compute the Value of Codes that are Unofficial and the percentage of that Groups Value based on an aggregated level
 
-        level   :   specify a higher level of aggregation [0,1,2,3]
-                    [Default: 3]
+        Parameters
+        ----------
+        level   :   int, optional(default=3)
+                    specify a higher level of aggregation [0,1,2,3]
+        includeAX   :   bool, optional(default=False)
+                        Include AX Values
 
-        Future Work
-        -----------
-        [1] Implement the case level = 0
-            # if sitcl == 'SITCL0':
-            #   subidx = ['year', 'AX', 'value']
-            #   data = data[subidx].groupby(['year', 'MARKER']).sum()
-            # else:
+        ..  Future Work
+            -----------
+            1. Implement the case level = 0
+                # if sitcl == 'SITCL0':
+                #   subidx = ['year', 'AX', 'value']
+                #   data = data[subidx].groupby(['year', 'MARKER']).sum()
+                # else:
         """
         #-RequiredItems-#
         #self.add_iso3c()
@@ -1690,17 +1712,19 @@ class NBERWTFConstructor(NBERWTF):
         """ 
         Construct a set of ProductCodes that are Inter-temporally Consistent based around SITC Revision 2
 
-        Full TimeFrames
-        ===============
+        STATUS: NOT IMPLEMENTED
+
+        Full Time Frames
+        ----------------
 
         Dataset #1 [1962 to 2000]
-        -------------------------
+        ~~~~~~~~~~~~~~~~~~~~~~~~~
 
             The longest time horizon in the dataset. 
             Need to aggregate a lot of Product Codes to Level 3 + 0 to allow for dynamic consistency
         
         Dataset #2 [1962 to 2000] [SITCR2L3]
-        -------------------------------------
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             Aggregate ALL Codes to SITCR2 Level 3 
             This brings in the vast majority of data and Level4 'Corrections'
@@ -1709,10 +1733,10 @@ class NBERWTFConstructor(NBERWTF):
             **Current Focus** [See meta data for reasons]
 
         Subset TimeFrames
-        =================
+        -----------------
 
         Dataset #3 [1974 to 2000]
-        -------------------------
+        ~~~~~~~~~~~~~~~~~~~~~~~~~
 
             A lot of SITCR2 Codes get introduced into the dataset in 1974. 
             Starting from 1974 would allow a greater diversity of products but removes 10 years of dynamics
@@ -1720,7 +1744,7 @@ class NBERWTFConstructor(NBERWTF):
             TBD     
 
         Dataset #4 [1984 to 2000]
-        -------------------------
+        ~~~~~~~~~~~~~~~~~~~~~~~~~
 
             A lot of SITCR2 Codes get introduced into the dataset in 1984. 
             Starting from 1984 would allow a greater diversity of products but removes 10 years of dynamics
@@ -1728,23 +1752,18 @@ class NBERWTFConstructor(NBERWTF):
             TBD 
 
         """
-        #-List of Codes to DROP-#
-        # See: .delete_sitc4_issues_with_raw_data()
-
-        ### -- Working Here --- ###
-        
         raise NotImplementedError
 
     def intertemporal_consistent_productcodes_concord(self, verbose=False):
         """
         Produce a concordance for inter-temporal consistent product codes for converting data post year 2000
 
-        SITCR2 to CONCORD
+        STATUS: NOT IMPLEMENTED
+
         """
         # ---------------- #
         # - Working Here - #
         # ---------------- #
-
         raise NotImplementedError
 
 
@@ -1752,24 +1771,25 @@ class NBERWTFConstructor(NBERWTF):
     # - Construct Datasets  - #
     # ----------------------- #
 
+    #
+    # This is pretty sub-optimal. Is there a better way here?
+    #
+
     dataset_description     = { 
         'CNTRY_SR2L3_Y62to00_A'     :  'DescriptionHere'
     }
 
     def construct_dataset(self, dataset, verbose=False):
         """ 
-        Construct Datasets
-        ==================
-        
         A Wrapper for Returning Predefined Datasets
 
-        SITCL4 Datasets
-        ===============
+        STATUS: IN-WORK
 
-        IN-WORK
+        SITC-Level 4 Datasets
+        ---------------------
 
-        SITCL3 Datasets
-        ===============
+        SITC-Level 3 Datasets
+        ---------------
         Basic Cleaned Datasets 
         ----------------------
         Method: construct_dataset_SC_CNTRY_SR2L3_Y62to00_A to _D
@@ -1815,56 +1835,60 @@ class NBERWTFConstructor(NBERWTF):
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Level 3
-        Note: SC Reduce the Need to Debug many other routines for the time being. 
+        **Note**: Self Contained Compilation Reduces the Need to Debug many other routines for the time being. 
         The other methods are however useful to diagnose issues and to understand properties of the dataset
 
         STATUS: tests/test_constructor_SC_CNTRY_SR2L3_Y62to00.py
 
-        data_type               :   'trade', 'export', 'import'
-
-        Data Settings
-        -------------
-        dropAX              :   Drop AX Codes 
-        sitcr2              :   Add SITCR2 Indicator
-        drop_nonsitcr2      :   Drop non-standard SITC2 Codes
-        intertemp_cntrycode : Generate Intertemporal Consistent Country Units (meta)
-        drop_incp_cntrycode : Drop Incomplete Country Codes (meta)
-        
-        Other Settings
-        --------------
-        report              :   Print Report
-        source_institution  : which institutions SITC classification to use
-
-        Operations:
-        -----------
-        [1] Drop SITC4 to SITC3 Level (for greater intertemporal consistency)
-        [2] Import ISO3C Codes as Country Codes
-        [3] Drop Errors in SITC3 codes ["" Codes]
-            Optional:
-            ---------
-            [A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
-            [B] Drop Non-Standard SITC3 Codes [i.e. Aren't in the Classification]
-            [C] Adjust iiso3c, eiso3c country codes to be intertemporally consistent
-            [D] Drop countries with incomplete data across 1962 to 2000 (strict measure)
-
-        Datasets
-        --------
-        [_A] dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
-        [_B] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
-        [_C] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False 
-        [_D] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True  
+        Parameters
+        ----------
+        data_type           :   str
+                                Specify what type of data 'trade', 'export', 'import'
+        dropAX              :   bool, optional(default=True)
+                                Drop AX Codes 
+        sitcr2              :   bool, optional(default=True)
+                                Add SITCR2 Indicator
+        drop_nonsitcr2      :   bool, optional(default=True)
+                                Drop non-standard SITC2 Codes
+        intertemp_cntrycode :   bool, optional(default=False)
+                                Generate Intertemporal Consistent Country Units (from meta)
+        drop_incp_cntrycode :   bool, optional(default=False)
+                                Drop Incomplete Country Codes (from meta)
+        report              :   bool, optional(default=True)
+                                Print Report
+        source_institution  :   str, optional(default='un')
+                                which institutions SITC classification to use
 
         Notes
         -----
-        [1] This makes use of countryname_to_iso3c in the meta data subpackage
-        [2] This method can be tested using /do/basic_sic3_country_data.do
-        [3] DropAX + Drop NonStandard SITC Rev 2 Codes still contains ~94-96% of the data found in the raw data
+        1. Operations ::
 
-        Future Work
-        -----------
-        [1] Check SITC Revision 2 Official Codes
-        [2] Should this be split into a header function with specific trade, export, and import methods?
-        [3] Add in Change Value Units to $'s (x 1000)
+            [1] Drop SITC4 to SITC3 Level (for greater intertemporal consistency)
+            [2] Import ISO3C Codes as Country Codes
+            [3] Drop Errors in SITC3 codes ["" Codes]
+                Optional:
+                ---------
+                [A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
+                [B] Drop Non-Standard SITC3 Codes [i.e. Aren't in the Classification]
+                [C] Adjust iiso3c, eiso3c country codes to be intertemporally consistent
+                [D] Drop countries with incomplete data across 1962 to 2000 (strict measure)
+
+        2. Datasets ::
+
+            [_A] dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+            [_B] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+            [_C] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False 
+            [_D] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True  
+
+        3. This makes use of countryname_to_iso3c in the meta data subpackage
+        4. This method can be tested using /do/basic_sic3_country_data.do
+        5. DropAX + Drop NonStandard SITC Rev 2 Codes still contains ~94-96% of the data found in the raw data
+
+        ..  Future Work
+            -----------
+            1. Check SITC Revision 2 Official Codes
+            2. Should this be split into a header function with specific trade, export, and import methods?
+            3. Add in Change Value Units to $'s (x 1000)
         """
         from .meta import countryname_to_iso3c
         self.dataset_name = 'CNTRY_SR2L3_Y62to00_A'
@@ -1982,15 +2006,22 @@ class NBERWTFConstructor(NBERWTF):
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data_type, dataset_object=True, verbose=True):
         """
-        Complete Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset A]
-        A => dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+        Complete Dataset Constructor for Dataset A
+       
+        Settings ::
 
-        data_type   :   'trade', 'export', 'import'
-        dataset_object : True/False [Default: True]
+            dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
-        Note
-        ---- 
-        [1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
+        Parameters
+        -----------
+        data_type       :   str
+                            Specify data type 'trade', 'export', 'import'
+        dataset_object  :   bool, optional(default=True)
+                            Return a dataset object
+
+        Notes
+        ----- 
+        1. For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
             as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 
         """
@@ -2002,15 +2033,22 @@ class NBERWTFConstructor(NBERWTF):
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data_type, dataset_object=True, verbose=True):
         """
-        Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset B]
-        B => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+        Dataset Constructor for Dataset B
+        
+        Settings :: 
 
-        data_type   :   'trade', 'export', 'import'
-        dataset_object : True/False [Default: True]
+            dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
-        Note
-        ---- 
-        [1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
+        Parameters
+        -----------
+        data_type       :   str
+                            Specify data type 'trade', 'export', 'import'
+        dataset_object  :   bool, optional(default=True)
+                            Return a dataset object
+
+        Notes
+        ------ 
+        1. For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
             as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
         """
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
@@ -2021,15 +2059,22 @@ class NBERWTFConstructor(NBERWTF):
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data_type, dataset_object=True, verbose=True):
         """
-        Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset C]
-        C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
+        Dataset Constructor for Dataset C
+        
+        Settings ::
 
-        data_type   :   'trade', 'export', 'import'
-        dataset_object : True/False [Default: True]
+            dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
 
-        Note
-        ---- 
-        [1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
+        Parameters
+        -----------
+        data_type       :   str
+                            Specify data type 'trade', 'export', 'import'
+        dataset_object  :   bool, optional(default=True)
+                            Return a dataset object
+
+        Notes
+        ----- 
+        1. For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
             as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
         """
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
@@ -2040,15 +2085,22 @@ class NBERWTFConstructor(NBERWTF):
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data_type, dataset_object=True, verbose=True):
         """
-        Dataset Constructor for .construct_dataset_SC_CNTRY_SR2L3_Y62to00() [Dataset D]
-        C => dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
+        Dataset Constructor for Dataset D
+        
+        Settings ::
 
-        data_type   :   'trade', 'export', 'import'
-        dataset_object : True/False [Default: True] 
+            dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
 
-        Note
-        ---- 
-        [1] For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
+        Parameters
+        -----------
+        data_type       :   str
+                            Specify data type 'trade', 'export', 'import'
+        dataset_object  :   bool, optional(default=True)
+                            Return a dataset object
+
+        Notes
+        ----- 
+        1.  For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
             as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
         """
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
@@ -2066,22 +2118,24 @@ class NBERWTFConstructor(NBERWTF):
 
         STATUS: **IN WORK**
 
-        Operations
-        ----------
-        Option A
-        --------- 
-        [1] Merge in Data at Raw Data Stage (China/HK Adjustments) & Delete sitc4 code issues
-        [2] Collapse to Values Only (Keeping only ['year', 'icode', 'ecode', 'sitc4']) removes the Quantity Disaggregation
-        [1] Alter Country Codes to be Intertemporally Consistent Units of Analysis (i.e. SUN = Soviet Union)
-        [2] Collapse Values to SITCL3 Data
-        [3] Remove Problematic Codes
+        Notes
+        -----
+        1. Operations - Option A ::
 
-        Future Work
-        -----------
-        [1] Work through these steps to ensure operations are on dataset and they flow from one to another
-        [2] Write Tests for these methods as a priority
-            [A] adjust_china_hongkongdata
-            [B] collapse_to_valuesonly
+                [1] Merge in Data at Raw Data Stage (China/HK Adjustments) & Delete sitc4 code issues
+                [2] Collapse to Values Only (Keeping only ['year', 'icode', 'ecode', 'sitc4']) removes the Quantity Disaggregation
+                [1] Alter Country Codes to be Intertemporally Consistent Units of Analysis (i.e. SUN = Soviet Union)
+                [2] Collapse Values to SITCL3 Data
+                [3] Remove Problematic Codes
+
+
+        ..  Future Work
+            -----------
+            1. Work through these steps to ensure operations are on dataset and they flow from one to another
+            2. Write Tests for these methods as a priority
+                [A] adjust_china_hongkongdata
+                [B] collapse_to_valuesonly
+
         """
         if self.complete_dataset != True:
             raise ValueError("Dataset must be a complete dataset!") 
@@ -2137,19 +2191,24 @@ class NBERWTFConstructor(NBERWTF):
 
         This will export the cleaned bilateral data to the NBERWTF object. 
 
-        Arguments 
-        ---------
-        data_type   :   'trade', 'export', 'import'
+        Parameters
+        ----------
+        data_type   :   str
+                        Specify type of data 'trade', 'export', 'import'
+        generic     :   bool, optional(default=False)
+                        Return a generic data class (i.e. CPImportData)
 
-        Object Interface's
-        ------------------
-        'trade'     :   ['year', iiso3c', 'eiso3c', 'sitc[1-4]', 'value']   (Optional: 'quantity'?)
-        'export'    :   ['year', 'eiso3c', 'sitc[1-4]', 'value']
-        'import'    :   ['year', 'iiso3c', 'sitc[1-4]', 'value']
+        Notes
+        -----
+        1. Object Interface's ::
 
-        Future Work 
-        -----------
-        [1] Turn data_type into a self.data_type attribute!
+            'trade'     :   ['year', iiso3c', 'eiso3c', 'sitc[1-4]', 'value']   (Optional: 'quantity'?)
+            'export'    :   ['year', 'eiso3c', 'sitc[1-4]', 'value']
+            'import'    :   ['year', 'iiso3c', 'sitc[1-4]', 'value']
+
+        ..  Future Work 
+            -----------
+            1. Turn data_type into a self.data_type attribute!
         """
 
         self.data_type = data_type
@@ -2176,6 +2235,13 @@ class NBERWTFConstructor(NBERWTF):
     def to_dynamic_productleveltradesystem(self, verbose=True):
         """
         Method to construct a ProductLevelTradeSystem from the dataset
+        
+        STATUS: NOT IMPLEMENTED
+        
+        Notes
+        -----
+        1. Shouldn't this be taken care of by the dataset object to reduce duplication.
+
         """
         raise NotImplementedError
 
@@ -2184,6 +2250,11 @@ class NBERWTFConstructor(NBERWTF):
         Method to construct a Product Level Export System from the dataset
         Warning: This assumes the dataset contains the intended data
         Note: This requires 'export' data
+
+        Notes
+        -----
+        1. Shouldn't this be taken care of by the dataset object to reduce duplication. 
+
         """
         print "[WARNING] This method assumes the data in .dataset is the intended data"
         #-Prepare Names-#
@@ -2199,6 +2270,13 @@ class NBERWTFConstructor(NBERWTF):
         """
         Method to construct a Product Level Import System from the dataset
         Note: This requires 'import' data
+
+        STATUS: NOT IMPLEMENTED
+
+        Notes
+        -----
+        1. Shouldn't this be taken care of by the dataset object to reduce duplication. 
+
         """
         raise NotImplementedError
     
@@ -2214,33 +2292,35 @@ class NBERWTFConstructor(NBERWTF):
         """
         Construct Global Information About the Dataset 
         
-        Automatically import ALL data and Construct Unique:
+        Automatically import ALL data and Construct Unique ::
         
-        [1] Country List    [Unique List of Countries in the Dataset]
-        [2] Exporter List   [Unique List of Exporters in the Dataset]
-        [3] Importer List   [Unique List of Exporters in the Dataset]
-        [4] CountryName to ISO3C (REGEX) {py file only} [Requires Manual Adjustment]
-        [5] CountryName to ISO3N (REGEX) {py file only} [Requires Manual Adjustment]
-
-        Note:   The CountryName Concordances are automatically generated (currently using pycountrycode)
-                These files should be checked for accuracy
+            [1] Country List    [Unique List of Countries in the Dataset]
+            [2] Exporter List   [Unique List of Exporters in the Dataset]
+            [3] Importer List   [Unique List of Exporters in the Dataset]
+            [4] CountryName to ISO3C (REGEX) {py file only} [Requires Manual Adjustment]
+            [5] CountryName to ISO3N (REGEX) {py file only} [Requires Manual Adjustment]
 
         Parameters:
         -----------
-            target_dir  :   target directory where files are to be written
-                            [Should specify REPO Location if updating REPO Files OR DATA_PATH if replace in Installed Package]
-            out_type    :   file type for results files 'csv', 'py' 
-                            [Default: 'py']
+        target_dir  :   str
+                        target directory where files are to be written. Should specify REPO Location if updating REPO Files OR DATA_PATH if replace in Installed Package
+        out_type    :   str, optional(default='py')
+                        file type for results files 'csv', 'py' 
 
-        Usage:
+        Notes
         -----
-        Useful if NBER Feenstra's Dataset get's updated etc. OR for constructing manual country concordances etc.
+        1. Usage ::
 
-        Future Work:
-        ------------
-        [1] Maybe this sort of information should be compiled by parsing the source files and importing only 
-            the required information to save on time and memory! 
-            (Update: Current Implementation of read.stata() doesn't allow selective import due to being a binary file)
+            Useful if NBER Feenstra's Dataset get's updated etc. OR for constructing manual country concordances etc.
+
+        2. The CountryName Concordances are automatically generated (currently using pycountrycode). These files should be checked for accuracy
+        
+
+        ..  Future Work:
+            ------------
+            1.  Maybe this sort of information should be compiled by parsing the source files and importing only 
+                the required information to save on time and memory! 
+                (Update: Current Implementation of read.stata() doesn't allow selective import due to being a binary file)
         """
         # - Check if Dataset is Complete for Global Info Property - #
         if self.complete_dataset != True:
@@ -2280,16 +2360,17 @@ class NBERWTFConstructor(NBERWTF):
         """
         Write Basic Files for ./meta in Excel Format for inclusion into the REPO
 
-        Files
-        -----
-        [1] intertemporal_iiso3n.xlsx
-        [2] intertemporal_eiso3n.xlsx
-        [3] intertemporal_sitc4.xlsx
-
         Notes
         -----
-        [1] Excel is currently used as an easy way to inspect the data
-        [2] Not using local package location as mostly want to check output prior to entry through repo.
+        1. Files ::
+
+            [1] intertemporal_iiso3n.xlsx
+            [2] intertemporal_eiso3n.xlsx
+            [3] intertemporal_sitc4.xlsx
+
+        2. Excel is currently used as an easy way to inspect the data
+        3. Not using local package location as mostly want to check output prior to entry through repo.
+
         """
         #-Parse Directory-#
         target_dir = check_directory(target_dir)
@@ -2307,12 +2388,19 @@ class NBERWTFConstructor(NBERWTF):
         """
         Construct an Intertemporal Table (Wide Table of Data)
         
-        force       :   True/False
-                        [Default: True => doesn't raise a ValueError if trying to conduct function on an incomplete dataset]
+        Parameters
+        ----------
+        idx         :   list, optional(default=['eiso3c'])
+                        Specify Index Element for Table
+        value       :   str, optional(default='value')
+                        Specify name for value variable
+        force       :   bool, optional(default=False)
+                        Force operation over an incomplete dataset. Useful for Testing etc.
 
         Returns
         -------
-            itable, etable
+        dataframe (intertemporal table)
+
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2327,6 +2415,14 @@ class NBERWTFConstructor(NBERWTF):
     def intertemporal_countrycodes(self, dataset=False, force=False, verbose=False):
         """
         Wrapper for Generating intertemporal_countrycodes FROM 'raw_data' or 'dataset'
+
+        Parameters
+        ----------
+        dataset     :   bool, optional(default=False)
+                        Work on dataset (if False then raw_data)
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete data. Useful for testing. 
+
         """
         if dataset:
             if verbose: print "Constructing Intertemporal Country Code Tables from Dataset ..."
@@ -2343,12 +2439,15 @@ class NBERWTFConstructor(NBERWTF):
         Intertemporal Country Code Tables can also be computed from dataset using .intertemporal_countrycodes_dataset()
         which includes iso3c etc.
 
-        force       :   True/False
-                        [Default: True => doesn't raise a ValueError if trying to conduct function on an incomplete dataset]
+        Parameters
+        ----------
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete data. Useful for testing. 
 
         Returns
         -------
-            table_iiso3n, table_eiso3n
+        table_iiso3n, table_eiso3n
+
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2375,12 +2474,17 @@ class NBERWTFConstructor(NBERWTF):
         Construct a table of importer and exporter country codes by year from DATASET
         This includes iso3c and is useful when using .countries_only() etc.
         
-        force       :   True/False
-                        [Default: True => doesn't raise a ValueError if trying to conduct function on an incomplete dataset]
+        Parameters
+        ----------
+        cid         :   str, optional(default='default')
+                        Specify Country Indicator. 
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete data. Useful for testing. 
 
         Returns
         -------
-            table_iiso3n, table_eiso3n
+        table_iiso3n, table_eiso3n
+
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2434,8 +2538,11 @@ class NBERWTFConstructor(NBERWTF):
         """
         Construct a table of productcodes by year
         
-        force       :   True/False
-                        [Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
+        Parameters
+        ----------
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete data. Useful for testing. 
+
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2459,14 +2566,22 @@ class NBERWTFConstructor(NBERWTF):
         Construct a table of productcodes by year
         This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
         
-        tabletype   :   ['indicator', 'value', 'composition']
-        meta        :   True/False
+        Parameters
+        ----------
+        tabletype   :   str, optional(default='indicator')
+                        Set type of table 'indicator', 'value', or 'composition'
+        meta        :   bool, optional(default=True)
                         Adds SITCR2 Marker in the Index
-        countries   :   ['None', 'exporter', 'importer']
-                        Default = 'None'
-        level       :   Level for Composition Table
-        force       :   True/False
-                        [Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
+        countries   :   str, optional(default='None')
+                        Specify country identifier 'exporter', 'importer' [Default = 'None' performs analysis at the product level w/out country disaggregation]
+        cpidx       :   bool, optional(default=True)
+                        Specify country index
+        source_institution  :   str, optional(default='un')
+                                Specify source_institution for data retrieval
+        level       :   int, optional(default=-1)
+                        Specify level setting for composition table
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete data. Useful for testing. 
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2482,6 +2597,8 @@ class NBERWTFConstructor(NBERWTF):
             return self.intertemporal_productcodes_dataset_indicator(meta=meta, countries=countries, cpidx=cpidx, source_institution=source_institution, \
                                                                     force=force, verbose=verbose)               
     
+
+    #-Updated Documentation TO HERE-#
 
     def intertemporal_productcodes_dataset_indicator(self, meta=True, countries='None', cpidx=True, source_institution='un', force=False, verbose=False):
         """
