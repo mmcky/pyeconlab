@@ -1,26 +1,25 @@
 """
 CEPII/BACI Dataset Objects
+==========================
 
-Supporting Constructor
-----------------------
-[1] BACIConstructor
+Supporting Constructor: BACIConstructor
 
 Dependancies
 ------------
-[1] pyeconlab.trade => CPTradeDataset, CPTradeData, CPExportData, CPImportData
-[2] .base => BACI 
+1. pyeconlab.trade => CPTradeDataset, CPTradeData, CPExportData, CPImportData
+2. pyeconlab.trade.dataset.CEPIIBACI.base => BACI 
 
 Product Classification
 ----------------------
-[1] HS92 Years: 1995-2011
-[2] HS96 Years: 1998-2011
-[3] HS02 Years: 2003-2011
+1. HS92 Years: 1995-2011
+2. HS96 Years: 1998-2011
+3. HS02 Years: 2003-2011
 
 Types
-=====
-[1] Trade Data 	(Bilateral Trade Flows)
-[2] Export Data 	(Export Trade Flows)
-[3] Import Data 	(Import Trade Flows)
+-----
+1. Trade Data 	(Bilateral Trade Flows)
+2. Export Data 	(Export Trade Flows)
+3. Import Data 	(Import Trade Flows)
 """
 
 import numpy as np
@@ -37,7 +36,15 @@ from pyeconlab.trade.dataset import CPTradeDataset, CPTradeData, CPExportData, C
 #-Trade-#
 
 class BACITradeData(BACI, CPTradeData):
-	""" BACI TRADE Dataset """
+	""" 
+	BACI TRADE Dataset Wrapper
+
+	See Also
+	--------
+	pyeconlab.trade.dataset.CEPIIBACI.base
+	pyeconlab.trade.dataset.CPTradeData
+	
+	"""
 	__data = pd.DataFrame()
 
 	#-Class Properties-#
@@ -81,7 +88,15 @@ class BACITradeData(BACI, CPTradeData):
 #-Exports-#
 
 class BACIExportData(BACI, CPExportData):
-	""" BACI Export Dataset """
+	""" 
+	BACI Export Dataset
+
+	See Also
+	--------
+	pyeconlab.trade.dataset.CEPIIBACI.base
+	pyeconlab.trade.dataset.CPTradeData
+
+	"""
 	__data = pd.DataFrame()
 
 	@property 
@@ -101,7 +116,15 @@ class BACIExportData(BACI, CPExportData):
 #-Imports-#
 
 class BACIImportData(BACI, CPImportData):
-	""" BACI Import Dataset """
+	""" 
+	BACI Import Dataset
+
+	See Also
+	--------
+	pyeconlab.trade.dataset.CEPIIBACI.base
+	pyeconlab.trade.dataset.CPTradeData
+	
+	"""
 	__data = pd.DataFrame()
 
 	@property 
