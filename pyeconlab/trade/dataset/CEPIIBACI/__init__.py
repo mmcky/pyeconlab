@@ -1,5 +1,9 @@
 """
 CEPIIBACI Subpackage
+====================
+
+Provides access to CEPII BACI Datasets
+
 """
 
 from .base import BACI

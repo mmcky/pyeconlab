@@ -1,5 +1,8 @@
 """
-Dataset Construction / Compilation Classes
+Generic Dataset Constructor Class
+=================================
+
+STATUS: ON-HOLD (Most Constructors are fairly specialised so this may not be wise or useful)
 
 ALL Data Constructors Requires the separate Download of Source Data and the Specification of a Source Data Directory
 Note: Every effort will be made to keep the interface up to date if any dataset format or filenames change
