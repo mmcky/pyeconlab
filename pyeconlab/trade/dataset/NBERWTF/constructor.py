@@ -2582,6 +2582,7 @@ class NBERWTFConstructor(NBERWTF):
                         Specify level setting for composition table
         force       :   bool, optional(default=False)
                         Force method to be performed on incomplete data. Useful for testing. 
+
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2598,17 +2599,25 @@ class NBERWTFConstructor(NBERWTF):
                                                                     force=force, verbose=verbose)               
     
 
-    #-Updated Documentation TO HERE-#
 
     def intertemporal_productcodes_dataset_indicator(self, meta=True, countries='None', cpidx=True, source_institution='un', force=False, verbose=False):
         """
         Construct a table of productcodes by year
         This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
         
-        meta        :   True/False
+        Parameters
+        -----------
+        meta        :   bool, optional(default=True)
                         Adds SITCR2 Marker in the Index
-        force       :   True/False
-                        [Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
+        countries   :   str, optional(default='None')
+                        Specify which index type to use 'exporter', 'importer'
+        cpidx       :   bool, optional(default=True)
+                        <update this>
+        source_institution  :   str, optional(default='un')
+                                Specify source institution for meta data
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete dataset
+
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2653,10 +2662,20 @@ class NBERWTFConstructor(NBERWTF):
         Construct a table of productcodes by year containing Values
         This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
         
-        meta        :   True/False
+
+        Parameters
+        ----------
+        meta        :   bool, optional(default=True)
                         Adds SITCR2 Marker in the Index
-        force       :   True/False
-                        [Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
+        countries   :   str, optional(default='None')
+                        Specify which index type to use 'exporter', 'importer'
+        cpidx       :   bool, optional(default=True)
+                        <update this>
+        source_institution  :   str, optional(default='un')
+                                Specify source institution for meta data
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete dataset
+
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2710,16 +2729,23 @@ class NBERWTFConstructor(NBERWTF):
         Construct a table of productcodes by year
         This is different to the RAW DATA method as it adds in meta data such as SITC ALPHA MARKERS AND Official SITCR2 Indicator
         
-        meta        :   True/False
+        Parameters
+        ----------
+        meta        :   bool, optional(default=True)
                         Adds SITCR2 Marker in the Index
-        level       :   Level for Composition Table
-                        Default: 1 x Level Higher than Data in the Dataset (i.e. 4 would generate compositions with level 3 codes)
-        force       :   True/False
-                        [Default: FALSE => raise a ValueError if trying to conduct function on an incomplete dataset]
+        countries   :   str, optional(default='None')
+                        Specify which index type to use 'exporter', 'importer'
+        cpidx       :   bool, optional(default=True)
+                        <update this>
+        source_institution  :   str, optional(default='un')
+                                Specify source institution for meta data
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete dataset
 
-        Issue
-        -----
-        [1] np.nan is being teated as 100% in composition Tables
+        ..  Issue
+            -----
+            1. np.nan is being teated as 100% in composition Tables
+
         """
         if self.complete_dataset != True:
             if force == False:
@@ -2773,13 +2799,17 @@ class NBERWTFConstructor(NBERWTF):
         """
         Produce Value Composition Tables for Looking at SITC4 relative to some other level of aggregation
 
-        level   :   Aggregation Level to compute compositions for.
-        countries :     Allow for Tables to be generated for exporter, level or importer, level or just level 
+        Parameters
+        ----------
+        level       :   int, optional(default=-1)
+                        Aggregation Level to compute compositions for. Defaults to one level up. 
+        countries   :   str, optional(default='None')  
+                        Allow for Tables to be generated for exporter, level or importer, level or just level 
 
-        Note
-        ----
-        [1] Write Tests
-        [2] This could be a dataframe.py utility
+        ..  Future Work
+            ----
+            1. Write Tests
+            2. This could be a dataframe.py utility
         """
         #-DATASET-#
         data = self.dataset
@@ -2830,6 +2860,14 @@ class NBERWTFConstructor(NBERWTF):
     def intertemporal_productcode_countries(self, meta=True, force=False, verbose=False):
         """
         Compute Number of Country Exporters for Any Given ProductCode
+
+        Parameters
+        ----------
+        meta    :   bool, optional(default=True)
+                    Include meta data in tables
+        force   :   bool, optional(default=False)
+                    Force method to be performed on incomplete dataset        
+
         """
         df = self.intertemporal_productcodes_dataset_indicator(meta=meta, countries='exporter')
         df = df.reset_index()
@@ -2846,42 +2884,49 @@ class NBERWTFConstructor(NBERWTF):
 
     def intertemporal_productcode_adjustments_table(self, force=False, verbose=False):
         """
-        [STATUS: EXPERIMENTAL] Documents and Produces the Adjustments Table for Meta Data Reference 
+        [EXPERIMENTAL] Documents and Produces the Adjustments Table for Meta Data Reference 
         
-        force   :   True/False - Check if Complete Dataset 
-                    [Default: False]
+        STATUS: EXPERIMENTAL
 
-        Looking at SITCL3 GROUPS
-        ------------------------
-        [1] For each Unofficial 'sitc4' Code Ending with '0' check if Official Codes in the SAME LEAF are CONTINUOUS. IF they ARE keep the CHILDREN as they are 
-            disaggregated classified goods ELSE wrap up the data into the Unofficial '0' Code as these groups have intertemporal classification issues for the 1962-2000
-            dataset
-
-            [a] is dropping the '0' unofficial category systemically dropping certain countries data from the dataset?** See [2] in Notes
-            [b] What is the value of unofficial codes categories by year?
-
-        Looking at 'A' and 'X' Groups
-        -----------------------------
-        [1] Remove 'A' and 'X' Codes as they are assignable and hold relatively little data (these will be captured in SITCL3 Dataset as a robustness check)
-            Supporting Evidence can be considered with .compute_valAX_sitclevel() method
-
-        Method
-        ------
-        [1] Collapse A and X Codes into the Unofficial Code Line (IF AVAILABLE)
-            IF NOT AVAILABE: DELETE
-        [2] Check EACH SITCL3 GROUP and compare the Unofficial Code '0' with the Official Codes within the group. 
-            IF Children == FULL COVERAGE (i.e. 39) then keep Children AND DELETE UNOFFICIAL Line
-            IF Children != FULL COVERAGE (i.e 30) then collapse sum the Children into the Unoficial line item
+        Parameters
+        ----------
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete dataset
 
         Notes
         -----
-        [1] '025*'' and '011*'' are good examples and test cases    
-        [2] Check meta/xlsx/intertemporal_sitc4_compositions_wmeta_adjustments.xlsx to review and check output
+        1. Looking at SITCL3 GROUPS ::
+
+            [1] For each Unofficial 'sitc4' Code Ending with '0' check if Official Codes in the SAME LEAF are CONTINUOUS. IF they ARE keep the CHILDREN as they are 
+                disaggregated classified goods ELSE wrap up the data into the Unofficial '0' Code as these groups have intertemporal classification issues for the 1962-2000
+                dataset
+
+                [a] is dropping the '0' unofficial category systemically dropping certain countries data from the dataset?** See [2] in Notes
+                [b] What is the value of unofficial codes categories by year?
+
+        2. Looking at 'A' and 'X' Groups ::
+
+            [1] Remove 'A' and 'X' Codes as they are assignable and hold relatively little data (these will be captured in SITCL3 Dataset as a robustness check)
+                Supporting Evidence can be considered with .compute_valAX_sitclevel() method
+
+            Method
+            ------
+            [1] Collapse A and X Codes into the Unofficial Code Line (IF AVAILABLE)
+                IF NOT AVAILABE: DELETE
+            [2] Check EACH SITCL3 GROUP and compare the Unofficial Code '0' with the Official Codes within the group. 
+                IF Children == FULL COVERAGE (i.e. 39) then keep Children AND DELETE UNOFFICIAL Line
+                IF Children != FULL COVERAGE (i.e 30) then collapse sum the Children into the Unoficial line item
+
+        Notes
+        -----
+        1. '025*'' and '011*'' are good examples and test cases    
+        2. Check meta/xlsx/intertemporal_sitc4_compositions_wmeta_adjustments.xlsx to review and check output
             {A} We should check how many countries are using the unofficial code vs. the official codes in each group as this may effect intercountry 
                 variation. By deleting the Unofficial Level 3 Code this may be systemically removing exports from some developing countries. A full
                 treatment of countries needs to be done for each SITCL3 subgroup to decide the best collapse and deletion strategy.
                 Case Study: '057*' => Check Exporters using '0570' and exporters using '0571' to '0577'
-        [3] This table suggests that SITCL3 should be used for inter-temporal consistency re: 2-A remark.  
+        3. This table suggests that SITCL3 should be used for inter-temporal consistency re: 2-A remark. 
+
         """
         #-Core-#
         comp = self.intertemporal_productcodes_dataset(tabletype='composition', meta=True, level=3, force=force)
@@ -2922,23 +2967,25 @@ class NBERWTFConstructor(NBERWTF):
 
     def compute_cases_intertemporal_sitc4_3digits(self, force=False, verbose=False):
         """
-        [STATUS: EXPERIMENTAL] Compute a Cases Table for SITC4 Intertemporal ProductCodes at the 3 Digit Level
+        [EXPERIMENTAL] Compute a Cases Table for SITC4 Intertemporal ProductCodes at the 3 Digit Level
 
         STATUS: IN-WORK
 
-        Cases
+        Notes
         -----
-        For Each SITC Level 3 Group apply a classifier for the following cases
+        1. Cases ::
+        
+            For Each SITC Level 3 Group apply a classifier for the following cases
 
-        'Case1'     :   Avg(Official Coverage)                  > 95% (Official Codes are represented across 95% of the years on average)
-                        Avg(Composition % of Official Codes)    > 95% (most of the value lies in Official encodings across al 39 years)
-                        {This shows groups that are represented by a majority of trade flows in official SITCR2 Codes across the whole dataset i.e. 0011)
+            'Case1'     :   Avg(Official Coverage)                  > 95% (Official Codes are represented across 95% of the years on average)
+                            Avg(Composition % of Official Codes)    > 95% (most of the value lies in Official encodings across al 39 years)
+                            {This shows groups that are represented by a majority of trade flows in official SITCR2 Codes across the whole dataset i.e. 0011)
 
-        'Case2'     :   Unofficial Code Ending in '0' is present
-                        {This will highlight groups that have an Unofficial 3Digit Level Code Present in the data. 
-                        These groups suffer heavily from inter-country heterogeneity in how similar products are grouped} 
+            'Case2'     :   Unofficial Code Ending in '0' is present
+                            {This will highlight groups that have an Unofficial 3Digit Level Code Present in the data. 
+                            These groups suffer heavily from inter-country heterogeneity in how similar products are grouped} 
 
-        'Case3'     :   ??
+            'Case3'     :   ??
 
         """
         
@@ -2981,12 +3028,13 @@ class NBERWTFConstructor(NBERWTF):
         """
         Convert the Raw Stata Source Files to a HDF File Container indexed by Y#### (where #### = year)
 
-        Future Work
-        -----------
-        [1] Integrity Checking against original dta file hash?
-        [2] Move this to a Utility?
-        [3] Is there a way to make this work across 4 cores writing separate container names? 
-            May require separate h5 files
+        ..  Future Work
+            -----------
+            1. Integrity Checking against original dta file hash?
+            2. Move this to a Utility?
+            3. Is there a way to make this work across 4 cores writing separate container names? 
+                May require separate h5 files
+
         """
         #Note: This might write into a dataset!
         years = self._available_years
@@ -3010,12 +3058,16 @@ class NBERWTFConstructor(NBERWTF):
         """
         Convert the Entire RAW Data Compilation to a HDF File with index 'raw_data'
 
-        complevel : compression level
+        Parameters
+        ----------
+        format  :   str, optional(default='table')
+                    Specify HDF File type
 
-        Future Work
-        -----------
-        [1] Integrity Checking against original dta file hash?
-        [2] Move this to a Utility?
+        ..  Future Work
+            -----------
+            1. Integrity Checking against original dta file hash?
+            2. Move this to a Utility?
+
         """
         years = self._available_years
         hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '_raw' + '.h5'
@@ -3034,6 +3086,14 @@ class NBERWTFConstructor(NBERWTF):
     def to_pickle(self, fn, data='dataset', verbose=False):
         """
         Send self.raw_data or self.dataset to a pickle file
+
+        Parameters
+        ----------
+        fn  :   str
+                Specify filename 
+        data    :   str, optional(default='dataset')
+                    Specify which data source to write (dataset or raw_data)
+
         """
         fl = open(fn, 'wb') 
         if data == 'dataset':
@@ -3050,9 +3110,14 @@ class NBERWTFConstructor(NBERWTF):
     def issues_with_raw_data(self):
         """
         Documents observed issues with the RAW DATA
-        Note: This products files from where it is called
+        
+        Warnings
+        --------
+        1. This produces files from where it is called
 
-        [1] Missing SITC4 Codes (28 observations) -> './missing_sitc4.xlsx'
+        Notes
+        -----
+        1. Missing SITC4 Codes (28 observations) -> './missing_sitc4.xlsx'
         """
         #-Missing Codes-#
         codelength = self.raw_data['sitc4'].apply(lambda x: len(x))
@@ -3067,7 +3132,10 @@ class NBERWTFConstructor(NBERWTF):
         """
         Produce Test Data to check method: collapse_to_valuesonly
 
-        size    : sample size of 10 different duplicate scenarios
+        Parameters
+        ----------
+        size    :   int, optional(default=10)
+                    sample size of 10 different duplicate scenarios
         
         Returns 
         -------
@@ -3077,7 +3145,7 @@ class NBERWTFConstructor(NBERWTF):
 
         Notes
         -----
-        [1] Sample Data can be saved to csv or xlsx and aggregated to check against result
+        1. Sample Data can be saved to csv or xlsx and aggregated to check against result
         """ 
         idx = ['year', 'icode', 'importer', 'ecode', 'exporter', 'sitc4']
         #-Find Duplicate Lines by IDX-#
@@ -3105,6 +3173,9 @@ class NBERWTFConstructor(NBERWTF):
     def testdata_construct_dynamically_consistent_dataset(self, size=20):
         """
         Product Tests Data to check: construct_dynamically_consistent_dataset
+
+        STATUS: NOT IMPLEMENTED
+
         """
         raise NotImplementedError
 
@@ -3117,28 +3188,35 @@ class NBERWTFConstructor(NBERWTF):
         """
         Composition Study on SITC Code [ie. code='057']
 
-        Purpose
-        -------
-        This study products a table of 'exporter' compositional data. The Composition is the percent 
-        of exports from that country attributed to each SITC4 digit code for a level 3 code such as '057'. 
-        This table shows  significant cross-country heterogeneity in how countries "use" the coding system. 
+        Parameters
+        ----------
+        code    :   str
+                    Specify an SITC ProductCode
 
-        In the 1960's data for Australia coded '0570' makes up ~36% of the category. If a dataset is 
-        constructed using only official codes then 36% of Australia's export in this family of products 
-        would be dropped from the sample from the 1960's. 
-        However in the case of Brazil, this line item '0570' is not used much at all (~0.3%) and it's exports 
-        would be relatively unchanged. 
+        Notes
+        -----
+        1. Case Study ::
 
-        Note: Cross Sections can still be studied with the high level of disaggregation. But for dynamic studies,
-        these compositional affects will skew export lines showing export growth and decline in cases of compositional 
-        shift from one to another coding system.
+            This study products a table of 'exporter' compositional data. The Composition is the percent 
+            of exports from that country attributed to each SITC4 digit code for a level 3 code such as '057'. 
+            This table shows  significant cross-country heterogeneity in how countries "use" the coding system. 
 
-        Main Outcome
-        ------------
-        [1] For dynamic consistency between 1962 and 2000 the only real option is to aggregate families of goods to the 3-Digit Level
-            This aggregation will also capture A and X adjustments and countries usuing the high level classification with records 
-            found in '0' categories that aren't always found in the SITCR2 classification. 
-        [2] For dynamic consistency from 1984 onwards, it is possible to use SITCR2 official codes. 
+            In the 1960's data for Australia coded '0570' makes up ~36% of the category. If a dataset is 
+            constructed using only official codes then 36% of Australia's export in this family of products 
+            would be dropped from the sample from the 1960's. 
+            However in the case of Brazil, this line item '0570' is not used much at all (~0.3%) and it's exports 
+            would be relatively unchanged. 
+
+            Note: Cross Sections can still be studied with the high level of disaggregation. But for dynamic studies,
+            these compositional affects will skew export lines showing export growth and decline in cases of compositional 
+            shift from one to another coding system.
+
+            Main Outcome
+            ------------
+            [1] For dynamic consistency between 1962 and 2000 the only real option is to aggregate families of goods to the 3-Digit Level
+                This aggregation will also capture A and X adjustments and countries usuing the high level classification with records 
+                found in '0' categories that aren't always found in the SITCR2 classification. 
+            [2] For dynamic consistency from 1984 onwards, it is possible to use SITCR2 official codes. 
 
         """
         self.countries_only()
