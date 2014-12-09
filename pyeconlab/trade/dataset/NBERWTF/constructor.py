@@ -53,6 +53,9 @@ from pyeconlab.util import  from_series_to_pyfile, check_directory, recode_index
                             countryname_concordance, concord_data, random_sample, find_row, assert_merged_series_items_equal
 from pyeconlab.trade.classification import SITC
 
+#-Debug and Testing-#
+# from memory_profiler import profile
+
 # - Data in data/ - #
 this_dir, this_filename = os.path.split(__file__)
 #DATA_PATH = check_directory(os.path.join(this_dir, "data"))
@@ -635,6 +638,7 @@ class NBERWTFConstructor(NBERWTF):
             self.__raw_data = self.__raw_data.append(pd.read_stata(fn))
         self.__raw_data = self.__raw_data.reset_index()                                     #Otherwise Each year has repeated obs numbers
         del self.__raw_data['index']                                                        #Remove Old Index
+        gc.collect()
 
     def load_raw_from_hdf(self, years=[], verbose=True):
         """
@@ -653,12 +657,17 @@ class NBERWTFConstructor(NBERWTF):
         if years == [] or years == self._available_years:                       #years assigned prior to loading data
             fn = self._source_dir + self.__raw_data_hdf_fn
             if verbose: print "[INFO] Loading RAW DATA from %s" % fn
-            self.__raw_data = pd.read_hdf(fn, key='raw_data')
+            # self.__raw_data = pd.read_hdf(fn, key='raw_data')
+            store = pd.HDFStore(fn, mode='r')
+            self.__raw_data = store.get(key='raw_data')
+            store.close()
+            gc.collect()
         else:
             fn = self._source_dir + self.__raw_data_hdf_yearindex_fn 
             for year in years:
                 if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
                 self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
+            gc.collect()
 
     def dataset_to_hdf(self, flname='default', key='default', format='table', verbose=True):
         """
@@ -670,6 +679,7 @@ class NBERWTFConstructor(NBERWTF):
             key = self._name
         if verbose: print "[INFO] Saving dataset to: %s" % flname
         self.dataset.to_hdf(flname, key='dataset', mode='w', complevel=9, complib='zlib', format=format)
+        gc.collect()
 
     # ---------------------- #
     # - Supplementary Data - #
