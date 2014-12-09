@@ -8,7 +8,7 @@
 *** Notes
 *** -----
 *** [1] Currently this requires MANUAL adjustment for directories based on REPO Locations etc
-*** [2] Manually set the appropriate flags to produce Datasets A - B
+*** [2] Manually set the appropriate flags to produce Datasets A - D
 
 
 if c(os) == "MacOSX" {
@@ -17,7 +17,7 @@ if c(os) == "MacOSX" {
 }
 
 if c(os) == "Windows" {
-	global dir="E:\work-data\x_datasets\36a376e5a01385782112519bddfac85e"
+	global dir="D:\work-data\datasets\36a376e5a01385782112519bddfac85e"
 	global metadir = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\dataset\NBERFeenstraWTF\meta\" 		//Hard Coded For Now
 	global metaclass = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\classification\meta\" 				//Hard Coded For Now
 	global mac=0

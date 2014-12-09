@@ -282,7 +282,7 @@ class BACIConstructor(BACI):
         for year in self.years:
             fn = self.source_dir + 'baci' + self.classification.strip('HS') + '_' + str(year) + '.csv'
             if verbose: print "[INFO] Loading Year: %s from file: %s" % (year, fn)
-            self.__raw_data = self.__raw_data.append(pd.read_csv(fn, data_type={'hs6' : str}))
+            self.__raw_data = self.__raw_data.append(pd.read_csv(fn, dtype={'hs6' : str}))
         self.__raw_data = self.__raw_data.reset_index()                     #Otherwise Each year has repeated obs numbers
         del self.__raw_data['index']
         if deletions:

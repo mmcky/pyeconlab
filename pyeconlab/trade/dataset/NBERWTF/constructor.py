@@ -270,13 +270,11 @@ class NBERWTFConstructor(NBERWTF):
         #-Assign Source Directory-#
         self._source_dir    = check_directory(source_dir)   # check_directory() performs basic tests on the specified directory
         self.data_type      = u"trade"
-
         #-Parse Skip Setup-#
         if skip_setup == True:
             print "[INFO] Skipping Setup of NBERWTFConstructor!"
             self.__raw_data     = None                                              #Allows to be assigned later on
             return None
-        
         #-Setup Object-#
         if verbose: print "Fetching NBER-Feenstra Data from %s" % source_dir
         if years == []:
@@ -284,7 +282,6 @@ class NBERWTFConstructor(NBERWTF):
             years = self._available_years   # Default Years
         #-Assign to Attribute-#
         self.years  = years
-
         # - Fetch Raw Data for Years - #
         if ftype == 'dta':
             self.load_raw_from_dta(verbose=verbose)
@@ -298,19 +295,17 @@ class NBERWTFConstructor(NBERWTF):
                 self.convert_stata_to_hdf_yearindex(verbose=verbose)    #Compute Year Index Version Also
         else:
             raise ValueError("ftype must be dta or hdf")
-
         #-Reduce Memory-#
         if reduce_memory:
             self._dataset = self.__raw_data                                     #Saves ~2Gb of RAM (but cannot access raw_data)
             self.__raw_data = None
         else:
             self._dataset = self.__raw_data.copy(deep=True)                     #[Default] pandas.DataFrame.copy(deep=True) is much more efficient than copy.deepcopy()
-
         #-Simple Standardization-#
         if standardise == True: 
             if verbose: print "[INFO] Running Interface Standardisation ..."
             self.standardise_data(force=force, verbose=verbose)
-
+        gc.collect()
 
     def __repr__(self):
         string = "Class: %s\n" % (self.__class__)                           + \
@@ -640,7 +635,7 @@ class NBERWTFConstructor(NBERWTF):
         del self.__raw_data['index']                                                        #Remove Old Index
         gc.collect()
 
-    def load_raw_from_hdf(self, years=[], verbose=True):
+    def load_raw_from_hdf(self, years=[], use_raw_years_fl=False, gc_collect=True, verbose=True):
         """
         Load HDF Version of RAW Dataset from a source_directory
         
@@ -653,21 +648,20 @@ class NBERWTFConstructor(NBERWTF):
             1. Move to a Generic Class of DatasetConstructors?
 
         """
-        self.__raw_data     = pd.DataFrame() 
-        if years == [] or years == self._available_years:                       #years assigned prior to loading data
+        if years == [] or years == self._available_years and not use_raw_years_fl:                  
             fn = self._source_dir + self.__raw_data_hdf_fn
             if verbose: print "[INFO] Loading RAW DATA from %s" % fn
-            # self.__raw_data = pd.read_hdf(fn, key='raw_data')
-            store = pd.HDFStore(fn, mode='r')
-            self.__raw_data = store.get(key='raw_data')
-            store.close()
-            gc.collect()
+            self.__raw_data = pd.read_hdf(fn, key='raw_data')
+            if gc_collect:
+                gc.collect()
         else:
+            self.__raw_data     = pd.DataFrame() 
             fn = self._source_dir + self.__raw_data_hdf_yearindex_fn 
             for year in years:
                 if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
                 self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
-            gc.collect()
+                if gc_collect:
+                    gc.collect()
 
     def dataset_to_hdf(self, flname='default', key='default', format='table', verbose=True):
         """
@@ -1781,66 +1775,45 @@ class NBERWTFConstructor(NBERWTF):
     # - Construct Datasets  - #
     # ----------------------- #
 
-    #
-    # This is pretty sub-optimal. Is there a better way here?
-    #
+    # dict(dataset-name : ('Description', 'Settings'))
+    
+    #-SITC Level 1 Dataset-#
 
-    dataset_description     = { 
-        'CNTRY_SR2L3_Y62to00_A'     :  'DescriptionHere'
+    #-SITC Level 2 Dataset-#
+
+    #-SITC Level 3 Dataset-#
+    datasets_sitc3  = {
+        'Method'                :   'SC_CNTRY_SR2L3_Y62to00',
+        #-Trade-#
+
+        #-Export-#
+        'Export-SITCR2L3-A'         :   {
+                                            'Description'   :   'A Simple Dataset that contains AX, non SITC Standard Codes and and country codes are not intetemporally consistent',  \
+                                            'Settings'      :   'dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False',   \
+                                            'SpecialMethod' :   'construct_dataset_SC_CNTRY_SR2L3_Y62to00_A'                                                                \
+                                        },  
+        'Export-SITCR2L3-B'         :   {
+                                            'Description'   :   'A Dataset that does not contain AX, or non standard codes, and country codes are not intetemporally consistent', \
+                                            'Settings'      :   'dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False',      \
+                                            'SpecialMethod' :   'construct_dataset_SC_CNTRY_SR2L3_Y62to00_B'                                                                \
+                                        },
+        'Export-SITCR2L3-C'         :   {
+                                            'Description'   :   'A Dataset that does not contain AX or non standard codes, and has intertemporally consistent country codes',   \
+                                            'Settings'      :   'dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False',           \
+                                            'SpecialMethod' :   'construct_dataset_SC_CNTRY_SR2L3_Y62to00_C'                                                                    \
+                                        },         
+        'Export-SITCR2L3-D'         :   {
+                                            'Description'   :   'A Dataset that does not contain AX or non standard codes, and has intertemporally consistent country codes and countries covering the entire period',   \
+                                            'Settings'      :   'dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True',           \
+                                            'SpecialMethod' :   'construct_dataset_SC_CNTRY_SR2L3_Y62to00_D'                                                                   \
+                                        }, 
+        #-Import-#
     }
 
-    def construct_dataset(self, dataset, verbose=False):
-        """ 
-        A Wrapper for Returning Predefined Datasets
+    #-SITC Level 4 Dataset-#
+    datasets_sitc4 = {    
 
-        STATUS: IN-WORK
-
-        SITC-Level 4 Datasets
-        ---------------------
-
-        SITC-Level 3 Datasets
-        ---------------
-        Basic Cleaned Datasets 
-        ----------------------
-        Method: construct_dataset_SC_CNTRY_SR2L3_Y62to00_A to _D
-        
-        Trade
-        ~~~~~ 
-        [BaTr_SITC3_A] data='trade', dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
-        [BaTr_SITC3_B] data='trade', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
-        
-        Exports
-        ~~~~~~~ 
-        [BaEx_SITC3_A] data='export', dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
-        [BaEx__SITC3_B] data='export', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
-        
-        Imports
-        ~~~~~~~
-        [BaIm_SITC3_A] data='import', dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
-        [BaIm_SITC3_B] data='import', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
-
-        Dynamic Consistent Datasets
-        ---------------------------
-        Trade 
-        ~~~~~
-        [DynTr_SITC3_C] data='trade', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False    
-        [DynTr_SITC3_D] data='trade', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
-
-        Exports
-        ~~~~~~~
-        [DynEx_SITC3_C] data='export', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False   
-        [DynEx_SITC3_D] data='export', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
-
-        Imports 
-        ~~~~~~~
-        [DynIm_SITC3_C] data='import', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False   
-        [DynIm_SITC3_D] data='import', dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
-
-        Future Work
-        ===========
-        [1] Construct a Dictionary of methods to dataset name
-        """
-        raise NotImplementedError
+    }
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
         """
@@ -1876,12 +1849,12 @@ class NBERWTFConstructor(NBERWTF):
             [1] Drop SITC4 to SITC3 Level (for greater intertemporal consistency)
             [2] Import ISO3C Codes as Country Codes
             [3] Drop Errors in SITC3 codes ["" Codes]
-                Optional:
-                ---------
-                [A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
-                [B] Drop Non-Standard SITC3 Codes [i.e. Aren't in the Classification]
-                [C] Adjust iiso3c, eiso3c country codes to be intertemporally consistent
-                [D] Drop countries with incomplete data across 1962 to 2000 (strict measure)
+            Optional:
+            ---------
+            [A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
+            [B] Drop Non-Standard SITC3 Codes [i.e. Aren't in the Classification]
+            [C] Adjust iiso3c, eiso3c country codes to be intertemporally consistent
+            [D] Drop countries with incomplete data across 1962 to 2000 (strict measure)
 
         2. Datasets ::
 
@@ -2006,7 +1979,7 @@ class NBERWTFConstructor(NBERWTF):
             dfy = df.groupby(['year']).sum()['value'].reset_index()
             y = rdfy.merge(dfy, how="outer", on=['year']).set_index(['year'])
             y['%'] = y['value_y'] / y['value_x'] * 100
-            report =    "Report construct_default_simple_sitc3(options)\n" + \
+            report =    "Report construct_dataset_SC_CNTRY_SR2L3_Y62to00(options)\n" + \
                         "---------------------------------------\n"
             for year in self.years:
                 report += "This dataset in year: %s captures %s percent of Total 'World' Values\n" % (year, int(y.ix[year]['%']))
@@ -3062,6 +3035,7 @@ class NBERWTFConstructor(NBERWTF):
             
         print hdf
         hdf.close()
+        gc.collect()
 
 
     def convert_raw_data_to_hdf(self, format='table', verbose=True):
@@ -3081,13 +3055,11 @@ class NBERWTFConstructor(NBERWTF):
         """
         years = self._available_years
         hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '_raw' + '.h5'
-            # hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
-            # self.__raw_data_hdf = hdf
-            # pd.set_option('io.hdf.default_format', 'table')
         hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
         hdf.put('raw_data', self.__raw_data, format=format)
         if verbose: print hdf
         hdf.close()
+        gc.collect()
 
     #---------#
     #-Pickles-#
@@ -3103,6 +3075,10 @@ class NBERWTFConstructor(NBERWTF):
                 Specify filename 
         data    :   str, optional(default='dataset')
                     Specify which data source to write (dataset or raw_data)
+
+        Notes 
+        -----
+        1. This uses a LOT of memory when trying to write to the file. 
 
         """
         fl = open(fn, 'wb') 
