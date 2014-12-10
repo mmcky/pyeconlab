@@ -522,7 +522,40 @@ class NBERWTFConstructor(NBERWTF):
         #-Year Values-#
         rdfy = rdf[['year', 'value']].groupby(['year']).sum()
         return rdfy
-        
+    
+    def yearly_product_world_values(self, level=4):
+        """
+        Construct yearly product world values (sitc4)
+
+        Parameters
+        ----------
+        level   :   int, optional(default=4)
+                    Specify SITC Level to Return
+        """
+        rdf = self.raw_data
+        rdf = rdf.loc[(rdf.importer=="World") & (rdf.exporter == "World")]
+        #-Year Product Values-#
+        rdfpy = rdf[['year', 'sitc4', 'value']].groupby(['year', 'sitc4']).sum()
+        #-Simple Adjust Level-#
+        if level < 4:
+            rdfpy.reset_index(inplace=True)
+            rdfpy['sitc%s'%level] = rdfpy['sitc4'].apply(lambda x: x[:level])
+            rdfpy = rdfpy[['year', 'sitc%s'%level, 'value']].groupby(['year', 'sitc%s'%level]).sum()
+        return rdfpy
+
+    @property
+    def yearly_country_values(self):
+        """ 
+        Construct yearly country values (from raw data)
+        """
+        if self.operations != "":
+            raise ValueError("This operation needs to be conducted on a fresh dataset with no operations. You can reset the data with .reset_dataset()")
+        self.add_iso3c()
+        rdf = self.dataset.copy(deep=True) 
+        rdf = rdf.loc[(rdf.importer=="World") & (rdf.exporter!="World")]
+        #-Year Country Values-#
+        rdfpy = rdf[['year', 'eiso3c', 'value']].groupby(['year', 'eiso3c']).sum()
+        return rdfpy
 
     def stats(self, dataset=True, basic=False, extended=False, dlimit=10):
         """
