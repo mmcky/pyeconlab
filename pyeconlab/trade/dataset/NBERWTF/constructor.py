@@ -1806,57 +1806,26 @@ class NBERWTFConstructor(NBERWTF):
         raise NotImplementedError
 
 
-    # ----------------------- #
-    # - Construct Datasets  - #
-    # ----------------------- #
+    # -------------------------------- #
+    # - Construct Datasets Wrappers  - #
+    # -------------------------------- #
 
-    # dict(dataset-name : ('Description', 'Settings'))
+    #-Dataset Definitions-#
+    from .constructor_dataset import datasets_sitc3
     
-    #-SITC Level 1 Dataset-#
+    # ---------------------------------------------------------------- #
+    # -- NOTICE: Currently Migrating this to constructor_dataset.py -- #
+    # ---------------------------------------------------------------- #
 
-    #-SITC Level 2 Dataset-#
-
-    #-SITC Level 3 Dataset-#
-    datasets_sitc3  = {
-        'Method'                :   'SC_CNTRY_SR2L3_Y62to00',
-        #-Trade-#
-
-        #-Export-#
-        'Export-SITCR2L3-A'         :   {
-                                            'Description'   :   'A Simple Dataset that contains AX, non SITC Standard Codes and and country codes are not intetemporally consistent',  \
-                                            'Settings'      :   'dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False',   \
-                                            'SpecialMethod' :   'construct_dataset_SC_CNTRY_SR2L3_Y62to00_A'                                                                \
-                                        },  
-        'Export-SITCR2L3-B'         :   {
-                                            'Description'   :   'A Dataset that does not contain AX, or non standard codes, and country codes are not intetemporally consistent', \
-                                            'Settings'      :   'dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False',      \
-                                            'SpecialMethod' :   'construct_dataset_SC_CNTRY_SR2L3_Y62to00_B'                                                                \
-                                        },
-        'Export-SITCR2L3-C'         :   {
-                                            'Description'   :   'A Dataset that does not contain AX or non standard codes, and has intertemporally consistent country codes',   \
-                                            'Settings'      :   'dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False',           \
-                                            'SpecialMethod' :   'construct_dataset_SC_CNTRY_SR2L3_Y62to00_C'                                                                    \
-                                        },         
-        'Export-SITCR2L3-D'         :   {
-                                            'Description'   :   'A Dataset that does not contain AX or non standard codes, and has intertemporally consistent country codes and countries covering the entire period',   \
-                                            'Settings'      :   'dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True',           \
-                                            'SpecialMethod' :   'construct_dataset_SC_CNTRY_SR2L3_Y62to00_D'                                                                   \
-                                        }, 
-        #-Import-#
-    }
-
-    #-SITC Level 4 Dataset-#
-    datasets_sitc4 = {    
-
-    }
-
-    def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=True, source_institution='un', verbose=True):
+    def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, report=True, source_institution='un', verbose=True):
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Level 3
         **Note**: Self Contained Compilation Reduces the Need to Debug many other routines for the time being. 
         The other methods are however useful to diagnose issues and to understand properties of the dataset
 
-        STATUS: tests/test_constructor_SC_CNTRY_SR2L3_Y62to00.py
+        STATUS: tests/test_constructor_dataset_sitcr2l3.py
+
+        See 
 
         Parameters
         ----------
@@ -1872,6 +1841,8 @@ class NBERWTFConstructor(NBERWTF):
                                 Generate Intertemporal Consistent Country Units (from meta)
         drop_incp_cntrycode :   bool, optional(default=False)
                                 Drop Incomplete Country Codes (from meta)
+        adjust_units        :   bool, optional(default=False)
+                                Adjust units by a factor of 1000 to specify in $'s
         report              :   bool, optional(default=True)
                                 Print Report
         source_institution  :   str, optional(default='un')
@@ -1907,6 +1878,7 @@ class NBERWTFConstructor(NBERWTF):
             1. Check SITC Revision 2 Official Codes
             2. Should this be split into a header function with specific trade, export, and import methods?
             3. Add in Change Value Units to $'s (x 1000)
+            4. What should I do about the duplicate information contained in this docstring and the actual dataset constructor function (which is externally available)
         """
         from .meta import countryname_to_iso3c
         self.dataset_name = 'CNTRY_SR2L3_Y62to00_A'
@@ -1915,96 +1887,10 @@ class NBERWTFConstructor(NBERWTF):
             raise ValueError("This Method requires a complete RAW dataset")
         if sum(self.years) != 77259:                                                                        #IS there a better way than this hack!
             raise ValueError("This Dataset must contain the full range of years to be constructed")
-        #-Set Data-#
-        df = self.dataset 
-        df = df[['year', 'exporter', 'importer', 'sitc4', 'value']]
-        #-SITC3-#
-        df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
-        df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
-        self.level = 3
-        #-Country Adjustment-#
-        df = df.loc[(df.exporter != "World") & (df.importer != "World")]
-        #-Exports (can include NES on importer side)-#
-        if data_type == 'export' or data_type == 'exports':
-            df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
-            df = df.loc[(df.eiso3c != '.')]
-            df = df.groupby(['year', 'eiso3c', 'sitc3']).sum()['value'].reset_index()
-        #-Imports (can include NES on importer side)-#
-        elif data_type == 'import' or data_type == 'imports':
-            df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
-            df = df.loc[(df.iiso3c != '.')]
-            df = df.groupby(['year','iiso3c', 'sitc3']).sum()['value'].reset_index()
-            #-Trade-#
-        else: 
-            df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
-            df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
-            df = df.loc[(df.iiso3c != '.') & (df.eiso3c != '.')]
-            df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
-        #-Product Code Errors in Dataset-#
-        df = df.loc[(df.sitc3 != "")]                                                                   #Does this need a reset_index?
-        #-dropAX-#
-        if dropAX:
-            if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
-            df['AX'] = df.sitc3.apply(lambda x: 1 if re.search("[AX]", x) else 0)
-            df = df.loc[df.AX != 1]
-            del df['AX']
-        #-sitcr2-#
-        if sitcr2:
-            if verbose: print "[INFO] Adding SITCR2 Indicator"
-            from pyeconlab.trade.classification import SITC
-            sitc = SITC(revision=2, source_institution=source_institution)
-            codes = sitc.get_codes(level=3)
-            df['sitcr2'] = df['sitc3'].apply(lambda x: 1 if x in codes else 0)
-            if drop_nonsitcr2:
-                if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
-                df = df.loc[(df.sitcr2 == 1)]
-                del df['sitcr2']                #No Longer Needed
-        #-intertemp_cntrycode-#
-        if intertemp_cntrycode:
-            if verbose: print "[INFO] Imposing dynamically consistent iiso3c and eiso3c recodes across 1962-2000"
-            from pyeconlab.util import concord_data
-            from .meta import iso3c_recodes_for_1962_2000
-            #-Export-#
-            if data_type == 'export' or data_type == 'exports':
-                df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
-                df = df[df['eiso3c'] != '.']
-                df = df.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
-            #-Import-#
-            elif data_type == 'import' or data_type == 'imports':
-                df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
-                df = df[df['iiso3c'] != '.']
-                df = df.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
-            #-Trade-#
-            else:
-                df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
-                df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
-                df = df[df['iiso3c'] != '.']
-                df = df[df['eiso3c'] != '.']
-                df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum().reset_index()
-        #-drop_incp_cntrycode-#
-        if drop_incp_cntrycode:
-            if verbose: print "[INFO] Dropping countries with incomplete data across 1962-2000"
-            from pyeconlab.util import concord_data
-            from .meta import incomplete_iso3c_for_1962_2000
-            #-Export-#
-            if data_type == 'export' or data_type == 'exports':
-                df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False))     #issue_error = false returns x if no match
-                df = df[df['eiso3c'] != '.']
-            #-Import-#
-            elif data_type == 'import' or data_type == 'imports':
-                df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False))     #issue_error = false returns x if no match
-                df = df[df['iiso3c'] != '.']
-            #-Trade-#
-            else:
-                df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False))     #issue_error = false returns x if no match
-                df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False))     #issue_error = false returns x if no match
-                df = df[df['iiso3c'] != '.']
-                df = df[df['eiso3c'] != '.']
-            df = df.reset_index()
-            del df['index']
-        #-adjust units from 1000's to $'s-#
-        #df['value'] = df['value']*1000         #Currently keeping units in 1000's similar to BACI
-        #self._units_value_str = "$'s"
+        #-Construct Dataset-#
+        from .constructor_dataset_sitcr2l3 import construct_sitcr2l3
+        df = construct_sitcr2l3(self.dataset, data_type, dropAX, sitcr2, drop_nonsitcr2, intertemp_cntrycode, drop_incp_cntrycode, adjust_units, source_institution, verbose)
+        
         #-Report-#
         if report:
             rdf = self.raw_data
@@ -2019,8 +1905,120 @@ class NBERWTFConstructor(NBERWTF):
             for year in self.years:
                 report += "This dataset in year: %s captures %s percent of Total 'World' Values\n" % (year, int(y.ix[year]['%']))
             print report
+        #-Set Attributes-#
+        self.level = 3
         self.data_type = data_type
+        if adjust_units:
+            self._units_value_str = "$'s"
+        #-Set Dataset to Object-#
         self._dataset = df
+
+        #-BEGIN REMOVE-#
+        # df = df[['year', 'exporter', 'importer', 'sitc4', 'value']]
+        # #-SITC3-#
+        # df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
+        # df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
+        # self.level = 3
+        # #-Country Adjustment-#
+        # df = df.loc[(df.exporter != "World") & (df.importer != "World")]
+        # #-Exports (can include NES on importer side)-#
+        # if data_type == 'export' or data_type == 'exports':
+        #     df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
+        #     df = df.loc[(df.eiso3c != '.')]
+        #     df = df.groupby(['year', 'eiso3c', 'sitc3']).sum()['value'].reset_index()
+        # #-Imports (can include NES on importer side)-#
+        # elif data_type == 'import' or data_type == 'imports':
+        #     df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
+        #     df = df.loc[(df.iiso3c != '.')]
+        #     df = df.groupby(['year','iiso3c', 'sitc3']).sum()['value'].reset_index()
+        #     #-Trade-#
+        # else: 
+        #     df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
+        #     df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
+        #     df = df.loc[(df.iiso3c != '.') & (df.eiso3c != '.')]
+        #     df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
+        # #-Product Code Errors in Dataset-#
+        # df = df.loc[(df.sitc3 != "")]                                                                   #Does this need a reset_index?
+        # #-dropAX-#
+        # if dropAX:
+        #     if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
+        #     df['AX'] = df.sitc3.apply(lambda x: 1 if re.search("[AX]", x) else 0)
+        #     df = df.loc[df.AX != 1]
+        #     del df['AX']
+        # #-sitcr2-#
+        # if sitcr2:
+        #     if verbose: print "[INFO] Adding SITCR2 Indicator"
+        #     from pyeconlab.trade.classification import SITC
+        #     sitc = SITC(revision=2, source_institution=source_institution)
+        #     codes = sitc.get_codes(level=3)
+        #     df['sitcr2'] = df['sitc3'].apply(lambda x: 1 if x in codes else 0)
+        #     if drop_nonsitcr2:
+        #         if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
+        #         df = df.loc[(df.sitcr2 == 1)]
+        #         del df['sitcr2']                #No Longer Needed
+        # #-intertemp_cntrycode-#
+        # if intertemp_cntrycode:
+        #     if verbose: print "[INFO] Imposing dynamically consistent iiso3c and eiso3c recodes across 1962-2000"
+        #     from pyeconlab.util import concord_data
+        #     from .meta import iso3c_recodes_for_1962_2000
+        #     #-Export-#
+        #     if data_type == 'export' or data_type == 'exports':
+        #         df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
+        #         df = df[df['eiso3c'] != '.']
+        #         df = df.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
+        #     #-Import-#
+        #     elif data_type == 'import' or data_type == 'imports':
+        #         df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
+        #         df = df[df['iiso3c'] != '.']
+        #         df = df.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+        #     #-Trade-#
+        #     else:
+        #         df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
+        #         df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
+        #         df = df[df['iiso3c'] != '.']
+        #         df = df[df['eiso3c'] != '.']
+        #         df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum().reset_index()
+        # #-drop_incp_cntrycode-#
+        # if drop_incp_cntrycode:
+        #     if verbose: print "[INFO] Dropping countries with incomplete data across 1962-2000"
+        #     from pyeconlab.util import concord_data
+        #     from .meta import incomplete_iso3c_for_1962_2000
+        #     #-Export-#
+        #     if data_type == 'export' or data_type == 'exports':
+        #         df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False))     #issue_error = false returns x if no match
+        #         df = df[df['eiso3c'] != '.']
+        #     #-Import-#
+        #     elif data_type == 'import' or data_type == 'imports':
+        #         df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False))     #issue_error = false returns x if no match
+        #         df = df[df['iiso3c'] != '.']
+        #     #-Trade-#
+        #     else:
+        #         df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False))     #issue_error = false returns x if no match
+        #         df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(incomplete_iso3c_for_1962_2000, x, issue_error=False))     #issue_error = false returns x if no match
+        #         df = df[df['iiso3c'] != '.']
+        #         df = df[df['eiso3c'] != '.']
+        #     df = df.reset_index()
+        #     del df['index']
+        #-adjust units from 1000's to $'s-#
+        #df['value'] = df['value']*1000         #Currently keeping units in 1000's similar to BACI
+        #self._units_value_str = "$'s"
+        # #-Report-#
+        # if report:
+        #     rdf = self.raw_data
+        #     rdf = rdf.loc[(rdf.importer=="World") & (rdf.exporter == "World")]
+        #     #-Year Values-#
+        #     rdfy = rdf.groupby(['year']).sum()['value'].reset_index()
+        #     dfy = df.groupby(['year']).sum()['value'].reset_index()
+        #     y = rdfy.merge(dfy, how="outer", on=['year']).set_index(['year'])
+        #     y['%'] = y['value_y'] / y['value_x'] * 100
+        #     report =    "Report construct_dataset_SC_CNTRY_SR2L3_Y62to00(options)\n" + \
+        #                 "---------------------------------------\n"
+        #     for year in self.years:
+        #         report += "This dataset in year: %s captures %s percent of Total 'World' Values\n" % (year, int(y.ix[year]['%']))
+        #     print report
+        # self.data_type = data_type
+        # self._dataset = df
+        #- END REMOVE -#
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(self, data_type, dataset_object=True, verbose=True):
         """
@@ -2184,6 +2182,9 @@ class NBERWTFConstructor(NBERWTF):
         if no_index:
             self._dataset = self.dataset.reset_index()
         return self.dataset
+
+
+    # -- END MIGRATION -- #
 
 
     #-----------------------------#
