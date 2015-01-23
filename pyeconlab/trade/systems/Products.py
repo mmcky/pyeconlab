@@ -35,25 +35,25 @@ import numpy as np
 
 ### --- Add Custom Local Libraries --- ###
 
-library_dir = "work/lib_python/"
+# library_dir = "work/lib_python/"
 
-if sys.platform.startswith('win'):
-    #Tuned to Win7 Platform References#
-    abs_path = os.path.expanduser("~")             #Note this method won't work if library is on a different drive letter!#
-    abs_path = abs_path + "\\" + library_dir  
-elif sys.platform.startswith('darwin'):             #OS X - NEEDS TESTING
-    abs_path = os.path.expanduser("~")
-    abs_path = abs_path + "/" + library_dir
-elif sys.platform.startswith('linux'):
-    abs_path = os.path.expanduser("~")
-    abs_path = abs_path + "/" + library_dir
+# if sys.platform.startswith('win'):
+#     #Tuned to Win7 Platform References#
+#     abs_path = os.path.expanduser("~")             #Note this method won't work if library is on a different drive letter!#
+#     abs_path = abs_path + "\\" + library_dir  
+# elif sys.platform.startswith('darwin'):             #OS X - NEEDS TESTING
+#     abs_path = os.path.expanduser("~")
+#     abs_path = abs_path + "/" + library_dir
+# elif sys.platform.startswith('linux'):
+#     abs_path = os.path.expanduser("~")
+#     abs_path = abs_path + "/" + library_dir
 
-projects = ['mydatasets'] 							#'wdi_lab' superseeded by local WDI.py
-for project in projects:
-    sys.path.append(abs_path+"/"+project)
+# projects = ['mydatasets'] 							#'wdi_lab' superseeded by local WDI.py
+# for project in projects:
+#     sys.path.append(abs_path+"/"+project)
 
 try: 
-	import MyDatasets as md
+	import mydatasets as md
 except:
 	print "[mydatasets] The MyDatasets Repository cannot be found!"
 	sys.exit()
