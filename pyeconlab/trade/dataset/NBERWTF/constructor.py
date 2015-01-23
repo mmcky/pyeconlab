@@ -6,7 +6,8 @@ NBERWTF Constructor
 Compile NBERFeenstra RAW data Files and Perform Data Preparation Tasks
 
 It is the CORE responsibility of this module to clean, prepare and investigate the data.
-The NATURE of the data shouldn't be changed in this class. For example, routines for collapsing the bilateral flows to exports should be contained in NBERWTF 
+The NATURE of the data shouldn't be changed in this class. 
+For example, routines for collapsing the bilateral flows to exports should be contained in NBERWTF 
 
 Conventions
 -----------
@@ -33,6 +34,7 @@ Future Work
 1. A More memory efficient for Export and Import Data Only would be to collapse prior to adjustments?
 2. Clarify operators on raw_data vs. dataset
 3. Simplify this!
+4. Propose to Leave this as a Data Exploration Class and REMOVE dataset construction as their requirements can be very specific. 
 """
 
 #-Future-#
