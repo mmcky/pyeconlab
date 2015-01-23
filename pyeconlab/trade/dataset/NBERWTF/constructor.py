@@ -1890,7 +1890,6 @@ class NBERWTFConstructor(NBERWTF):
         #-Construct Dataset-#
         from .constructor_dataset_sitcr2l3 import construct_sitcr2l3
         df = construct_sitcr2l3(self.dataset, data_type, dropAX, sitcr2, drop_nonsitcr2, intertemp_cntrycode, drop_incp_cntrycode, adjust_units, source_institution, verbose)
-        
         #-Report-#
         if report:
             rdf = self.raw_data
