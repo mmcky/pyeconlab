@@ -22,7 +22,7 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 3
         
-        There are no checks on the dataframe to ensure data integrity.
+        There are no checks on the incoming dataframe to ensure data integrity.
         This is your responsibility
 
         STATUS: tests/test_constructor_dataset_sitcr2l3.py
