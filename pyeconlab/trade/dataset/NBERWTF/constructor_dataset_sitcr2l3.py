@@ -81,20 +81,20 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
         """
 
         #-Set Data-#
-        cols = ['year', 'exporter', 'importer', 'sitc4', 'value']
-        df = df[cols]
+        idx = ['year', 'exporter', 'importer', 'sitc4']
+        df = df[idx + ['value']]
         
         #-Hong Kong China Data Adjustment Option-#
         if adjust_hk[0]:
-            hkdata = adjust_hk[1][cols]
+            hkdata = adjust_hk[1]
             #-Values-#
-            raw_value = df[cols+['value']].rename(columns={'value' : 'value_raw'})
+            raw_value = df[idx+['value']].rename(columns={'value' : 'value_raw'})
             try:
-                adjust_value = hkdata[cols+['value_adj']]
+                adjust_value = hkdata[idx+['value_adj']]
             except:
                 raise ValueError("[ERROR] China/Hong Kong Data has not been passed in properly!")
             #-Note: Current merge_columns utility merges one column set at a time-#
-            df = merge_columns(raw_value, adjust_value, cols, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
+            df = merge_columns(raw_value, adjust_value, idx, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
 
         #-Adjust to SITC Level 3-#
