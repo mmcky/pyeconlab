@@ -9,16 +9,20 @@ Notes
 
 """
 
+#-Library Imports-#
 import re
-
+#-Package Imports-#
 from pyeconlab.trade.classification import SITC
-from pyeconlab.util import concord_data
+from pyeconlab.util import concord_data, merge_columns
+#-Relative Imports-#
 from .meta import countryname_to_iso3c, iso3c_recodes_for_1962_2000, incomplete_iso3c_for_1962_2000 
             
 
-#-Constructors-#
+#-Dataset Constructors-#
 
-def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
+#-SITC Revision 2 Level 3-#
+
+def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(True, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 3
         
@@ -39,6 +43,8 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
                                 Add SITCR2 Indicator
         drop_nonsitcr2      :   bool, optional(default=True)
                                 Drop non-standard SITC2 Codes
+        adjust_hk           :   Tuple(bool, df), optional(default=(False, None))
+                                Adjust the Hong Kong Data using NBER supplemental files which needs to be supplied as a dataframe
         intertemp_cntrycode :   bool, optional(default=False)
                                 Generate Intertemporal Consistent Country Units (from meta)
         drop_incp_cntrycode :   bool, optional(default=False)
@@ -75,8 +81,22 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
         """
 
         #-Set Data-#
-        df = df[['year', 'exporter', 'importer', 'sitc4', 'value']]
+        cols = ['year', 'exporter', 'importer', 'sitc4', 'value']
+        df = df[cols]
         
+        #-Hong Kong China Data Adjustment Option-#
+        if adjust_hk[0]:
+            hkdata = adjust_hk[1][cols]
+            #-Values-#
+            raw_value = df[cols+['value']].rename(columns={'value' : 'value_raw'})
+            try:
+                adjust_value = hkdata[cols+['value_adj']]
+            except:
+                raise ValueError("[ERROR] China/Hong Kong Data has not been passed in properly!")
+            #-Note: Current merge_columns utility merges one column set at a time-#
+            df = merge_columns(raw_value, adjust_value, cols, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
+            #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
+
         #-Adjust to SITC Level 3-#
         df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
         df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
