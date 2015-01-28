@@ -22,7 +22,7 @@ from .meta import countryname_to_iso3c, iso3c_recodes_for_1962_2000, incomplete_
 
 #-SITC Revision 2 Level 3-#
 
-def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(True, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
+def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 3
         
@@ -185,7 +185,9 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
        
         #-Adjust Units from 1000's to $'s-#
         if adjust_units:
+            if verbose: print "[INFO] Adjusting 'value' units to $'s"
             df['value'] = df['value']*1000         #Default: Keep in 1000's
         
         #-Return Dataset-#
+        if verbose: print "[INFO] Finished Computing Dataset - SITC Revision 2 Level 3" 
         return df
