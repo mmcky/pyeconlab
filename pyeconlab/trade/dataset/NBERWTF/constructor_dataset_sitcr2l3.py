@@ -189,5 +189,5 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             df['value'] = df['value']*1000         #Default: Keep in 1000's
         
         #-Return Dataset-#
-        if verbose: print "[INFO] Finished Computing Dataset - SITC Revision 2 Level 3" 
+        if verbose: print "[INFO] Finished Computing Dataset ..." 
         return df
