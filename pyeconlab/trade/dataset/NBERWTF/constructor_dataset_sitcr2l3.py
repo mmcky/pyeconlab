@@ -86,6 +86,7 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
         
         #-Hong Kong China Data Adjustment Option-#
         if adjust_hk[0]:
+            if verbose: print "[INFO] Adjusting Hong Kong and China Values"
             hkdata = adjust_hk[1]
             #-Values-#
             raw_value = df[idx+['value']].rename(columns={'value' : 'value_raw'})
@@ -98,25 +99,30 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
 
         #-Adjust to SITC Level 3-#
+        if verbose: print "[INFO] Collapsing to SITC Level 3 Data"
         df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
         df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
         
         #-Countries Only Adjustment-#
+        if verbose: print "[INFO] Removing 'World' values from the dataset to be country only data"
         df = df.loc[(df.exporter != "World") & (df.importer != "World")]
         
         #-Add Country ISO Information-#
         #-Exports (can include NES on importer side)-#
         if data_type == 'export' or data_type == 'exports':
+            if verbose: print "[INFO] Adding eiso3c using nber meta data"
             df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
             df = df.loc[(df.eiso3c != '.')]
             df = df.groupby(['year', 'eiso3c', 'sitc3']).sum()['value'].reset_index()
         #-Imports (can include NES on importer side)-#
         elif data_type == 'import' or data_type == 'imports':
+            if verbose: print "[INFO] Adding iiso3c using nber meta data"
             df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
             df = df.loc[(df.iiso3c != '.')]
             df = df.groupby(['year','iiso3c', 'sitc3']).sum()['value'].reset_index()
         #-Trade-#
         else: 
+            if verbose: print "[INFO] Adding eiso3c and iiso3c using nber meta data"
             df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
             df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
             df = df.loc[(df.iiso3c != '.') & (df.eiso3c != '.')]
@@ -144,19 +150,21 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
         
         #-Adjust Country Codes to be Intertemporally Consistent-#
         if intertemp_cntrycode:
-            if verbose: print "[INFO] Imposing dynamically consistent iiso3c and eiso3c recodes across 1962-2000"
             #-Export-#
             if data_type == 'export' or data_type == 'exports':
+                if verbose: print "[INFO] Imposing dynamically consistent eiso3c recodes across 1962-2000"
                 df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
                 df = df[df['eiso3c'] != '.']
                 df = df.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
             #-Import-#
             elif data_type == 'import' or data_type == 'imports':
+                if verbose: print "[INFO] Imposing dynamically consistent iiso3c recodes across 1962-2000"
                 df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
                 df = df[df['iiso3c'] != '.']
                 df = df.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
             #-Trade-#
             else:
+                if verbose: print "[INFO] Imposing dynamically consistent iiso3c and eiso3c recodes across 1962-2000"
                 df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
                 df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
                 df = df[df['iiso3c'] != '.']
@@ -189,5 +197,5 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             df['value'] = df['value']*1000         #Default: Keep in 1000's
         
         #-Return Dataset-#
-        if verbose: print "[INFO] Finished Computing Dataset ..." 
+        if verbose: print "[INFO] Finished Computing Dataset (%s) ..." % (data_type) 
         return df
