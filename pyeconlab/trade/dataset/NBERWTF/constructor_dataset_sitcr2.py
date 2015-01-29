@@ -16,6 +16,14 @@ Future Work
 
 """
 
+#-Library Imports-#
+import re
+#-Package Imports-#
+from pyeconlab.trade.classification import SITC
+from pyeconlab.util import concord_data, merge_columns
+#-Relative Imports-#
+from .meta import countryname_to_iso3c, iso3c_recodes_for_1962_2000, incomplete_iso3c_for_1962_2000 
+
 #-Generalised SC Constructor Functions-#
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
@@ -105,7 +113,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
         if level != 4:
             if verbose: print "[INFO] Collapsing to SITC Level %s Data" % level
             df['sitc%s'%level] = df.sitc4.apply(lambda x: x[0:level])
-            df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
+            df = df.groupby(['year', 'exporter', 'importer', 'sitc%s'%level]).sum()['value'].reset_index()
         elif level == 4:
             if verbose: print "[INFO] Data is already at the requested level"
         else:
@@ -124,20 +132,20 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
             if verbose: print "[INFO] Adding eiso3c using nber meta data"
             df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
             df = df.loc[(df.eiso3c != '.')]
-            df = df.groupby(['year', 'eiso3c', 'sitc3']).sum()['value'].reset_index()
+            df = df.groupby(['year', 'eiso3c', 'sitc%s'%level]).sum()['value'].reset_index()
         #-Imports (can include NES on importer side)-#
         elif data_type == 'import' or data_type == 'imports':
             if verbose: print "[INFO] Adding iiso3c using nber meta data"
             df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
             df = df.loc[(df.iiso3c != '.')]
-            df = df.groupby(['year','iiso3c', 'sitc3']).sum()['value'].reset_index()
+            df = df.groupby(['year','iiso3c', 'sitc%s'%level]).sum()['value'].reset_index()
         #-Trade-#
         else: 
             if verbose: print "[INFO] Adding eiso3c and iiso3c using nber meta data"
             df['iiso3c'] = df.importer.apply(lambda x: countryname_to_iso3c[x])
             df['eiso3c'] = df.exporter.apply(lambda x: countryname_to_iso3c[x])
             df = df.loc[(df.iiso3c != '.') & (df.eiso3c != '.')]
-            df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
+            df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc%s'%level]).sum()['value'].reset_index()
         
         #-Remove Product Code Errors in Dataset-#
         df = df.loc[(df['sitc%s'%level] != "")]                                                                   #Does this need a reset_index?
@@ -152,7 +160,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
         if sitcr2:
             if verbose: print "[INFO] Adding SITCR2 Indicator"
             sitc = SITC(revision=2, source_institution=source_institution)
-            codes = sitc.get_codes(level=lelve)
+            codes = sitc.get_codes(level=level)
             df['sitcr2'] = df['sitc%s'%level].apply(lambda x: 1 if x in codes else 0)
             if drop_nonsitcr2:
                 if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
@@ -166,13 +174,13 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
                 if verbose: print "[INFO] Imposing dynamically consistent eiso3c recodes across 1962-2000"
                 df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
                 df = df[df['eiso3c'] != '.']
-                df = df.groupby(['year', 'eiso3c', 'sitc3']).sum().reset_index()
+                df = df.groupby(['year', 'eiso3c', 'sitc%s'%level]).sum().reset_index()
             #-Import-#
             elif data_type == 'import' or data_type == 'imports':
                 if verbose: print "[INFO] Imposing dynamically consistent iiso3c recodes across 1962-2000"
                 df['iiso3c'] = df['iiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
                 df = df[df['iiso3c'] != '.']
-                df = df.groupby(['year', 'iiso3c', 'sitc3']).sum().reset_index()
+                df = df.groupby(['year', 'iiso3c', 'sitc%s'%level]).sum().reset_index()
             #-Trade-#
             else:
                 if verbose: print "[INFO] Imposing dynamically consistent iiso3c and eiso3c recodes across 1962-2000"
@@ -180,7 +188,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
                 df['eiso3c'] = df['eiso3c'].apply(lambda x: concord_data(iso3c_recodes_for_1962_2000, x, issue_error=False))    #issue_error = false returns x if no match
                 df = df[df['iiso3c'] != '.']
                 df = df[df['eiso3c'] != '.']
-                df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum().reset_index()
+                df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc%s'%level]).sum().reset_index()
         
         #-Drop Incomplete Country Codes-#
         if drop_incp_cntrycode:
