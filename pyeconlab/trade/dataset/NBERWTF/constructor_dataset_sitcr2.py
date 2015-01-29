@@ -140,7 +140,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
             df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
         
         #-Remove Product Code Errors in Dataset-#
-        df = df.loc[(df['sitc%s'%level != "")]                                                                   #Does this need a reset_index?
+        df = df.loc[(df['sitc%s'%level] != "")]                                                                   #Does this need a reset_index?
         #-dropAX-#
         if dropAX:
             if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
