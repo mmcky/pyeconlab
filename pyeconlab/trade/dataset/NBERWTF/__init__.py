@@ -8,6 +8,7 @@ API for NBER World Trade Flows Subpackage
 
 from .constructor import NBERWTFConstructor
 from .constructor_dataset_sitcr2l3 import construct_sitcr2l3
+from .constructor_dataset_sitcr2l4 import construct_sitcr2l4
 from .dataset import NBERWTF, NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData
 
 #-Meta Data-#

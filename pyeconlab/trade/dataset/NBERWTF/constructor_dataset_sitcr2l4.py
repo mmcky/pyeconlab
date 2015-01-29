@@ -1,13 +1,9 @@
 """
-NBER (Self Contained) Dataset Functions [SITC Revision 2 Level 3]
+NBER (Self Contained) Dataset Functions [SITC Revision 2 Level 4]
 
 Source Dataset: SITC R2 (Quasi) Level 4
 
 Status: IN-TESTING
-
-Notes
------
-1. Self Contained Compilation Reduces the Need to Debug many other routines. Use the Constructor class to explore the raw data 
 
 """
 
@@ -22,16 +18,16 @@ from .meta import countryname_to_iso3c, iso3c_recodes_for_1962_2000, incomplete_
 
 #-Dataset Constructors-#
 
-#-SITC Revision 2 Level 3-#
+#-SITC Revision 2 Level 4-#
 
-def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
+def construct_sitcr2l4(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
         """
-        Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 3
+        Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 4
         
         There are no checks on the incoming dataframe to ensure data integrity.
         This is your responsibility
 
-        STATUS: tests/test_constructor_dataset_sitcr2l3.py
+        STATUS: tests/test_constructor_dataset_sitcr2l4.py
 
         Parameters
         ----------
@@ -61,26 +57,26 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
         1. Operations ::
 
             [1] Adjust Hong Kong and China Data
-            [2] Drop SITC4 to SITC3 Level (for greater intertemporal consistency)
-            [3] Import ISO3C Codes as Country Codes
-            [4] Drop Errors in SITC3 codes ["" Codes]
+            [2] Import ISO3C Codes as Country Codes
+            [3] Drop Errors in SITC Level 4 codes ["" Codes]
             
             Optional:
             ---------
-            [A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
-            [B] Drop Non-Standard SITC3 Codes [i.e. Aren't in the Classification]
+            [A] Drop SITC L4 codes that contain 'A' and 'X' codes [Default: True]
+            [B] Drop Non-Standard SITC L3 Codes [i.e. Aren't in the Classification]
             [C] Adjust iiso3c, eiso3c country codes to be intertemporally consistent
             [D] Drop countries with incomplete data across 1962 to 2000 (strict measure)
   
 
         3. This makes use of countryname_to_iso3c in the meta data subpackage
-        4. This method can be tested using /do/basic_sitc3_country_data.do
-        5. DropAX + Drop NonStandard SITC Rev 2 Codes still contains ~94-96% of the data found in the raw data
+        5. DropAX + Drop NonStandard SITC Rev 2 Codes still contains ~??% of the data found in the raw data
 
         ..  Future Work
             -----------
             1. Check SITC Revision 2 Official Codes
             2. Add in a Year Filter
+            3. Write a STATA do script for generating test data (/do/basic_sitc4_country_data.do)
+            4. Write a test for the Generalised Version of this Function in constructor_dataset.py and collapse these routines to remove code duplication
         """
 
         #-Set Data-#
@@ -103,14 +99,6 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             #-Note: Current merge_columns utility merges one column set at a time-#
             df = merge_columns(raw_value, adjust_value, idx, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
-
-        #-Adjust to SITC Level 3-#
-        if verbose: print "[INFO] Collapsing to SITC Level 3 Data"
-        df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
-        df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
-        
-        #-Operations at SITC Level 3-#
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
         #-Countries Only Adjustment-#
         if verbose: print "[INFO] Removing 'World' values from the dataset to be country only data"
@@ -138,20 +126,20 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
         
         #-Remove Product Code Errors in Dataset-#
-        df = df.loc[(df.sitc3 != "")]                                                                   #Does this need a reset_index?
+        df = df.loc[(df.sitc4 != "")]                                                                   #Does this need a reset_index?
         #-dropAX-#
         if dropAX:
             if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
-            df['AX'] = df.sitc3.apply(lambda x: 1 if re.search("[AX]", x) else 0)
+            df['AX'] = df.sitc4.apply(lambda x: 1 if re.search("[AX]", x) else 0)
             df = df.loc[df.AX != 1]
-            del df['AX']               #No Longer Required
+            del df['AX']                #No Longer Required
         
         #-Official SITCR2 Codes-#
         if sitcr2:
             if verbose: print "[INFO] Adding SITCR2 Indicator"
             sitc = SITC(revision=2, source_institution=source_institution)
-            codes = sitc.get_codes(level=3)
-            df['sitcr2'] = df['sitc3'].apply(lambda x: 1 if x in codes else 0)
+            codes = sitc.get_codes(level=4)
+            df['sitcr2'] = df['sitc4'].apply(lambda x: 1 if x in codes else 0)
             if drop_nonsitcr2:
                 if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
                 df = df.loc[(df.sitcr2 == 1)]

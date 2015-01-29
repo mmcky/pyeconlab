@@ -1,30 +1,25 @@
 """
-NBER (Self Contained) Dataset Functions [SITC Revision 2 Level 3]
+NBER (Self Contained) Dataset Functions
 
 Source Dataset: SITC R2 (Quasi) Level 4
 
 Status: IN-TESTING
 
-Notes
------
-1. Self Contained Compilation Reduces the Need to Debug many other routines. Use the Constructor class to explore the raw data 
+This is a generalised version of:
+	1. constructor_dataset_sitcr2l3
+	2. constructor_dataset_sitcr2l4
+
+Future Work
+-----------
+1. Write Tests comparing this with constructor_dataset_sitcr2l3 and constructor_dataset_sitcr2l4 (to see if I can remove others)
+2. Write Independant Tests
 
 """
 
-#-Library Imports-#
-import re
-#-Package Imports-#
-from pyeconlab.trade.classification import SITC
-from pyeconlab.util import concord_data, merge_columns
-#-Relative Imports-#
-from .meta import countryname_to_iso3c, iso3c_recodes_for_1962_2000, incomplete_iso3c_for_1962_2000 
-            
+#-Generalised SC Constructor Functions-#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-#-Dataset Constructors-#
-
-#-SITC Revision 2 Level 3-#
-
-def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
+def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 3
         
@@ -39,6 +34,8 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
                                 Pandas DataFrame containing the raw data
         data_type           :   str
                                 Specify what type of data 'trade', 'export', 'import'
+        level               :   int
+                                Specify Level of Final dataset (i.e. SITC Level 1, 2, 3, or 4)
         dropAX              :   bool, optional(default=True)
                                 Drop AX Codes 
         sitcr2              :   bool, optional(default=True)
@@ -104,13 +101,18 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             df = merge_columns(raw_value, adjust_value, idx, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
 
-        #-Adjust to SITC Level 3-#
-        if verbose: print "[INFO] Collapsing to SITC Level 3 Data"
-        df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
-        df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
-        
-        #-Operations at SITC Level 3-#
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        #-Collapse to SITC Level -#
+        if level != 4:
+            if verbose: print "[INFO] Collapsing to SITC Level %s Data" % level
+            df['sitc%s'%level] = df.sitc4.apply(lambda x: x[0:level])
+            df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
+        elif level == 4:
+            if verbose: print "[INFO] Data is already at the requested level"
+        else:
+            raise ValueError("Level must be 1, 2, 3, or 4 for the NBER data")
+
+        #-Operations Post Collapse to SITC Level-#
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
         #-Countries Only Adjustment-#
         if verbose: print "[INFO] Removing 'World' values from the dataset to be country only data"
@@ -138,20 +140,20 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             df = df.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()['value'].reset_index()
         
         #-Remove Product Code Errors in Dataset-#
-        df = df.loc[(df.sitc3 != "")]                                                                   #Does this need a reset_index?
+        df = df.loc[(df['sitc%s'%level != "")]                                                                   #Does this need a reset_index?
         #-dropAX-#
         if dropAX:
             if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
-            df['AX'] = df.sitc3.apply(lambda x: 1 if re.search("[AX]", x) else 0)
+            df['AX'] = df['sitc%s'%level].apply(lambda x: 1 if re.search("[AX]", x) else 0)
             df = df.loc[df.AX != 1]
-            del df['AX']               #No Longer Required
+            del df['AX']
         
         #-Official SITCR2 Codes-#
         if sitcr2:
             if verbose: print "[INFO] Adding SITCR2 Indicator"
             sitc = SITC(revision=2, source_institution=source_institution)
-            codes = sitc.get_codes(level=3)
-            df['sitcr2'] = df['sitc3'].apply(lambda x: 1 if x in codes else 0)
+            codes = sitc.get_codes(level=lelve)
+            df['sitcr2'] = df['sitc%s'%level].apply(lambda x: 1 if x in codes else 0)
             if drop_nonsitcr2:
                 if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
                 df = df.loc[(df.sitcr2 == 1)]

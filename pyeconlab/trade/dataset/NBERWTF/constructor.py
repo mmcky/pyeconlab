@@ -1811,8 +1811,49 @@ class NBERWTFConstructor(NBERWTF):
     # -------------------------------- #
 
     #-Dataset Definitions-#
-    from .constructor_dataset import SITC3_DATA_DESCRIPTION, SITC3_DATASET_OPTIONS
+    from .constructor_dataset import SITC_DATASET_DESCRIPTION, SITC_DATASET_OPTIONS
     
+    def construct_dataset(self, data_type, product_level=4, dataset=None, **kwargs):
+        """
+        Generic Constructor of Datasets
+
+        STATUS: IN-WORK
+
+        Parameters
+        ----------
+        data_type       :   str
+                            Specify type of data ('Trade', 'Export', 'Import')
+        product_level   :   int, optional(default=4)
+                            Specify a Product Level for Final Dataset (1, 2, 3, or 4)
+        dataset         :   str, optional(default=None)
+                            Specify Predefined set of Parameters. 
+                            If None then requires keyword arguments specifying your specification
+        **kwargs        :   specify options from constructor_dataset methods
+
+        Future Work
+        -----------
+        1. Select Class Attributes
+        """
+        #-Obtain Constructor-#
+        if product_level == 4:
+            from .constructor_dataset_sitcr2l4 import construct_sitcr2l4 as construct_dataset
+        elif product_level == 3:
+            from .constructor_dataset_sitcr2l3 import construct_sitcr2l3 as construct_dataset
+        elif product_level == 2:
+            from .constructor_dataset_sitcr2l2 import construct_sitcr2l2 as construct_dataset
+        elif product_level == 1:
+            from .constructor_dataset_sitcr2l1 import construct_sitcr2l1 as construct_dataset
+        else:
+            raise ValueError("Product Level (%s) is not a valid option!" % product_level)
+        #-Parse Pre-Defined Options-#
+        if type(dataset) == str:
+            kwargs = SITC_DATASET_OPTIONS[dataset]
+            self._dataset = construct_dataset(data_type=data_type, **kwargs)
+            #-Should we set attributes?
+        else:
+            self._dataset = constructor_dataset(data_type=data_type, **kwargs) #Does this work from function interface?
+
+
     # ---------------------------------------------------------------- #
     # -- NOTICE: Currently Migrating this to constructor_dataset.py -- #
     # ---------------------------------------------------------------- #
@@ -2076,8 +2117,10 @@ class NBERWTFConstructor(NBERWTF):
             self._dataset = self.dataset.reset_index()
         return self.dataset
 
-
+    #---------------------#
     # -- END MIGRATION -- #
+    #---------------------#
+
 
 
     #-----------------------------#
