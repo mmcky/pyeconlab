@@ -22,9 +22,9 @@ Note: These are avaiable as Trade, Export or Import.
 #-SITC Level 3 Dataset-#
 
 SITC3_DATA_DESCRIPTION = {
-    'A' :   u"A basic dataset that collapses data to SITC Level 3 but maintaining initial countrycodes and productcodes as in the raw dataset"
-    'B' :   u"[A] except corrects HK-CHINA data from nber correction files"
-    'C' :   u"A dataset that does not contain AX or any non standard codes, adjusts HK-CHINA data, but does not adjust countries for intertemporal consistency"
+    'A' :   u"A basic dataset that collapses data to SITC Level 3 but maintaining initial countrycodes and productcodes as in the raw dataset",
+    'B' :   u"[A] except corrects HK-CHINA data from nber correction files",
+    'C' :   u"A dataset that does not contain AX or any non standard codes, adjusts HK-CHINA data, but does not adjust countries for intertemporal consistency",
     'D' :   u"A Dataset that does not contain AX or any non standard codes, adjusts HK-CHINA data, and has intertemporally consistent country codes",
     'E' :   u"A Dataset that does not contain AX or any non standard codes, adjusts HK-CHINA data, has intertemporally consistent country codes, and includes countries that only cover the entire period",
 } 
