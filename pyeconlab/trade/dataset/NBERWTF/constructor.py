@@ -1864,10 +1864,11 @@ class NBERWTFConstructor(NBERWTF):
 
         2. Datasets ::
 
-            [_A] dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
-            [_B] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
-            [_C] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False 
-            [_D] dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True  
+            [A] dropAX=False, sitcr2=False, drop_nonsitcr2=False, adjust_hk=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+            [B] dropAX=False, sitcr2=False, drop_nonsitcr2=False, adjust_hk=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+            [C] dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+            [D] dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=True, intertemp_cntrycode=True, drop_incp_cntrycode=False 
+            [E] dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=True, intertemp_cntrycode=True, drop_incp_cntrycode=True  
 
         3. This makes use of countryname_to_iso3c in the meta data subpackage
         4. This method can be tested using /do/basic_sic3_country_data.do
@@ -1877,8 +1878,7 @@ class NBERWTFConstructor(NBERWTF):
             -----------
             1. Check SITC Revision 2 Official Codes
             2. Should this be split into a header function with specific trade, export, and import methods?
-            3. Add in Change Value Units to $'s (x 1000)
-            4. What should I do about the duplicate information contained in this docstring and the actual dataset constructor function (which is externally available)
+            3. What should I do about the duplicate information contained in this docstring and the actual dataset constructor function (which is externally available)
         """
         from .meta import countryname_to_iso3c
         self.dataset_name = 'CNTRY_SR2L3_Y62to00_A'

@@ -84,6 +84,9 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
         idx = ['year', 'exporter', 'importer', 'sitc4']
         df = df[idx + ['value']]
         
+        #-Operations Requiring SITC Level 4-#
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
         #-Hong Kong China Data Adjustment Option-#
         if adjust_hk[0]:
             if verbose: print "[INFO] Adjusting Hong Kong and China Values"
@@ -103,6 +106,9 @@ def construct_sitcr2l3(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
         df['sitc3'] = df.sitc4.apply(lambda x: x[0:3])
         df = df.groupby(['year', 'exporter', 'importer', 'sitc3']).sum()['value'].reset_index()
         
+        #-Operations at SITC Level 3-#
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
         #-Countries Only Adjustment-#
         if verbose: print "[INFO] Removing 'World' values from the dataset to be country only data"
         df = df.loc[(df.exporter != "World") & (df.importer != "World")]
