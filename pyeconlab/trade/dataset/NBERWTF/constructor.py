@@ -1811,7 +1811,7 @@ class NBERWTFConstructor(NBERWTF):
     # -------------------------------- #
 
     #-Dataset Definitions-#
-    from .constructor_dataset import datasets_sitc3
+    from .constructor_dataset import SITC3_DATA_DESCRIPTION, SITC3_DATASET_OPTIONS
     
     # ---------------------------------------------------------------- #
     # -- NOTICE: Currently Migrating this to constructor_dataset.py -- #
