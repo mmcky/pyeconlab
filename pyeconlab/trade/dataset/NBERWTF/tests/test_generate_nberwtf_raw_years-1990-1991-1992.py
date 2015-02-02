@@ -26,12 +26,24 @@ TEST_DATA_DIR = package_folder(__file__, "data")
 #-Compare Data-#
 def test_nberwtf_raw_years_package_data(verbose=True):
 	"""
-	Test RAW Sample Data that is within the REPO
+	Test RAW Sample WTF Data that is within the REPO
 	"""
 	TEST_DATA = pd.HDFStore(TEST_DATA_DIR+"nberwtf_raw_years-1990-1991-1992.h5")
 	for key in TEST_DATA.keys():
 		year = key.replace("/Y", "")
 		if verbose: print "Testing Year: %s" % year
 		source_dta = pd.read_stata(SOURCE_DIR + "wtf%s.dta"%year[2:])
+		assert_frame_equal(TEST_DATA[key], source_dta)
+	TEST_DATA.close()
+
+def test_nberwtf_hkchina_raw_years_package_data(verbose=True):
+	"""
+	Test RAW Sample Data (hk-china adjustments) that is within the REPO
+	"""
+	TEST_DATA = pd.HDFStore(TEST_DATA_DIR+"nberwtf_hkchina_supp_raw_years-1990-1991-1992.h5")
+	for key in TEST_DATA.keys():
+		year = key.replace("/Y", "")
+		if verbose: print "Testing Year: %s" % year
+		source_dta = pd.read_stata(SOURCE_DIR + "china_hk%s.dta" % str(year)[2:])
 		assert_frame_equal(TEST_DATA[key], source_dta)
 	TEST_DATA.close()
