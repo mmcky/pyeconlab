@@ -3,11 +3,15 @@ NBER (Self Contained) Dataset Functions
 
 Source Dataset: SITC R2 (Quasi) Level 4
 
-Status: IN-TESTING
-
 This is a generalised version of:
-	1. constructor_dataset_sitcr2l3
-	2. constructor_dataset_sitcr2l4
+	1. constructor_dataset_sitcr2l4
+	2. constructor_dataset_sitcr2l3
+    3. constructor_dataset_sitcr2l2
+    4. constructor_dataset_sitcr2l1
+
+Testing
+-------
+1. tests/test_constructor_dataset_sitcr2.py
 
 Future Work
 -----------
@@ -90,12 +94,14 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
 
         #-Set Data-#
         idx = ['year', 'exporter', 'importer', 'sitc4']
-        df = df[idx + ['value']]
+        df = df.loc[:,idx + ['value']]
         
         #-Operations Requiring SITC Level 4-#
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
         #-Hong Kong China Data Adjustment Option-#
+        if type(adjust_hk) == bool:
+            adjust_hk = (adjust_hk, None)
         if adjust_hk[0]:
             if verbose: print "[INFO] Adjusting Hong Kong and China Values"
             hkdata = adjust_hk[1]

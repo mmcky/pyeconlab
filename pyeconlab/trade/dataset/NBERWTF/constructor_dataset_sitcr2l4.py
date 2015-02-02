@@ -3,7 +3,15 @@ NBER (Self Contained) Dataset Functions [SITC Revision 2 Level 4]
 
 Source Dataset: SITC R2 (Quasi) Level 4
 
-Status: IN-TESTING
+Testing
+-------
+1.  Compare with Generalised Version of this Function
+    tests/test_constructor_dataset_sitcr2
+
+Notes
+-----
+1. Self Contained Compilation Reduces the Need to Debug many other routines. 
+2. Use the Constructor class to explore the raw data 
 
 """
 
@@ -81,7 +89,7 @@ def construct_sitcr2l4(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
 
         #-Set Data-#
         idx = ['year', 'exporter', 'importer', 'sitc4']
-        df = df[idx + ['value']]
+        df = df.loc[:,idx + ['value']]
         
         #-Operations Requiring SITC Level 4-#
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#

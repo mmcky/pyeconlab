@@ -47,8 +47,7 @@ def load_raw_dataset(fn, start_year, end_year, verbose=False):
     return data
 
 from pyeconlab.trade.dataset.NBERWTF import construct_sitcr2
-from pyeconlab.trade.dataset.NBERWTF import construct_sitcr2l3 
-from pyeconlab.trade.dataset.NBERWTF import construct_sitcr2l4 
+from pyeconlab.trade.dataset.NBERWTF import construct_sitcr2l1, construct_sitcr2l2, construct_sitcr2l3, construct_sitcr2l4 
 from pyeconlab.util import package_folder
 
 #-Package Data-#
@@ -97,4 +96,38 @@ class TestGenericVsSpecificNBERFunctions():
                     SITC_DATASET_OPTIONS[dataset]['adjust_hk'] = (False, None)
                 data1 = construct_sitcr2(self.rawdata, data_type=data_type, level=3, **SITC_DATASET_OPTIONS[dataset])   #-Default Options-#
                 data2 = construct_sitcr2l3(self.rawdata, data_type=data_type, **SITC_DATASET_OPTIONS[dataset])
+                assert_frame_equal(data1, data2)
+
+    def TestLevel2(self, verbose=True):
+        """
+        Test Level 2 Data Constructors
+        """
+        for dataset in SITC_DATASET_OPTIONS:
+            if verbose: print "Testing DATASET Definition: %s" % dataset
+            for data_type in DATA_TYPE:
+                if verbose: print "Testing DATA_TYPE: %s" % data_type
+                #-IF Adjust Hong Kong Data then Add Data to the Tuple-#
+                if SITC_DATASET_OPTIONS[dataset]['adjust_hk'] == True: 
+                    SITC_DATASET_OPTIONS[dataset]['adjust_hk'] = (True, self.hkchina_rawdata)
+                else:
+                    SITC_DATASET_OPTIONS[dataset]['adjust_hk'] = (False, None)
+                data1 = construct_sitcr2(self.rawdata, data_type=data_type, level=2, **SITC_DATASET_OPTIONS[dataset])   #-Default Options-#
+                data2 = construct_sitcr2l2(self.rawdata, data_type=data_type, **SITC_DATASET_OPTIONS[dataset])
+                assert_frame_equal(data1, data2)
+
+    def TestLevel1(self, verbose=True):
+        """
+        Test Level 1 Data Constructors
+        """
+        for dataset in SITC_DATASET_OPTIONS:
+            if verbose: print "Testing DATASET Definition: %s" % dataset
+            for data_type in DATA_TYPE:
+                if verbose: print "Testing DATA_TYPE: %s" % data_type
+                #-IF Adjust Hong Kong Data then Add Data to the Tuple-#
+                if SITC_DATASET_OPTIONS[dataset]['adjust_hk'] == True: 
+                    SITC_DATASET_OPTIONS[dataset]['adjust_hk'] = (True, self.hkchina_rawdata)
+                else:
+                    SITC_DATASET_OPTIONS[dataset]['adjust_hk'] = (False, None)
+                data1 = construct_sitcr2(self.rawdata, data_type=data_type, level=1, **SITC_DATASET_OPTIONS[dataset])   #-Default Options-#
+                data2 = construct_sitcr2l1(self.rawdata, data_type=data_type, **SITC_DATASET_OPTIONS[dataset])
                 assert_frame_equal(data1, data2)
