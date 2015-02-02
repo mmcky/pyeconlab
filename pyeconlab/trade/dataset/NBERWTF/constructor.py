@@ -182,12 +182,13 @@ class NBERWTFConstructor(NBERWTF):
         3. Properties
         4. Supplementary Data (Loading Data)
         5. Operations on Dataset (Adjusting self._dataset, cleaning tasks etc)
-        6. Construct Datasets (NBERWTF)
+        6. Construct Datasets (NBERWTF)*
         7. Supporting Functions
         8. Generate Meta Data Files For Inclusion into Project Package (meta/)
         9. Converters (hd5 Files etc.)
         10. Generate Data to support construction of tests
         11. Construct Case Study Data
+    *Note: Predefined Datasets are only considered here. Access to the dataset functions is possible through the constructor_dataset_* family of functions. 
 
     6.  Additional Notes
         ----------------
@@ -1806,53 +1807,74 @@ class NBERWTFConstructor(NBERWTF):
         raise NotImplementedError
 
 
-    # -------------------------------- #
-    # - Construct Datasets Wrappers  - #
-    # -------------------------------- #
-
-    #-Dataset Definitions-#
-    from .constructor_dataset import SITC_DATASET_DESCRIPTION, SITC_DATASET_OPTIONS
+    # ------------------------------------------- #
+    # - Construct Predefined Datasets Wrappers  - #
+    # ------------------------------------------- #
     
-    def construct_dataset(self, data_type, product_level=4, dataset=None, **kwargs):
+    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True):
         """
-        Generic Constructor of Datasets
-
-        STATUS: IN-WORK
+        Constructor of Predefined SITC Datasets
 
         Parameters
         ----------
         data_type       :   str
-                            Specify type of data ('Trade', 'Export', 'Import')
-        product_level   :   int, optional(default=4)
+                            Specify type of data ('trade', 'export', 'import')
+        dataset         :   str
+                            Specify Predefined set of Parameters ('A', 'B' etc.)
+        product_level   :   int
                             Specify a Product Level for Final Dataset (1, 2, 3, or 4)
-        dataset         :   str, optional(default=None)
-                            Specify Predefined set of Parameters. 
-                            If None then requires keyword arguments specifying your specification
-        **kwargs        :   specify options from constructor_dataset methods
+        sitc_revision   :   int, optional(default=2)
+                            Specify SITC Revision
 
         Future Work
         -----------
-        1. Select Class Attributes
-        """
-        #-Obtain Constructor-#
-        if product_level == 4:
-            from .constructor_dataset_sitcr2l4 import construct_sitcr2l4 as construct_dataset
-        elif product_level == 3:
-            from .constructor_dataset_sitcr2l3 import construct_sitcr2l3 as construct_dataset
-        elif product_level == 2:
-            from .constructor_dataset_sitcr2l2 import construct_sitcr2l2 as construct_dataset
-        elif product_level == 1:
-            from .constructor_dataset_sitcr2l1 import construct_sitcr2l1 as construct_dataset
-        else:
-            raise ValueError("Product Level (%s) is not a valid option!" % product_level)
-        #-Parse Pre-Defined Options-#
-        if type(dataset) == str:
-            kwargs = SITC_DATASET_OPTIONS[dataset]
-            self._dataset = construct_dataset(data_type=data_type, **kwargs)
-            #-Should we set attributes?
-        else:
-            self._dataset = constructor_dataset(data_type=data_type, **kwargs) #Does this work from function interface?
+        1. Add in a way to process HK-CHINA Adjustments
 
+        """
+        #-Dataset Definitions-#
+        from .constructor_dataset import SITC_DATASET_DESCRIPTION, SITC_DATASET_OPTIONS
+        #-Checks-#
+        if self.operations != "":
+            raise ValueError("This Method requires a complete RAW dataset")
+        if sum(self.years) != 77259:                                                                        #IS there a better way than this hack!
+            raise ValueError("This Dataset must contain the full range of years to be constructed")
+        #-Parse Input-#
+        if sitc_revision == 2:
+            from .constructor_dataset_sitcr2 import construct_sitcr2 as construct_dataset
+        else:
+            raise ValueError("SITC Revision 2 is currently the only implimented revision")
+        if dataset not in SITC_DATASET_OPTIONS.keys():
+            raise ValueError("Specified Dataset (%s) is not found in the SITC_DATASET_OPTIONS property")
+        #-OpString-#
+        str_kwargs = [", %s=%s" % (key, SITC_DATASET_OPTIONS[dataset][key]) for key in sorted(SITC_DATASET_OPTIONS[dataset].keys())]
+        self.notes += "".join(str_kwargs)
+        op_string = u"(construct_sitc_dataset(data_type=%s, dataset=%s, product_level=%s, sitc_revision=%s%s))" % (data_type, dataset, product_level, sitc_revision, "".join(str_kwargs))
+        if check_operations(self, op_string): return None
+        #-Main Work-#
+        DESCRIPTION = SITC_DATASET_DESCRIPTION[dataset]
+        OPTIONS = SITC_DATASET_OPTIONS[dataset]
+        #-Compute Dataset-#
+        self._dataset = construct_dataset(self.dataset, data_type=data_type, level=product_level, **OPTIONS)
+        self.dataset_name = "SITCR2-%s" % dataset
+        #-Construct Report-#
+        if report:
+            rdf = self.raw_data
+            rdf = rdf.loc[(rdf.importer=="World") & (rdf.exporter == "World")]
+            #-Year Values-#
+            rdfy = rdf.groupby(['year']).sum()['value'].reset_index()
+            dfy = self._dataset.groupby(['year']).sum()['value'].reset_index()
+            y = rdfy.merge(dfy, how="outer", on=['year']).set_index(['year'])
+            y['%'] = y['value_y'] / y['value_x'] * 100
+            report =    "Report %s\n"%(op_string) + \
+                        "---------------------------------------\n"
+            for year in self.years:
+                report += "This dataset in year: %s captures %s percent of Total 'World' Values\n" % (year, int(y.ix[year]['%']))
+            print report
+        #-Update Attributes-#
+        self.revision = sitc_revision
+        self.level = product_level
+        #-OpString-#
+        update_operations(self, op_string)
 
     # ---------------------------------------------------------------- #
     # -- NOTICE: Currently Migrating this to constructor_dataset.py -- #
@@ -1930,7 +1952,9 @@ class NBERWTFConstructor(NBERWTF):
             raise ValueError("This Dataset must contain the full range of years to be constructed")
         #-Construct Dataset-#
         from .constructor_dataset_sitcr2l3 import construct_sitcr2l3
-        df = construct_sitcr2l3(self.dataset, data_type, dropAX, sitcr2, drop_nonsitcr2, intertemp_cntrycode, drop_incp_cntrycode, adjust_units, source_institution, verbose)
+        df = construct_sitcr2l3(self.dataset, data_type=data_type, dropAX=dropAX, sitcr2=sitcr2, drop_nonsitcr2=drop_nonsitcr2, adjust_hk=False, 
+                                intertemp_cntrycode=intertemp_cntrycode, drop_incp_cntrycode=drop_incp_cntrycode,           
+                                adjust_units=adjust_units, source_institution='un', verbose=True)
         #-Report-#
         if report:
             rdf = self.raw_data
@@ -1949,6 +1973,7 @@ class NBERWTFConstructor(NBERWTF):
         self.level = 3
         self.data_type = data_type
         if adjust_units:
+            self._units_value = 1
             self._units_value_str = "$'s"
         #-Set Dataset to Object-#
         self._dataset = df
@@ -1958,9 +1983,7 @@ class NBERWTFConstructor(NBERWTF):
         """
         Complete Dataset Constructor for Dataset A
        
-        Settings ::
-
-            dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+        Settings: dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
         Parameters
         -----------
@@ -1978,16 +2001,14 @@ class NBERWTFConstructor(NBERWTF):
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
         if dataset_object:
             self.notes = "Computed with options dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False"
-            obj = self.to_nberfeenstrawtf(data_type=data_type)
+            obj = self.to_nberwtf(data_type=data_type)
             return obj
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(self, data_type, dataset_object=True, verbose=True):
         """
         Dataset Constructor for Dataset B
         
-        Settings :: 
-
-            dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
+        Settings: dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False
 
         Parameters
         -----------
@@ -2004,16 +2025,14 @@ class NBERWTFConstructor(NBERWTF):
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
         if dataset_object:
             self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False"
-            obj = self.to_nberfeenstrawtf(data_type=data_type)
+            obj = self.to_nberwtf(data_type=data_type)
             return obj
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(self, data_type, dataset_object=True, verbose=True):
         """
         Dataset Constructor for Dataset C
         
-        Settings ::
-
-            dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
+        Settings: dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False
 
         Parameters
         -----------
@@ -2030,16 +2049,14 @@ class NBERWTFConstructor(NBERWTF):
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
         if dataset_object:
             self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False"
-            obj = self.to_nberfeenstrawtf(data_type=data_type)
+            obj = self.to_nberwtf(data_type=data_type)
             return obj
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(self, data_type, dataset_object=True, verbose=True):
         """
         Dataset Constructor for Dataset D
         
-        Settings ::
-
-            dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
+        Settings: dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True
 
         Parameters
         -----------
@@ -2056,7 +2073,7 @@ class NBERWTFConstructor(NBERWTF):
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
         if dataset_object:
             self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True"
-            obj = self.to_nberfeenstrawtf(data_type=data_type)
+            obj = self.to_nberwtf(data_type=data_type)
             return obj
 
     #-Dataset Construction Using Internal Methods-#
@@ -2139,7 +2156,7 @@ class NBERWTFConstructor(NBERWTF):
         self._dataset.txf_units_value_str   = self._units_value_str
         return self._dataset
 
-    def to_nberfeenstrawtf(self, data_type, generic=False, verbose=True):
+    def to_nberwtf(self, data_type, generic=False, verbose=True):
         """
         Construct NBERWTF Object with Common Core Object Names
         Note: This is constructed from the ._dataset attribute
