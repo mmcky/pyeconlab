@@ -414,7 +414,7 @@ class BACIConstructor(BACI):
     #-Conversion-#
     #------------#
 
-    def convert_raw_data_to_hdf(self, key='raw_data', format='fixed', hdf_fn='', verbose=True):
+    def convert_raw_data_to_hdf(self, key='raw_data', format='table', hdf_fn='', verbose=True): 
         """ 
         Convert Raw Data to HDF
 
@@ -422,7 +422,7 @@ class BACIConstructor(BACI):
         ----------
         key     :   str, optional(default='raw_data')
                     Specify a key for the hdf file
-        format  :   str, optional(defualt='fixed')
+        format  :   str, optional(defualt='table') #Fixed or Table?
                     Specify hdf file format
         hdf_fn  :   str, optional(default='')
                     Specify a custom file name, otherwise attribute hdf_fn is used
@@ -443,14 +443,14 @@ class BACIConstructor(BACI):
         if verbose: print hdf
         hdf.close()
     
-    def convert_raw_data_to_hdf_yearindex(self, format='fixed', hdf_fn='', verbose=True):
+    def convert_raw_data_to_hdf_yearindex(self, format='table', hdf_fn='', verbose=True):
         """ 
         Convert Raw Data to HDF File Indexed by Year
         
         Parameters
         ----------
-        format  :   str, optional(defualt='fixed')
-                    Specify hdf file format
+        format  :   str, optional(defualt='table') #Fixed or Table?
+                    Specify hdf file format 
         hdf_fn  :   str, optional(default='')
                     Specify a custom file name, otherwise attribute hdf_fn is used
 
