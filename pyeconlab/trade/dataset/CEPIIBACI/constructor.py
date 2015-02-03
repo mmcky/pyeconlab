@@ -45,6 +45,7 @@ Notes
 """
 
 #-System Imports-#
+import os
 import re
 import warnings
 import string
@@ -170,6 +171,8 @@ class BACIConstructor(BACI):
         self.operations     = u"" 
         self.complete_dataset = False
         self.units_value_str = self.source_units_value_str
+        #-Cache Directory-#
+        self.__cache_dir = "cache\\"
 
         #-Country, Product Source File Fixed Indicator-#
         self.product_datafl_fixed = False                       #Should this be more sophisticated, this is a constructor so probably not
@@ -199,6 +202,10 @@ class BACIConstructor(BACI):
                 self.load_raw_from_hdf(years=years, verbose=verbose)
             except:
                 print "[INFO] Your source directory: %s does not contain h5 version.\nStarting to compile one now ...." % self.source_dir
+                #-Check Cache Folder Exists-#
+                if not os.path.exists(self.__source_dir + self.__cache_dir):
+                    print "[INFO] Setting up a Cache Directory ..."
+                    os.makedirs(self.__source_dir + self.__cache_dir)
                 self.load_raw_from_csv(standard_names=False, verbose=verbose)
                 self.convert_raw_data_to_hdf(verbose=verbose)               #Compute hdf file for next load
                 self.convert_raw_data_to_hdf_yearindex(verbose=verbose)     #Compute Year Index Version Also
@@ -314,11 +321,11 @@ class BACIConstructor(BACI):
         self.__raw_data = pd.DataFrame() 
         print years
         if years == [] or years == self.source_available_years[self.classification]:
-            fn = self.source_dir + self.raw_data_hdf_fn[self.classification]
+            fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_fn[self.classification]
             if verbose: print "[INFO] Loading RAW DATA from %s" % fn
             self.__raw_data = pd.read_hdf(fn, key='raw_data')
         else:
-            fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification] 
+            fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_yearindex_fn[self.classification] 
             for year in years:
                 if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
                 self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
@@ -429,7 +436,7 @@ class BACIConstructor(BACI):
             1. Add a year filter and name the file accordingly
         """
         if hdf_fn == '':
-            hdf_fn = self.source_dir + self.raw_data_hdf_fn[self.classification]    #This default is the entire dataset for any given classification
+            hdf_fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_fn[self.classification]    #This default is the entire dataset for any given classification
         if verbose: print "[INFO] Writing raw_data to %s" % hdf_fn
         hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
         hdf.put(key, self.raw_data, format=format)
@@ -453,7 +460,7 @@ class BACIConstructor(BACI):
 
         """
         if hdf_fn == '': 
-            hdf_fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification]  #This default is the entire dataset for any given classification
+            hdf_fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_yearindex_fn[self.classification]  #This default is the entire dataset for any given classification
         if verbose: print "[INFO] Writing raw_data to %s" % hdf_fn
         #-Construct HDF File-#
         hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
@@ -484,7 +491,7 @@ class BACIConstructor(BACI):
             years = self.source_available_years[self.classification]
         #-Setup HDF File-#
         if hdf_fn == '':
-            hdf_fn = self.source_dir + self.raw_data_hdf_yearindex_fn[self.classification]
+            hdf_fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_yearindex_fn[self.classification]
         hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
         #-Convert Years-#
         for year in years:
