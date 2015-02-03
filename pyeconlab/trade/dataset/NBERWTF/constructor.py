@@ -296,6 +296,7 @@ class NBERWTFConstructor(NBERWTF):
                 print "[INFO] Your source_directory: %s does not contain h5 version in cache folder.\n Starting to compile one now ...."
                 #-Check Cache Folder Exists-#
                 if not os.path.exists(self._source_dir + self.__cache_dir):
+                    print "[INFO] Setting up a Cache Directory ..."
                     os.makedirs(self._source_dir + self.__cache_dir)
                 self.load_raw_from_dta(verbose=verbose)
                 self.convert_raw_data_to_hdf(verbose=verbose)           #Compute hdf file for next load
