@@ -242,6 +242,7 @@ class NBERWTFConstructor(NBERWTF):
     # - Dataset Reference - #
     __raw_data_hdf_fn   = u'wtf62-00_raw.h5'
     __raw_data_hdf_yearindex_fn = u'wtf62-00_yearindex.h5'
+    __cache_dir = u"cache\\"
 
     def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, skip_setup=False, force=False, reduce_memory=False, verbose=True):
         """ 
@@ -292,7 +293,10 @@ class NBERWTFConstructor(NBERWTF):
             try:
                 self.load_raw_from_hdf(years=years, verbose=verbose)
             except:
-                print "[INFO] Your source_directory: %s does not contain h5 version.\n Starting to compile one now ...."
+                print "[INFO] Your source_directory: %s does not contain h5 version in cache folder.\n Starting to compile one now ...."
+                #-Check Cache Folder Exists-#
+                if not os.path.exists(self._source_dir + self.__cache_dir):
+                    os.makedirs(self._source_dir + self.__cache_dir)
                 self.load_raw_from_dta(verbose=verbose)
                 self.convert_raw_data_to_hdf(verbose=verbose)           #Compute hdf file for next load
                 self.convert_stata_to_hdf_yearindex(verbose=verbose)    #Compute Year Index Version Also
@@ -675,24 +679,36 @@ class NBERWTFConstructor(NBERWTF):
         """
         Load HDF Version of RAW Dataset from a source_directory
         
+        Parameters
+        ----------
+        years               :   list, optional(default=[])
+                                Specify Years to Load from HDF 
+        use_raw_years_fl    :   bool, optional(default=False)
+                                Use raw_years HDF file. 
+        gc_collect          :   bool, optional(default=True)
+                                Garbage Collection Objects to Ensure Memory is released. 
+
         Note   
         -----        
         1. To construct your own hdf version requires to initially load from NBER supplied RAW dta files. Then use Constructor method ``convert_source_dta_to_hdf()``
+        2. This currently accomodates two types of HDF files. Adopt a single specification with Years to reduce complexity
 
         ..  Questions
             ---------
             1. Move to a Generic Class of DatasetConstructors?
 
         """
+        #-Complete Raw Data File-#
         if years == [] or years == self._available_years and not use_raw_years_fl:                  
-            fn = self._source_dir + self.__raw_data_hdf_fn
+            fn = self._source_dir + self.__cache_dir + self.__raw_data_hdf_fn
             if verbose: print "[INFO] Loading RAW DATA from %s" % fn
             self.__raw_data = pd.read_hdf(fn, key='raw_data')
             if gc_collect:
                 gc.collect()
+        #-Year Indexed File-#
         else:
             self.__raw_data     = pd.DataFrame() 
-            fn = self._source_dir + self.__raw_data_hdf_yearindex_fn 
+            fn = self._source_dir + self.__cache_dir + self.__raw_data_hdf_yearindex_fn 
             for year in years:
                 if verbose: print "[INFO] Loading RAW DATA for year: %s from %s" % (year, fn)
                 self.__raw_data = self.__raw_data.append(pd.read_hdf(fn, key='Y'+str(year)))
@@ -3010,7 +3026,7 @@ class NBERWTFConstructor(NBERWTF):
         """
         #Note: This might write into a dataset!
         years = self._available_years
-        hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] + '_yearindex' + '.h5'     
+        hdf_fn = self._source_dir + self.__cache_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] + '_yearindex' + '.h5'     
         pd.set_option('io.hdf.default_format', format)
         hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
         self.__raw_data_hdf_yearindex = hdf                                     #SHould this be a filename rather than a Container?
@@ -3043,7 +3059,7 @@ class NBERWTFConstructor(NBERWTF):
 
         """
         years = self._available_years
-        hdf_fn = self._source_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '_raw' + '.h5'
+        hdf_fn = self._source_dir + self.__cache_dir + self._fn_prefix + str(years[0])[-2:] + '-' + str(years[-1])[-2:] +  '_raw' + '.h5'
         hdf = pd.HDFStore(hdf_fn, complevel=9, complib='zlib')
         hdf.put('raw_data', self.__raw_data, format=format)
         if verbose: print hdf
