@@ -48,6 +48,8 @@ import pandas as pd
 import numpy as np
 import countrycode as cc
 import cPickle as pickle
+import warnings
+warnings.simplefilter("always")
 #-Package Imports-#
 from .base import NBERWTF
 from .dataset import NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData 
@@ -1828,7 +1830,7 @@ class NBERWTFConstructor(NBERWTF):
     # - Construct Predefined Datasets Wrappers  - #
     # ------------------------------------------- #
     
-    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True):
+    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True, dataset_object=False):
         """
         Constructor of Predefined SITC Datasets
 
@@ -1842,6 +1844,8 @@ class NBERWTFConstructor(NBERWTF):
                             Specify a Product Level for Final Dataset (1, 2, 3, or 4)
         sitc_revision   :   int, optional(default=2)
                             Specify SITC Revision
+        dataset_object  :   bool, optional(default=False)
+                            Specify if the method should return an nberwtf object
 
         Future Work
         -----------
@@ -1892,10 +1896,17 @@ class NBERWTFConstructor(NBERWTF):
         self.level = product_level
         #-OpString-#
         update_operations(self, op_string)
+        #-Return a Dataset Object-#
+        if dataset_object:
+            self.notes = op_string 
+            obj = self.to_nberwtf(data_type=data_type)
+            return obj
 
-    # ---------------------------------------------------------------- #
-    # -- NOTICE: Currently Migrating this to constructor_dataset.py -- #
-    # ---------------------------------------------------------------- #
+    # -------------------------------------------------------------------------------------- #
+    # -- NOTICE: With the Addition of construct_sitc_dataset() this section is deprecated -- #
+    # -------------------------------------------------------------------------------------- #
+
+    # ------------------------------------ START REMOVAL ----------------------------------- #
 
     def construct_dataset_SC_CNTRY_SR2L3_Y62to00(self, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, report=True, source_institution='un', verbose=True):
         """
@@ -1960,6 +1971,7 @@ class NBERWTFConstructor(NBERWTF):
             2. Should this be split into a header function with specific trade, export, and import methods?
             3. What should I do about the duplicate information contained in this docstring and the actual dataset constructor function (which is externally available)
         """
+        warnings.warn("Deprecated in preference for construct_sitc_dataset method. This method doesn't include HK-CHINA Adjustments", PendingDeprecationWarning)
         from .meta import countryname_to_iso3c
         self.dataset_name = 'CNTRY_SR2L3_Y62to00_A'
         #-Checks-#
@@ -2015,6 +2027,7 @@ class NBERWTFConstructor(NBERWTF):
             as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
 
         """
+        warnings.warn("Deprecated in preference for construct_sitc_dataset method. This method doesn't include HK-CHINA Adjustments", PendingDeprecationWarning)
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
         if dataset_object:
             self.notes = "Computed with options dropAX=False, sitcr2=False, drop_nonsitcr2=False, intertemp_cntrycode=False, drop_incp_cntrycode=False"
@@ -2039,6 +2052,7 @@ class NBERWTFConstructor(NBERWTF):
         1. For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
             as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
         """
+        warnings.warn("Deprecated in preference for construct_sitc_dataset method. This method doesn't include HK-CHINA Adjustments", PendingDeprecationWarning)
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
         if dataset_object:
             self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=False, drop_incp_cntrycode=False"
@@ -2063,6 +2077,7 @@ class NBERWTFConstructor(NBERWTF):
         1. For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
             as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
         """
+        warnings.warn("Deprecated in preference for construct_sitc_dataset method. This method doesn't include HK-CHINA Adjustments", PendingDeprecationWarning)
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False, report=verbose, verbose=verbose)
         if dataset_object:
             self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=False"
@@ -2087,11 +2102,14 @@ class NBERWTFConstructor(NBERWTF):
         1.  For Export/Import Data should use construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type='export'/'import') 
             as can aggregate with NES on the importer partner side which is dropped in the cleaned trade database
         """
+        warnings.warn("Deprecated in preference for construct_sitc_dataset method. This method doesn't include HK-CHINA Adjustments", PendingDeprecationWarning)
         self.construct_dataset_SC_CNTRY_SR2L3_Y62to00(data_type=data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True, report=verbose, verbose=verbose)
         if dataset_object:
             self.notes = "Computed with options dropAX=True, sitcr2=True, drop_nonsitcr2=True, intertemp_cntrycode=True, drop_incp_cntrycode=True"
             obj = self.to_nberwtf(data_type=data_type)
             return obj
+
+    # ------------------------------------ END REMOVAL ----------------------------------- #
 
     #-Dataset Construction Using Internal Methods-#
 
@@ -2100,7 +2118,7 @@ class NBERWTFConstructor(NBERWTF):
         Constructs DEFAULT Dynamically Consistent Dataset for ProductCodes and CountryCodes
         Note: This can make debugging more difficult, and may wish to use an _SC_ dataset method (Self Contained)
 
-        STATUS: **IN WORK**
+        STATUS: **IN WORK** {Requires Testing}
 
         Notes
         -----
