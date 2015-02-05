@@ -447,7 +447,6 @@ class NBERWTFConstructor(NBERWTF):
             self._country_list.sort()
         return self._country_list   
 
-    @property
     def supp_data(self, item):
         """
         Return an Item from the Supplementary Data Dictionary
@@ -759,6 +758,7 @@ class NBERWTFConstructor(NBERWTF):
                 Could add in the option to specify a different source_dir but this probably won't get used. Not Wasting Time Now
             2.  Modify this so that only the intersection between available years and years. 
         """
+        op_string = u"(load_china_hongkongdata(years=%s, return_dataset=%s))" % (years, return_dataset)
         # - Attributes of China Hong-Kong Adjustment - #
         fn_prefix   = u'china_hk'
         fn_postfix  = u'.dta'
@@ -787,6 +787,8 @@ class NBERWTFConstructor(NBERWTF):
                             u'Source: ' + self._source_dir 
             # - Assign Data to Supp_Data with Key - #
             self._supp_data = {key : data}
+        #-Update op_string-#
+        update_operations(self, op_string)
         # - Option to Return Dataset - #
         if return_dataset:
             return self._supp_data[key]
@@ -1830,7 +1832,7 @@ class NBERWTFConstructor(NBERWTF):
     # - Construct Predefined Datasets Wrappers  - #
     # ------------------------------------------- #
     
-    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True, dataset_object=False):
+    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True, dataset_object=False, verbose=True):
         """
         Constructor of Predefined SITC Datasets
 
@@ -1868,18 +1870,27 @@ class NBERWTFConstructor(NBERWTF):
             raise ValueError("Specified Dataset (%s) is not found in the SITC_DATASET_OPTIONS property")
         #-OpString-#
         str_kwargs = [", %s=%s" % (key, SITC_DATASET_OPTIONS[dataset][key]) for key in sorted(SITC_DATASET_OPTIONS[dataset].keys())]
-        self.notes += "".join(str_kwargs)
-        op_string = u"(construct_sitc_dataset(data_type=%s, dataset=%s, product_level=%s, sitc_revision=%s%s))" % (data_type, dataset, product_level, sitc_revision, "".join(str_kwargs))
-        if check_operations(self, op_string): return None
+        op_string = u"(construct_sitc_dataset(data_type=%s, dataset=%s, product_level=%s, sitc_revision=%s, report=%s, dataset_object=%s, verbose=%s%s))" % (data_type, dataset, product_level, sitc_revision, report, dataset_object, verbose, "".join(str_kwargs))
+        self.notes = op_string #-Save Settings-#
+        if check_operations(self, op_string): 
+            return None
         #-Main Work-#
         DESCRIPTION = SITC_DATASET_DESCRIPTION[dataset]
         OPTIONS = SITC_DATASET_OPTIONS[dataset]
+        #-Check and add Supplementary Data-#
+        if OPTIONS['adjust_hk'] == True:
+            if not check_operations(self, "load_china_hongkongdata"):
+                self.load_china_hongkongdata(verbose=verbose) #-Load Data with Default Attributes-#
+            OPTIONS['adjust_hk'] = (True, self.supp_data(item='chn_hk_adjust'))
         #-Compute Dataset-#
-        self._dataset = construct_dataset(self.dataset, data_type=data_type, level=product_level, **OPTIONS)
+        self._dataset = construct_dataset(self.dataset, data_type=data_type, level=product_level, verbose=verbose, **OPTIONS)
         self.dataset_name = "SITCR2-%s" % dataset
+        #-Restore Original Option-#
+        if type(OPTIONS['adjust_hk']) == tuple:
+            OPTIONS['adjust_hk'] = OPTIONS['adjust_hk'][0]
         #-Construct Report-#
         if report:
-            rdf = self.raw_data
+            rdf = self.raw_data                                                     #Note: This produces a copy!
             rdf = rdf.loc[(rdf.importer=="World") & (rdf.exporter == "World")]
             #-Year Values-#
             rdfy = rdf.groupby(['year']).sum()['value'].reset_index()
@@ -1897,8 +1908,7 @@ class NBERWTFConstructor(NBERWTF):
         #-OpString-#
         update_operations(self, op_string)
         #-Return a Dataset Object-#
-        if dataset_object:
-            self.notes = op_string 
+        if dataset_object: 
             obj = self.to_nberwtf(data_type=data_type)
             return obj
 

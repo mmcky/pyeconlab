@@ -56,7 +56,6 @@ SITC_DATASET_OPTIONS = {
                 'drop_incp_cntrycode' : False,        #Drop Incomplete Intertemporal Countries
                 'adjust_units' : False,
                 'source_institution' : 'un',
-                'verbose' : True,
             },
     'B' :   {   'dropAX' : False,                     #Drops Products where Codes have 'A' or 'X'
                 'sitcr2' : False,                     #Adds an Official SITC Revision 2 Indicator
@@ -66,7 +65,6 @@ SITC_DATASET_OPTIONS = {
                 'drop_incp_cntrycode' : False,        #Drop Incomplete Intertemporal Countries
                 'adjust_units' : False,
                 'source_institution' : 'un',
-                'verbose' : True,
             },
     'C' :   {   'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
                 'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
@@ -76,7 +74,6 @@ SITC_DATASET_OPTIONS = {
                 'drop_incp_cntrycode' : False,       #Drop Incomplete Intertemporal Countries
                 'adjust_units' : False,
                 'source_institution' : 'un',
-                'verbose' : True,
             },       
     'D' :   {   'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
                 'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
@@ -86,7 +83,6 @@ SITC_DATASET_OPTIONS = {
                 'drop_incp_cntrycode' : False,       #Drop Incomplete Intertemporal Countries
                 'adjust_units' : False,
                 'source_institution' : 'un',
-                'verbose' : True,
             },           
     'E' :   {   'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
                 'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
@@ -96,7 +92,6 @@ SITC_DATASET_OPTIONS = {
                 'drop_incp_cntrycode' : True,        #Drop Incomplete Intertemporal Countries
                 'adjust_units' : False,
                 'source_institution' : 'un',
-                'verbose' : True,
             },
 }
 

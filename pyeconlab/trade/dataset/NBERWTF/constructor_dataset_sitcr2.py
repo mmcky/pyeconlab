@@ -129,9 +129,9 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
         #-Countries Only Adjustment-#
-        if verbose: print "[INFO] Removing 'World' values from the dataset to be country only data"
+        if verbose: print "[INFO] Removing 'World' values so that the dataset is country only data"
         df = df.loc[(df.exporter != "World") & (df.importer != "World")]
-        
+
         #-Add Country ISO Information-#
         #-Exports (can include NES on importer side)-#
         if data_type == 'export' or data_type == 'exports':
