@@ -1,6 +1,8 @@
 """
 Test for Generic Dataset Function Against dissaggregated routines
 
+STATUS: IN-USE (2015-02-09)
+
 Files
 -----
 constructor_dataset_sitcr2.py
@@ -11,7 +13,7 @@ Notes
 -----
 1.  This suggests that the two dataframes are indeed equivalent and can consider 
     REMOVING the constructor_dataset_sitcr2l4 and constructor_dataset_sitcr2l3 items 
-    in favour of the generic
+    in favour of the generic function
 
 """
 
