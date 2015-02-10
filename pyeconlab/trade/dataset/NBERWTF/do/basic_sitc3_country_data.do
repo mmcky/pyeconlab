@@ -48,8 +48,8 @@ log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 ** [E] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	adjust_hk=True,		intertemp_cntrycode=True, 	drop_incp_cntrycode=True
 
 ** Settings **
-global DATASET="B"
-global LEVEL=3   			//NotImplemented
+global DATASET "A"
+global LEVEL 3   			//NotImplemented
 
 if "$DATASET" == "A" {
 	global dropAX 	= 0
@@ -273,7 +273,8 @@ if $incomplete_cntry_recode == 1{
 }
 
 order year eiso3c iiso3c sitc3 value
-save "nberwtf_stata_trade_sitcr2l3_1962to2000_$DATASET.dta", replace
+local fl = "nberwtf_stata_trade_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
+save `fl', replace
 
 
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
@@ -325,7 +326,8 @@ drop if eiso3c == "." //Drops NES
 collapse (sum) value, by(year eiso3c sitc3)
 rename value value_m1
 
-save "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method1.dta", replace
+local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+save `fl', replace
 
 
 **------------------------------------------**
@@ -368,20 +370,21 @@ drop if eiso3c == "."
 collapse (sum) value, by(year eiso3c sitc3)
 rename value value_m2
 
-save "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method2.dta", replace
+local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
+save `fl', replace
 
 **
 ** Compare Methods
 **
-
-merge 1:1 year sitc3 eiso3c using "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method1.dta"
+local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+merge 1:1 year sitc3 eiso3c using `fl'
 gen diff = value_m1 - value_m2
 codebook diff
 list if diff != 0
 
 **Note: Check These Methods are Equivalent**
-
-use "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method1.dta", clear
+local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+use `fl', clear
 rename value_m1 value
 
 **Parse Options for Export Files**
@@ -437,11 +440,14 @@ if $incomplete_cntry_recode == 1{
 }
 
 order year eiso3c sitc3 value
-save "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET.dta", replace
+local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
+save `fl', replace
 
 if $cleanup == 1{
-	rm "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method1.dta"
-	rm "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method2.dta"
+	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+	rm `fl'
+	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
+	rm `fl'
 }
 
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
@@ -492,7 +498,9 @@ drop if iiso3c == "." //Drops NES
 collapse (sum) value, by(year iiso3c sitc3)
 rename value value_m1
 
-save "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method1.dta", replace
+local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+save `fl', replace
+
 
 **------------------------------------------**
 **Method#2: Keep Country Pairs and Aggregate**
@@ -527,20 +535,21 @@ drop if iiso3c == "."
 collapse (sum) value, by(year iiso3c sitc3)
 rename value value_m2
 
-save "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method2.dta", replace
+local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
+save `fl', replace
 
 **
 ** Compare Methods
 **
-
-merge 1:1 year sitc3 iiso3c using "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method1.dta"
+local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+merge 1:1 year sitc3 iiso3c using `fl'
 gen diff = value_m1 - value_m2
 codebook diff
 list if diff != 0
 
 **Note: Check These Methods are Equivalent
-
-use "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method1.dta", clear
+local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+use `fl', clear
 rename value_m1 value
 
 **Parse Options**
@@ -594,11 +603,16 @@ if $incomplete_cntry_recode == 1{
 }
 
 order year iiso3c sitc3 value
-save "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET.dta", replace
+local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
+save `fl', replace
 
 if $cleanup == 1{
-	rm "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method1.dta"
-	rm "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method2.dta"
+
+save `fl', replace
+	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+	rm `fl'
+	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
+	rm `fl'
 }
 
 log close
