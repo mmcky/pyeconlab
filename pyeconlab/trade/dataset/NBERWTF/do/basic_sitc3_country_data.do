@@ -1,44 +1,59 @@
-*** ----------------------------------------------------------------***
-*** Generate Basic SITC3 Country Datasets for PyEconLab 			***
-*** --------------------------------------------------- 			***
-*** [1] nberfeenstrawtf_do_stata_basic_country_data_bilateral.dta	***
-*** [2] nberfeenstrawtf_do_stata_basic_country_data_exports.dta		***
-*** [3] nberfeenstrawtf_do_stata_basic_country_data_imports.dta		***
+*** --------------------------------------------------------------------***
+*** Generate Basic SITC Level 3 Country Datasets for PyEconLab 			***
+*** ---------------------------------------------------------- 			***
+*** Output
+***	------
+*** [1] nberfeenstrawtf_do_stata_basic_country_data_bilateral.dta
+*** [2] nberfeenstrawtf_do_stata_basic_country_data_exports.dta
+*** [3] nberfeenstrawtf_do_stata_basic_country_data_imports.dta
 
 *** Notes
 *** -----
 *** [1] Currently this requires MANUAL adjustment for directories based on REPO Locations etc
 *** [2] Manually set the appropriate flags to produce Datasets A - D
 
+*** Future Work
+*** 1. Add Level Option
+ 
+di "Loading settings for environment: " c(os)
 
-if c(os) == "MacOSX" {
-	global dir=""
-	global mac=1
+if c(os) == "MacOSX" | c(os) == "Unix" {
+	// Sources //
+	global SOURCE="~/work-data/datasets/36a376e5a01385782112519bddfac85e"
+	global META = "~/repos/pyeconlab/pyeconlab/trade/dataset/NBERWTF/meta" 				//Hard Coded For Now
+	global METACLASS = "~/repos/pyeconlab/pyeconlab/trade/classification/meta" 			//Hard Coded For Now
+	// Targets //
+	global WORKINGDIR="~/work-temp"
 }
 
 if c(os) == "Windows" {
-	global dir="D:\work-data\datasets\36a376e5a01385782112519bddfac85e"
-	global metadir = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\dataset\NBERFeenstraWTF\meta\" 		//Hard Coded For Now
-	global metaclass = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\classification\meta\" 				//Hard Coded For Now
-	global mac=0
+	global SOURCE="D:\work-data\datasets\36a376e5a01385782112519bddfac85e"
+	global META = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\dataset\NBERWTF\meta" 		//Hard Coded For Now
+	global METACLASS = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\classification\meta" 	//Hard Coded For Now
+	// Targets //
+	global WORKINGDIR="D:/work-temp"
 }
 
-cd $dir
+cd $WORKINGDIR
 
 capture log close
 log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 
 ** Datasets 
 ** --------
-** Note: MANUALLY Set the Following for Correspondence with Pyeconlab Datasets
-** [_A] dropAX=False, 	sitcr2=False, 	drop_nonsitcr2=False, 	intertemp_cntrycode=False, 	drop_incp_cntrycode=False
-** [_B] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	intertemp_cntrycode=False, 	drop_incp_cntrycode=False
-** [_C] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	intertemp_cntrycode=True, 	drop_incp_cntrycode=False	
-** [_D] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	intertemp_cntrycode=True, 	drop_incp_cntrycode=True
+** [A] dropAX=False, 	sitcr2=False, 	drop_nonsitcr2=False, 	adjust_hk=False, 	intertemp_cntrycode=False, 	drop_incp_cntrycode=False
+** [B] dropAX=False, 	sitcr2=False, 	drop_nonsitcr2=False, 	adjust_hk=True,		intertemp_cntrycode=False, 	drop_incp_cntrycode=False
+** [C] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	adjust_hk=True,		intertemp_cntrycode=False, 	drop_incp_cntrycode=False
+** [D] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	adjust_hk=True,		intertemp_cntrycode=True, 	drop_incp_cntrycode=False	
+** [E] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	adjust_hk=True,		intertemp_cntrycode=True, 	drop_incp_cntrycode=True
 
 ** Settings **
+global DATASET = "A"
+global LEVEL = 3
+** Note: MANUALLY Set the Following for Correspondence with PYECONLAB Datasets to Generate
 global dropAX 	= 1
 global dropNonSITCR2 = 1 
+global adjust_hk = 1
 global intertemporal_cntry_recode = 0
 global incomplete_cntry_recode = 0
 
@@ -46,6 +61,16 @@ global incomplete_cntry_recode = 0
 global cleanup 	= 1
  
 ** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
+
+** ----------------------------- **
+** Pre-Compile HK-China Datasets **
+** ----------------------------- **
+use "$SOURCE/china_hk88.dta", clear
+foreach year of num 89(1)99 {
+	append using "$SOURCE/china_hk`year'.dta"
+}
+append using "$SOURCE/china_hk00.dta"
+save "china_hk.dta", replace
 
 ** ------------------ ** 
 ** Write Concordances **
@@ -55,13 +80,12 @@ global cleanup 	= 1
 **/meta/csv/countrycodes_to_iso3c.csv contains this listing**
 **Copied: 27-08-2014
 **Note: This is not intertemporally consistent**
-
-insheet using "$metadir/csv/countryname_to_iso3c.csv", clear names
+insheet using "$META\csv\countryname_to_iso3c.csv", clear names
 gen exporter = countryname
 drop countryname
 rename iso3c eiso3c
 save "exporter_to_eiso3c.dta", replace
-insheet using "$metadir/csv/countryname_to_iso3c.csv", clear names
+insheet using "$META/csv/countryname_to_iso3c.csv", clear names
 gen importer = countryname
 drop countryname
 rename iso3c iiso3c
@@ -70,17 +94,17 @@ save "importer_to_iiso3c.dta", replace
 **Concord to SITC Revision 2 Level 2 Codes**
 **classification/meta/SITC-R2-L3-codes.csv contains this listing**
 **Copied: 28-08-2014
-infix using "$metaclass/SITC-R2-L3-codes.dct", using("$metaclass/SITC-R2-L3-codes.csv") clear
+infix using "$METACLASS/SITC-R2-L3-codes.dct", using("$METACLASS/SITC-R2-L3-codes.csv") clear
 save "SITC-R2-L3-codes.dta", replace
 
 **Concordance for Intertemporal Country Adjustments for 1962 to 2000**
 **A concordance to AGGREGATE country groups to be consistent over time between 1962 to 2000**
 **/meta/csv/intertemporal_iso3c_for_1962_2000.csv contains this listing**
 **Copied: 29-08-2014
-insheet using "$metadir/csv/intertemporal_iso3c_for_1962_2000.csv", clear names
+insheet using "$META/csv/intertemporal_iso3c_for_1962_2000.csv", clear names
 rename iso3c eiso3c
 save "eiso3c_intertemporal_recodes.dta", replace
-insheet using "$metadir/csv/intertemporal_iso3c_for_1962_2000.csv", clear names
+insheet using "$META/csv/intertemporal_iso3c_for_1962_2000.csv", clear names
 rename iso3c iiso3c
 save "iiso3c_intertemporal_recodes.dta", replace
 
@@ -88,10 +112,10 @@ save "iiso3c_intertemporal_recodes.dta", replace
 **A concordance of countries to DROP from the dataset due to being intertemporally incomplete**
 **/meta/csv/intertemporal_iso3c_for_1962_2000.csv contains this listing**
 **Copied: 29-08-2014
-insheet using "$metadir/csv/incomplete_iso3c_for_1962_2000.csv", clear names
+insheet using "$META/csv/incomplete_iso3c_for_1962_2000.csv", clear names
 rename iso3c eiso3c
 save "eiso3c_incomplete_recodes.dta", replace
-insheet using "$metadir/csv/incomplete_iso3c_for_1962_2000.csv", clear names
+insheet using "$META/csv/incomplete_iso3c_for_1962_2000.csv", clear names
 rename iso3c iiso3c
 save "iiso3c_incomplete_recodes.dta", replace
 
@@ -99,16 +123,17 @@ save "iiso3c_incomplete_recodes.dta", replace
  
  
 **************************************************************
-**Dataset #1: Basic Bilateral Data 							**
+**Dataset #1: Bilateral TRADE Data 							**
 **Removes "World" and Any Non-Country Code (i.e. NES etc.)	**
 **************************************************************
 
-use "$dir/wtf62.dta", clear
+// Compile WTF Source Files //
+use "$SOURCE/wtf62.dta", clear
 foreach year of num 63(1)99 {
-	append using "$dir/wtf`year'.dta"
+	append using "$SOURCE/wtf`year'.dta"
 }
-append using "$dir/wtf00.dta"
-//save "$dir/wtf.dta", replace
+append using "$SOURCE/wtf00.dta"
+//save "$SOURCE/wtf.dta", replace
 
 format value %12.0f
 
@@ -118,6 +143,13 @@ preserve
 collapse (sum) value, by(year)
 list
 restore
+
+if $adjust_hk == 1{
+	// Values //
+	merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
+	replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
+	drop _merge value_adj
+}
 
 **Split Codes to THREE DIGIT**
 gen sitc3 = substr(sitc4,1,3)
@@ -221,14 +253,21 @@ save "nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta", replace
 **Note: these aggregations will capture NES as they are exports to the world **
 **---------------------------------**
 
-use "$dir/wtf62.dta", clear
+use "$SOURCE/wtf62.dta", clear
 foreach year of num 63(1)99 {
-	append using "$dir/wtf`year'.dta"
+	append using "$SOURCE/wtf`year'.dta"
 }
-append using "$dir/wtf00.dta"
-//save "$dir/wtf.dta", replace
+append using "$SOURCE/wtf00.dta"
+//save "$SOURCE/wtf.dta", replace
 
 format value %12.0f
+
+if $adjust_hk == 1{
+	// Values //
+	merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
+	replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
+	drop _merge value_adj
+}
 
 **Split Codes to THREE DIGIT**
 gen sitc3 = substr(sitc4,1,3)
@@ -258,14 +297,21 @@ save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta", replace
 **Method#2: Keep Country Pairs and Aggregate**
 **------------------------------------------**
 
-use "$dir/wtf62.dta", clear
+use "$SOURCE/wtf62.dta", clear
 foreach year of num 63(1)99 {
-	append using "$dir/wtf`year'.dta"
+	append using "$SOURCE/wtf`year'.dta"
 }
-append using "$dir/wtf00.dta"
-//save "$dir/wtf.dta", replace
+append using "$SOURCE/wtf00.dta"
+//save "$SOURCE/wtf.dta", replace
 
 format value %12.0f
+
+if $adjust_hk == 1{
+	// Values //
+	merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
+	replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
+	drop _merge value_adj
+}
 
 **Split Codes to THREE DIGIT**
 gen sitc3 = substr(sitc4,1,3)
@@ -374,14 +420,21 @@ if $cleanup == 1{
 **Method#1: Keep Country => "World"**
 **---------------------------------**
 
-use "$dir/wtf62.dta", clear
+use "$SOURCE/wtf62.dta", clear
 foreach year of num 63(1)99 {
-	append using "$dir/wtf`year'.dta"
+	append using "$SOURCE/wtf`year'.dta"
 }
-append using "$dir/wtf00.dta"
-//save "$dir/wtf.dta", replace
+append using "$SOURCE/wtf00.dta"
+//save "$SOURCE/wtf.dta", replace
 
 format value %12.0f
+
+if $adjust_hk == 1{
+	// Values //
+	merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
+	replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
+	drop _merge value_adj
+}
 
 **Split Codes to THREE DIGIT**
 gen sitc3 = substr(sitc4,1,3)
@@ -411,12 +464,12 @@ save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", replace
 **Method#2: Keep Country Pairs and Aggregate**
 **------------------------------------------**
 
-use "$dir/wtf62.dta", clear
+use "$SOURCE/wtf62.dta", clear
 foreach year of num 63(1)99 {
-	append using "$dir/wtf`year'.dta"
+	append using "$SOURCE/wtf`year'.dta"
 }
-append using "$dir/wtf00.dta"
-//save "$dir/wtf.dta", replace
+append using "$SOURCE/wtf00.dta"
+//save "$SOURCE/wtf.dta", replace
 
 format value %12.0f
 
