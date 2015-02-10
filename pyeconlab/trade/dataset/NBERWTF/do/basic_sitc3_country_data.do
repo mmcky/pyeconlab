@@ -48,14 +48,50 @@ log using "nberfeenstra_do_stata_sitc3_country_data.log", replace
 ** [E] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	adjust_hk=True,		intertemp_cntrycode=True, 	drop_incp_cntrycode=True
 
 ** Settings **
-global DATASET = "A"
-global LEVEL = 3
-** Note: MANUALLY Set the Following for Correspondence with PYECONLAB Datasets to Generate
-global dropAX 	= 1
-global dropNonSITCR2 = 1 
-global adjust_hk = 1
-global intertemporal_cntry_recode = 0
-global incomplete_cntry_recode = 0
+global DATASET="B"
+global LEVEL=3   			//NotImplemented
+
+if "$DATASET" == "A" {
+	global dropAX 	= 0
+	global dropNonSITCR2 = 0 
+	global adjust_hk = 0
+	global intertemporal_cntry_recode = 0
+	global incomplete_cntry_recode = 0
+}
+else if "$DATASET" == "B" {
+	global dropAX 	= 0
+	global dropNonSITCR2 = 0
+	global adjust_hk = 1
+	global intertemporal_cntry_recode = 0
+	global incomplete_cntry_recode = 0
+}
+else if "$DATASET" == "C" {
+	global dropAX 	= 1
+	global dropNonSITCR2 = 1 
+	global adjust_hk = 1
+	global intertemporal_cntry_recode = 0
+	global incomplete_cntry_recode = 0
+}
+else if "$DATASET" == "D" {
+	global dropAX 	= 1
+	global dropNonSITCR2 = 1 
+	global adjust_hk = 1
+	global intertemporal_cntry_recode = 1
+	global incomplete_cntry_recode = 0
+}
+else if "$DATASET" == "E" {
+	global dropAX 	= 1
+	global dropNonSITCR2 = 1 
+	global adjust_hk = 1
+	global intertemporal_cntry_recode = 1
+	global incomplete_cntry_recode = 1
+} 
+else {
+	di "Option %DATASET not valid"
+	exit
+}
+
+di "Processing Option: $DATASET"
 
 //Cleanup of Method1,Method2 Files
 global cleanup 	= 1
@@ -122,10 +158,9 @@ save "iiso3c_incomplete_recodes.dta", replace
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
  
  
-**************************************************************
-**Dataset #1: Bilateral TRADE Data 							**
-**Removes "World" and Any Non-Country Code (i.e. NES etc.)	**
-**************************************************************
+******************************************
+**Dataset #1: Bilateral TRADE Data 		**
+******************************************
 
 // Compile WTF Source Files //
 use "$SOURCE/wtf62.dta", clear
@@ -238,15 +273,15 @@ if $incomplete_cntry_recode == 1{
 }
 
 order year eiso3c iiso3c sitc3 value
-save "nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta", replace
+save "nberwtf_stata_trade_sitcr2l3_1962to2000_$DATASET.dta", replace
 
 
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
 
 
-************************************ 						
-**Dataset #2: Country Export Data **
-************************************ 
+****************************						
+**Dataset #2: Export Data **
+****************************
 
 **---------------------------------**
 **Method#1: Keep Country => "World"**
@@ -290,7 +325,7 @@ drop if eiso3c == "." //Drops NES
 collapse (sum) value, by(year eiso3c sitc3)
 rename value value_m1
 
-save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta", replace
+save "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method1.dta", replace
 
 
 **------------------------------------------**
@@ -333,20 +368,20 @@ drop if eiso3c == "."
 collapse (sum) value, by(year eiso3c sitc3)
 rename value value_m2
 
-save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method2.dta", replace
+save "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method2.dta", replace
 
 **
 ** Compare Methods
 **
 
-merge 1:1 year sitc3 eiso3c using "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta"
+merge 1:1 year sitc3 eiso3c using "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method1.dta"
 gen diff = value_m1 - value_m2
 codebook diff
 list if diff != 0
 
 **Note: Check These Methods are Equivalent**
 
-use "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta", clear
+use "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method1.dta", clear
 rename value_m1 value
 
 **Parse Options for Export Files**
@@ -402,11 +437,11 @@ if $incomplete_cntry_recode == 1{
 }
 
 order year eiso3c sitc3 value
-save "nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta", replace
+save "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET.dta", replace
 
 if $cleanup == 1{
-	rm "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method1.dta"
-	rm "nberfeenstrawtf_do_stata_basic_country_sitc3_exports_method2.dta"
+	rm "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method1.dta"
+	rm "nberwtf_stata_export_sitcr2l3_1962to2000_$DATASET_method2.dta"
 }
 
 *** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
@@ -457,8 +492,7 @@ drop if iiso3c == "." //Drops NES
 collapse (sum) value, by(year iiso3c sitc3)
 rename value value_m1
 
-save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", replace
-
+save "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method1.dta", replace
 
 **------------------------------------------**
 **Method#2: Keep Country Pairs and Aggregate**
@@ -493,20 +527,20 @@ drop if iiso3c == "."
 collapse (sum) value, by(year iiso3c sitc3)
 rename value value_m2
 
-save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method2.dta", replace
+save "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method2.dta", replace
 
 **
 ** Compare Methods
 **
 
-merge 1:1 year sitc3 iiso3c using "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta"
+merge 1:1 year sitc3 iiso3c using "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method1.dta"
 gen diff = value_m1 - value_m2
 codebook diff
 list if diff != 0
 
 **Note: Check These Methods are Equivalent
 
-use "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta", clear
+use "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method1.dta", clear
 rename value_m1 value
 
 **Parse Options**
@@ -560,11 +594,11 @@ if $incomplete_cntry_recode == 1{
 }
 
 order year iiso3c sitc3 value
-save "nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta", replace
+save "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET.dta", replace
 
 if $cleanup == 1{
-	rm "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method1.dta"
-	rm "nberfeenstrawtf_do_stata_basic_country_sitc3_imports_method2.dta"
+	rm "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method1.dta"
+	rm "nberwtf_stata_import_sitcr2l3_1962to2000_$DATASET_method2.dta"
 }
 
 log close
