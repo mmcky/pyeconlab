@@ -54,6 +54,8 @@ foreach item of global DATASETS {
 	
 	global DATASET="`item'"
 	
+	//global DATASET="B"
+	
 	capture log close
 	local fl = "nberwtf_stata_sitcl3_data_"+"$DATASET"+".log"
 	log using `fl', replace
