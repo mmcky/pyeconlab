@@ -392,7 +392,7 @@ foreach item of global DATASETS {
 	list if diff != 0
 
 	**Note: Check These Methods are Equivalent**
-	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
 	use `fl', clear
 	rename value_m1 value
 
@@ -557,7 +557,7 @@ foreach item of global DATASETS {
 	list if diff != 0
 
 	**Note: Check These Methods are Equivalent
-	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
+	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
 	use `fl', clear
 	rename value_m1 value
 
