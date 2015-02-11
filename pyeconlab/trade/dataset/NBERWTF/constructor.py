@@ -874,11 +874,15 @@ class NBERWTFConstructor(NBERWTF):
         if check_operations(self, op_string):                           #Check if Operation has been conducted
             return None
         #-Merge Settings-#
+        if not check_operations(self, "load_china_hongkongdata"):
+            self.load_china_hongkongdata()
         if self.operations != '':
-            raise ValueError("This method requires no previous operations to have been performed on the dataset!")
-        else:
-            on          =   [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']              #Merge on the Full complement of Items in the Original Dataset
-        
+            print "[WARNING] Operations already conducted on data: %s" % self.operations
+        # if self.operations != '':
+        #     raise ValueError("This method requires no previous operations to have been performed on the dataset!")
+        # else:
+        #     on          =   [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']              #Merge on the Full complement of Items in the Original Dataset
+        on = [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']
         #-Note: Current merge_columns utility merges one column set at a time-#
         #-Values-#
         raw_value = self.dataset[on+['value']].rename(columns={'value' : 'value_raw'})
