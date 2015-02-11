@@ -91,13 +91,11 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
             1. Check SITC Revision 2 Official Codes
             2. Add in a Year Filter
         """
-
-        #-Set Data-#
-        idx = ['year', 'exporter', 'importer', 'sitc4']
-        df = df.loc[:,idx + ['value']]
         
-        #-Operations Requiring SITC Level 4-#
+        #-Operations Requiring RAW SITC Level 4-#
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+        idx = [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']
 
         #-Hong Kong China Data Adjustment Option-#
         if type(adjust_hk) == bool:
@@ -111,9 +109,13 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
                 adjust_value = hkdata[idx+['value_adj']]
             except:
                 raise ValueError("[ERROR] China/Hong Kong Data has not been passed in properly!")
-            #-Note: Current merge_columns utility merges one column set at a time-#
+            #-Note: Current merge_columns utility merges one column set at a time-# 
             df = merge_columns(raw_value, adjust_value, idx, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
+
+        #-Filter Data-#
+        idx = [u'year', u'exporter', u'importer', u'sitc4']
+        df = df.loc[:,idx + ['value']]
 
         #-Collapse to SITC Level -#
         if level != 4:
