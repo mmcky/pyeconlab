@@ -14,6 +14,10 @@
 
 *** Future Work
 *** 1. Add Level Option
+
+set more off 
+//set trace on
+//set tracedepth 1
  
 di "Loading settings for environment: " c(os)
 
@@ -48,7 +52,7 @@ cd $WORKINGDIR
 //global DATASET "A"
 //global LEVEL 3   			//NotImplemented
 
-global DATASETS "A B C D E F"
+global DATASETS "A B C D E"
 
 foreach item of global DATASETS {
 	
@@ -394,7 +398,8 @@ foreach item of global DATASETS {
 	**Note: Check These Methods are Equivalent**
 	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
 	use `fl', clear
-	rename value_m1 value
+	//rename value_m1 value
+	rename value_m2 value
 
 	**Parse Options for Export Files**
 
@@ -524,6 +529,13 @@ foreach item of global DATASETS {
 
 	format value %12.0f
 
+	if $adjust_hk == 1{
+		// Values //
+		merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
+		replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
+		drop _merge value_adj
+	}
+	
 	**Split Codes to THREE DIGIT**
 	gen sitc3 = substr(sitc4,1,3)
 	drop sitc4
@@ -559,7 +571,8 @@ foreach item of global DATASETS {
 	**Note: Check These Methods are Equivalent
 	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
 	use `fl', clear
-	rename value_m1 value
+	//rename value_m1 value
+	rename value_m2 value
 
 	**Parse Options**
 
