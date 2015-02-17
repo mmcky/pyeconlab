@@ -1,32 +1,42 @@
-*** Generate Test Data for PyEconLab ***
-*** stata_filename.csv 				 ***
+***********************************************************************
+*** Generate Test Data using STATA for PyEconLab NBERWTF Validation ***
+*** --------------------------------------------------------------- ***
+*** This File is to Produce General Tests Data to Support Validation **
+***********************************************************************
 
 if c(os) == "MacOSX" {
-	global dir=""
-	global mac=1
+	global SOURCE_DIR="~/work-data/datasets/36a376e5a01385782112519bddfac85e/"
+	global TARGET_DIR="~/work-temp/"
 }
 
 if c(os) == "Windows" {
-	global dir="E:\work-data\x_datasets\36a376e5a01385782112519bddfac85e"
-	global mac=0
+	global SOURCE_DIR="D:/work-data/datasets/36a376e5a01385782112519bddfac85e/"
+	global TARGET_DIR="D:/work-temp/"
 }
 
-cd $dir
+*----------*
+*-Settings-*
+*----------*
 
-use "$dir/wtf62.dta", clear
+** Uncomment this for sending output to the testing directory **
+** Otherwise this will run from the current directory and can be used for updating the tests data **
+//cd $TARGET_DIR
+
+*** ---> START <---- ***
+
+use "$SOURCE_DIR/wtf62.dta", clear
 foreach year of num 63(1)99 {
-	append using "$dir/wtf`year'.dta"
+	append using "$SOURCE_DIR/wtf`year'.dta"
 }
-append using "$dir/wtf00.dta"
-//save "$dir/wtf.dta", replace
+append using "$SOURCE_DIR/wtf00.dta"
+//save "$SOURCE_DIR/wtf.dta", replace
 
 format value %12.0f
 
 **-----------------------**
 ** World Level Test Data **
-**-----------------------**
+**~~~~~~~~~~~~~~~~~~~~~~~**
 
-** Test Set#4
 ** Time Series of World Exports 
 ** Filename: stata_wtf62-00_WLD_total_export
 preserve
@@ -37,10 +47,20 @@ gen eiso3c = "WLD"
 outsheet using "stata_wtf62-00_WLD_total_export.csv", comma nolabel replace
 restore
 
+** Time Series of World Imports 
+** Filename: stata_wtf62-00_WLD_total_export
+preserve
+keep if exporter == "World"
+keep if importer == "World"
+collapse (sum) value, by(year importer)
+gen eiso3c = "WLD"
+outsheet using "stata_wtf62-00_WLD_total_import.csv", comma nolabel replace
+restore
+
 
 **-----------------------**
 **Country Level Test Data**
-**-----------------------**
+**~~~~~~~~~~~~~~~~~~~~~~~**
 
 ** Test Set#1
 ** Time Series of Total Exports
@@ -95,15 +115,15 @@ outsheet using "stata_wtf62-00_CHE_total_export.csv", comma nolabel replace
 restore
 
 
-
 **-----------------------**
 **Product Level Test Data**
-**-----------------------**
+**~~~~~~~~~~~~~~~~~~~~~~~**
 
-** Test Set#2
+*** SITC Level 4 ***
+*** ~~~~~~~~~~~~ ***
+
 ** Product Exports over Time
 ** Filename: stata_wtf62-00_sitc4_####_total.csv
-**
 
 **Official Codes**
 
@@ -149,13 +169,62 @@ collapse (sum) value, by(year)
 outsheet using "stata_wtf62-00_sitc4_6540_total.csv", comma nolabel replace
 restore
 
+*** SITC Level 3 ***
+*** ~~~~~~~~~~~~ ***
+
+** Product Exports over Time
+** Filename: stata_wtf62-00_sitc3_####_total.csv
+
+**Official Codes**
+
+**Unofficial Codes**
 
 
-**-------------------------------**
-**Country Product Level Test Data**
-**-------------------------------**
 
-** Test Set#3
+*** SITC Level 2 ***
+*** ~~~~~~~~~~~~ ***
+
+** Product Exports over Time
+** Filename: stata_wtf62-00_sitc3_####_total.csv
+
+**Official Codes**
+
+**Unofficial Codes**
+
+
+
+*** SITC Level 1 ***
+*** ~~~~~~~~~~~~ ***
+
+** Product Exports over Time
+** Filename: stata_wtf62-00_sitc3_####_total.csv
+
+**Official Codes**
+
+**Unofficial Codes**
+
+
+
+
+
+**---------------------------------**
+**Country x Product Level Test Data**
+**---------------------------------**
+
+use "$SOURCE_DIR/wtf62.dta", clear
+foreach year of num 63(1)99 {
+	append using "$SOURCE_DIR/wtf`year'.dta"
+}
+append using "$SOURCE_DIR/wtf00.dta"
+//save "$SOURCE_DIR/wtf.dta", replace
+
+format value %12.0f
+
+keep year importer exporter sitc4 value
+
+** SITC Level 4 Data **
+** ~~~~~~~~~~~~~~~~~ **
+
 ** Country x Product Exports over Time
 ** Filename: stata_wtf62-00_???_sitc4_####_total_export.csv
 **
@@ -179,22 +248,15 @@ outsheet using "stata_wtf62-00_ESP_sitc4_8973_total.csv", comma nolabel replace
 restore
 
 
-**-----------------------**
-**Special Group Test Data**
-**-----------------------**
+** SITC Level 3 Data **
+** ~~~~~~~~~~~~~~~~~ **
 
-
-
-**---------------------------**
-**SITC3 Digit Level Test Data**
-**---------------------------**
-
-use "$dir/wtf62.dta", clear
+use "$SOURCE_DIR/wtf62.dta", clear
 foreach year of num 63(1)99 {
-	append using "$dir/wtf`year'.dta"
+	append using "$SOURCE_DIR/wtf`year'.dta"
 }
-append using "$dir/wtf00.dta"
-//save "$dir/wtf.dta", replace
+append using "$SOURCE_DIR/wtf00.dta"
+//save "$SOURCE_DIR/wtf.dta", replace
 
 format value %12.0f
 
@@ -205,11 +267,7 @@ gen sitc3 = substr(sitc4,1,3)
 drop sitc4
 collapse (sum) value, by(year importer exporter sitc3)
 
-**-------------------------------**
-**Country Product Level Test Data**
-**-------------------------------**
 
-** Test Set#4
 ** Country x Product Exports over Time
 ** Filename: stata_wtf62-00_???_sitc3_####_total_export.csv
 **
