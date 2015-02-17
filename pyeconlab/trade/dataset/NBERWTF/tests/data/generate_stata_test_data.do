@@ -23,6 +23,7 @@ set more off
 ** Uncomment this for sending output to the testing directory **
 ** Otherwise this will run from the current directory and can be used for updating the tests data **
 //cd $TARGET_DIR
+pwd
 
 *** ---> START <---- ***
 
