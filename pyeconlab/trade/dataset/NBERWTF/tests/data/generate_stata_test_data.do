@@ -51,7 +51,7 @@ outsheet using "stata_wtf62-00_WLD_total_export.csv", comma nolabel replace
 restore
 
 ** Time Series of World Imports 
-** Filename: stata_wtf62-00_WLD_total_export
+** Filename: stata_wtf62-00_WLD_total_import
 preserve
 keep if exporter == "World"
 keep if importer == "World"
@@ -65,8 +65,7 @@ restore
 **Country Level Test Data**
 **~~~~~~~~~~~~~~~~~~~~~~~**
 
-** Test Set#1
-** Time Series of Total Exports
+** Time Series of Total Exports from Country (i) to World
 ** Filename: stata_wtf62-00_???_total_export.csv
 **
 preserve
@@ -125,7 +124,7 @@ restore
 *** SITC Level 4 ***
 *** ~~~~~~~~~~~~ ***
 
-** Product Exports over Time
+** World Product Exports over Time
 ** Filename: stata_wtf62-00_sitc4_####_total.csv
 ** Codes
 ** ~~~~~
@@ -185,7 +184,7 @@ restore
 *** SITC Level 3 ***
 *** ~~~~~~~~~~~~ ***
 
-** Product Exports over Time
+** World Product Exports over Time
 ** Filename: stata_wtf62-00_sitc3_###_total.csv
 ** Codes
 ** ~~~~~
@@ -227,13 +226,13 @@ restore
 
 
 **Unofficial Codes**
-
+// TBD
 
 
 *** SITC Level 2 ***
 *** ~~~~~~~~~~~~ ***
 
-** Product Exports over Time
+** World Product (p) Exports over Time
 ** Filename: stata_wtf62-00_sitc3_####_total.csv
 ** Codes
 ** ~~~~~
@@ -274,12 +273,13 @@ outsheet using "stata_wtf62-00_sitc2_78_total.csv", comma nolabel replace
 restore
 
 **Unofficial Codes**
+// TBD
 
 
 *** SITC Level 1 ***
 *** ~~~~~~~~~~~~ ***
 
-** Product Exports over Time
+** World Product (p) Exports over Time
 ** Filename: stata_wtf62-00_sitc3_####_total.csv
 ** Codes
 ** ~~~~~
@@ -308,17 +308,19 @@ foreach sitc in "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" {
 }
 
 
-
 **-----------------------------------**
 ** Country x Product Level Test Data **
+** Generic Tests of Raw Data 	     **
 **-----------------------------------**
+
+** EXPORTS **
+**~~~~~~~~~**
 
 use "$SOURCE_DIR/wtf62.dta", clear
 foreach year of num 63(1)99 {
 	append using "$SOURCE_DIR/wtf`year'.dta"
 }
 append using "$SOURCE_DIR/wtf00.dta"
-//save "$SOURCE_DIR/wtf.dta", replace
 
 format value %12.0f
 
@@ -327,24 +329,29 @@ keep year importer exporter sitc4 value
 ** SITC Level 4 Data **
 ** ~~~~~~~~~~~~~~~~~ **
 
-** Country x Product Exports over Time
+** Country (i) x Product (P) Exports to World over Time
 ** Filename: stata_wtf62-00_???_sitc4_####_total_export.csv
-**
+** Codes
+** ~~~~~
+** DNK, "0620","Sugar confectionery and preparations, non-chocolate"
+** ESP, "8973","Precious jewellery, goldsmiths' or silversmiths' wares"
 
+** Denmark Exports of "0620","Sugar confectionery and preparations, non-chocolate"
 preserve
 keep if exporter == "Denmark"
 keep if importer == "World"
 keep if sitc4 == "0620"
-collapse (sum) value, by(year)
+collapse (sum) value, by(year sitc4)
 gen eiso3c = "DNK"
-outsheet using "stata_wtf62-00_DNK_sitc4_0620_total.csv", comma nolabel replace
+outsheet using "stata_wtf62-00_DNK_sitc4_0620_total_export.csv", comma nolabel replace
 restore
 
+** Spain Exports of "8973","Precious jewellery, goldsmiths' or silversmiths' wares"
 preserve
 keep if exporter == "Spain"
 keep if importer == "World"
 keep if sitc4 == "8973"
-collapse (sum) value, by(year)
+collapse (sum) value, by(year sitc4)
 gen eiso3c = "ESP"
 outsheet using "stata_wtf62-00_ESP_sitc4_8973_total.csv", comma nolabel replace
 restore
@@ -353,48 +360,129 @@ restore
 ** SITC Level 3 Data **
 ** ~~~~~~~~~~~~~~~~~ **
 
-use "$SOURCE_DIR/wtf62.dta", clear
-foreach year of num 63(1)99 {
-	append using "$SOURCE_DIR/wtf`year'.dta"
-}
-append using "$SOURCE_DIR/wtf00.dta"
-//save "$SOURCE_DIR/wtf.dta", replace
-
-format value %12.0f
-
-keep year importer exporter sitc4 value
-
 **Split Codes to THREE DIGIT
 gen sitc3 = substr(sitc4,1,3)
 drop sitc4
 collapse (sum) value, by(year importer exporter sitc3)
 
 
-** Country x Product Exports over Time
+** Country (i) x Product (p) Exports to World over Time
 ** Filename: stata_wtf62-00_???_sitc3_####_total_export.csv
 ** Codes
 ** ~~~~~
-** "062","Sugar confectionery and preparations, non-chocolate"
-** "897","Gold, silver ware, jewelry and articles of precious materials, nes"
+** DNK, "062","Sugar confectionery and preparations, non-chocolate"
+** ESP, "897","Gold, silver ware, jewelry and articles of precious materials, nes"
 
-** "062","Sugar confectionery and preparations, non-chocolate"
+** Denmark exports of "062","Sugar confectionery and preparations, non-chocolate"
 preserve
 keep if exporter == "Denmark"
 keep if importer == "World"
 keep if sitc3 == "062"
-collapse (sum) value, by(year)
+collapse (sum) value, by(year sitc3)
 gen eiso3c = "DNK"
-outsheet using "stata_wtf62-00_DNK_sitc3_062_total.csv", comma nolabel replace
+outsheet using "stata_wtf62-00_DNK_sitc3_062_total_export.csv", comma nolabel replace
 restore
 
-** "897","Gold, silver ware, jewelry and articles of precious materials, nes"
+** Spain exports of "897","Gold, silver ware, jewelry and articles of precious materials, nes"
 preserve
 keep if exporter == "Spain"
 keep if importer == "World"
 keep if sitc3 == "897"
-collapse (sum) value, by(year)
+collapse (sum) value, by(year sitc3)
 gen eiso3c = "ESP"
-outsheet using "stata_wtf62-00_ESP_sitc3_897_total.csv", comma nolabel replace
+outsheet using "stata_wtf62-00_ESP_sitc3_897_total_export.csv", comma nolabel replace
 restore
 
 
+** IMPORTS **
+**~~~~~~~~~**
+
+use "$SOURCE_DIR/wtf62.dta", clear
+foreach year of num 63(1)99 {
+	append using "$SOURCE_DIR/wtf`year'.dta"
+}
+append using "$SOURCE_DIR/wtf00.dta"
+
+format value %12.0f
+
+keep year importer exporter sitc4 value
+
+** SITC Level 4 Data **
+** ~~~~~~~~~~~~~~~~~ **
+
+** Country (i) x Product (P) Imports From World over Time
+** Filename: stata_wtf62-00_???_sitc4_####_total_import.csv
+** Codes
+** ~~~~~
+** DNK, "0620","Sugar confectionery and preparations, non-chocolate"
+** ESP, "8973","Precious jewellery, goldsmiths' or silversmiths' wares"
+
+** Denmark Imports of "0620","Sugar confectionery and preparations, non-chocolate"
+preserve
+keep if exporter == "World"
+keep if importer == "Denmark"
+keep if sitc4 == "0620"
+collapse (sum) value, by(year sitc4)
+gen iiso3c = "DNK"
+outsheet using "stata_wtf62-00_DNK_sitc4_0620_total_import.csv", comma nolabel replace
+restore
+
+** Spain Imports of "8973","Precious jewellery, goldsmiths' or silversmiths' wares"
+preserve
+keep if exporter == "World"
+keep if importer == "Spain"
+keep if sitc4 == "8973"
+collapse (sum) value, by(year sitc4)
+gen iiso3c = "ESP"
+outsheet using "stata_wtf62-00_ESP_sitc4_8973_total_import.csv", comma nolabel replace
+restore
+
+
+** SITC Level 3 Data **
+** ~~~~~~~~~~~~~~~~~ **
+
+**Split Codes to THREE DIGIT
+gen sitc3 = substr(sitc4,1,3)
+drop sitc4
+collapse (sum) value, by(year importer exporter sitc3)
+
+** Country (i) x Product (p) Imports to World over Time
+** Filename: stata_wtf62-00_???_sitc3_####_total_import.csv
+** Codes
+** ~~~~~
+** DNK, "062","Sugar confectionery and preparations, non-chocolate"
+** ESP, "897","Gold, silver ware, jewelry and articles of precious materials, nes"
+
+** Denmark imports of "062","Sugar confectionery and preparations, non-chocolate"
+preserve
+keep if exporter == "Denmark"
+keep if importer == "World"
+keep if sitc3 == "062"
+collapse (sum) value, by(year sitc3)
+gen iiso3c = "DNK"
+outsheet using "stata_wtf62-00_DNK_sitc3_062_total_import.csv", comma nolabel replace
+restore
+
+** Spain imports of "897","Gold, silver ware, jewelry and articles of precious materials, nes"
+preserve
+keep if exporter == "World"
+keep if importer == "Spain"
+keep if sitc3 == "897"
+collapse (sum) value, by(year sitc3)
+gen iiso3c = "ESP"
+outsheet using "stata_wtf62-00_ESP_sitc3_897_total_import.csv", comma nolabel replace
+restore
+
+
+
+*** ------------------------------------> SPECIAL CASE TEST DATA <-------------------------------------------- ***
+
+
+**------------------------**
+** Special Case Test Data **
+**------------------------**
+
+
+**-----------------------------------**
+** Country x Product Level Test Data **
+**-----------------------------------**
