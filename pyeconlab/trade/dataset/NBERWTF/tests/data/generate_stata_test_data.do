@@ -353,7 +353,7 @@ keep if importer == "World"
 keep if sitc4 == "8973"
 collapse (sum) value, by(year sitc4)
 gen eiso3c = "ESP"
-outsheet using "stata_wtf62-00_ESP_sitc4_8973_total.csv", comma nolabel replace
+outsheet using "stata_wtf62-00_ESP_sitc4_8973_total_export.csv", comma nolabel replace
 restore
 
 
