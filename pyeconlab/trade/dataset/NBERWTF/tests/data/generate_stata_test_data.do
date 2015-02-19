@@ -532,14 +532,17 @@ append using "$SOURCE_DIR/china_hk00.dta"
 
 gen marker = 0
 //HONG KONG
-replace marker = 1 if year == 1990 & importer == "World" & exporter == "China HK SAR" & sitc4 == "0111"
-replace marker = 2 if year == 1990 & importer == "Oman" & exporter == "China HK SAR" & sitc4 == "6522"
-replace marker = 3 if year == 1990 & importer == "Japan" & exporter == "China HK SAR" & sitc4 == "8748"
+replace marker = 1 if year == 1990 & importer == "Oman" & exporter == "China HK SAR" & sitc4 == "6522"
+replace marker = 2 if year == 1990 & importer == "Japan" & exporter == "China HK SAR" & sitc4 == "8748"
+replace marker = 3 if year == 1990 & importer == "Thailand" & exporter == "China HK SAR" & sitc4 == "5989"
+replace marker = 4 if year == 1990 & importer == "Netherlands" & exporter == "China HK SAR" & sitc4 == "8982"
+replace marker = 5 if year == 1990 & importer == "China MC SAR" & exporter == "China HK SAR" & sitc4 == "6115"
 //CHINA
-replace marker = 4 if year == 1990 & importer == "World" & exporter == "China" & sitc4 == "7436"
-replace marker = 5 if year == 1990 & importer == "Thailand" & exporter == "China" & sitc4 == "5989"
-replace marker = 6 if year == 1990 & importer == "Netherlands" & exporter == "China" & sitc4 == "8982"
-replace marker = 7 if year == 1990 & importer == "China MC SAR" & exporter == "China" & sitc4 == "6115"
+replace marker = 1 if year == 1990 & importer == "Oman" & exporter == "China" & sitc4 == "6522"
+replace marker = 2 if year == 1990 & importer == "Japan" & exporter == "China" & sitc4 == "8748"
+replace marker = 3 if year == 1990 & importer == "Thailand" & exporter == "China" & sitc4 == "5989"
+replace marker = 4 if year == 1990 & importer == "Netherlands" & exporter == "China" & sitc4 == "8982"
+replace marker = 5 if year == 1990 & importer == "China MC SAR" & exporter == "China" & sitc4 == "6115"
 keep if marker != 0
 gen iiso3c = "WLD" if importer == "World"
 replace iiso3c = "JPN" if importer == "Japan"
@@ -549,6 +552,7 @@ replace iiso3c = "MAC" if importer == "China MC SAR"
 replace iiso3c = "NLD" if importer == "Netherlands"
 gen eiso3c = "CHN" if exporter == "China"
 replace eiso3c = "HKG" if exporter == "China HK SAR"
+sort marker iiso3c
 outsheet using "stata_wtf90_hk_china_adjust_sitc4_check_sample.csv", comma nolabel replace
 
 ** Option: intertemp_cntrycode **
