@@ -49,7 +49,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
         level               :   int
                                 Specify Level of Final dataset (i.e. SITC Level 1, 2, 3, or 4)
         dropAX              :   bool, optional(default=True)
-                                Drop AX Codes 
+                                Drop AX Codes at the Relevant Level (i.e. SITC Level 3 Data will include appropriate A and X codes)
         sitcr2              :   bool, optional(default=True)
                                 Add SITCR2 Indicator
         drop_nonsitcr2      :   bool, optional(default=True)
@@ -93,7 +93,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
         """
         
         #-Operations Requiring RAW SITC Level 4-#
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
         idx = [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']
 
@@ -114,7 +114,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
 
         #-Filter Data-#
-        idx = [u'year', u'exporter', u'importer', u'sitc4']
+        idx = [u'year', u'exporter', u'importer', u'sitc4']         #Note: This collapses duplicate entries with unit differences
         df = df.loc[:,idx + ['value']]
 
         #-Collapse to SITC Level -#
@@ -157,6 +157,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
         
         #-Remove Product Code Errors in Dataset-#
         df = df.loc[(df['sitc%s'%level] != "")]                                                                   #Does this need a reset_index?
+        
         #-dropAX-#
         if dropAX:
             if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
