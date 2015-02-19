@@ -83,12 +83,10 @@ def construct_sitcr2l2(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             2. Add in a Year Filter
         """
 
-        #-Set Data-#
-        idx = ['year', 'exporter', 'importer', 'sitc4']
-        df = df.loc[:,idx + ['value']]
-        
-        #-Operations Requiring SITC Level 4-#
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        #-Operations Requiring RAW SITC Level 4-#
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+        idx = [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']
 
         #-Hong Kong China Data Adjustment Option-#
         if adjust_hk[0]:
@@ -103,6 +101,10 @@ def construct_sitcr2l2(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             #-Note: Current merge_columns utility merges one column set at a time-#
             df = merge_columns(raw_value, adjust_value, idx, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
+
+        #-Filter Data-#
+        idx = ['year', 'exporter', 'importer', 'sitc4']
+        df = df.loc[:,idx + ['value']]
 
         #-Adjust to SITC Level 2-#
         if verbose: print "[INFO] Collapsing to SITC Level 2 Data"

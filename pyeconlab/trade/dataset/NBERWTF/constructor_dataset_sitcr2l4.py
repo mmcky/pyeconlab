@@ -86,13 +86,11 @@ def construct_sitcr2l4(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             3. Write a STATA do script for generating test data (/do/basic_sitc4_country_data.do)
             4. Write a test for the Generalised Version of this Function in constructor_dataset.py and collapse these routines to remove code duplication
         """
-
-        #-Set Data-#
-        idx = ['year', 'exporter', 'importer', 'sitc4']
-        df = df.loc[:,idx + ['value']]
         
-        #-Operations Requiring SITC Level 4-#
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+        #-Operations Requiring RAW SITC Level 4-#
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+        idx = [u'year', u'icode', u'importer', u'ecode', u'exporter', u'sitc4', u'unit', u'dot']
 
         #-Hong Kong China Data Adjustment Option-#
         if adjust_hk[0]:
@@ -107,6 +105,10 @@ def construct_sitcr2l4(df, data_type, dropAX=True, sitcr2=True, drop_nonsitcr2=T
             #-Note: Current merge_columns utility merges one column set at a time-#
             df = merge_columns(raw_value, adjust_value, idx, collapse_columns=('value_raw', 'value_adj', 'value'), dominant='right', output='final', verbose=verbose)
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
+
+        #-Filter Data-#
+        idx = ['year', 'exporter', 'importer', 'sitc4']
+        df = df.loc[:,idx + ['value']]
 
         #-Countries Only Adjustment-#
         if verbose: print "[INFO] Removing 'World' values from the dataset to be country only data"
