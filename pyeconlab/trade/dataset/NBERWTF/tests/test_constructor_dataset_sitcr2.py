@@ -22,6 +22,7 @@ Notes
 
 import sys
 import os
+import re
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
@@ -59,6 +60,22 @@ TEST_DATA_DIR = package_folder(__file__, "data")
 from ..constructor_dataset import SITC_DATASET_OPTIONS
 DATA_TYPE = ['trade', 'export', 'import']
 
+class TestRandomSamples():
+    """
+    Test Random Samples in Each Dataset
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.raw_data = load_raw_dataset(TEST_DATA_DIR+"nberwtf_raw_years-1990-1991-1992.h5", 1990, 1990, verbose=True)
+        cls.hkchina_rawdata = load_raw_dataset(TEST_DATA_DIR+"nberwtf_hkchina_supp_raw_years-1990-1991-1992.h5", 1990, 1990, verbose=True)
+
+    def TestRandomRawSample1990(self):
+        """
+        Test Random Sample Data from 1990
+        """
+        pass
+
 class TestOptions():
     """
     Test Options for the construct_sitcr2 function
@@ -68,8 +85,51 @@ class TestOptions():
         cls.rawdata = load_raw_dataset(TEST_DATA_DIR+"nberwtf_raw_years-1990-1991-1992.h5", 1990, 1990, verbose=True) 
         cls.hkchina_rawdata = load_raw_dataset(TEST_DATA_DIR+"nberwtf_hkchina_supp_raw_years-1990-1991-1992.h5", 1990, 1990, verbose=True)
 
-    def Test_dropax(self):
-        raise NotImplementedError
+    # def Test_dropax(self):
+    #     """
+    #     file: stata_wtf98_BGR_sitc4_51##_WORLD_import.csv                 ### ---> This is 1998 DATA -> Need 1990,1991 or 1992 DATA for within REPO testing <--- ###
+    #     """
+    #     OPTIONS = {
+    #             'A' :   {   'dropAX' : False,                    
+    #                         'sitcr2' : False,                     
+    #                         'drop_nonsitcr2' : False,            
+    #                         'adjust_hk' : (False, None),                 
+    #                         'intertemp_cntrycode' : False,        
+    #                         'drop_incp_cntrycode' : False,        
+    #                         'adjust_units' : False,
+    #                         'source_institution' : 'un',
+    #                     },
+    #             'B' :   {   'dropAX' : True,                     
+    #                         'sitcr2' : False,                     
+    #                         'drop_nonsitcr2' : False,             
+    #                         'adjust_hk' : (False, None),                   
+    #                         'intertemp_cntrycode' : False,        
+    #                         'drop_incp_cntrycode' : False,        
+    #                         'adjust_units' : False,
+    #                         'source_institution' : 'un',
+    #                     },
+    #             }
+    #     #-SITC Level 4-#
+    #     #~~~~~~~~~~~~~~#
+    #     #-Test dropAX=False Import Data-#
+    #     A = construct_sitcr2(self.rawdata, data_type='import', level=4, **OPTIONS['A'])
+    #     RAW = pd.read_csv(TEST_DATA_DIR + "stata_wtf98_BGR_sitc4_51##_WORLD_import.csv")
+    #     for idx,row in RAW.iterrows():
+    #         A_VAL = A.loc[(A.year == row.year) & (A.iiso3c == row.iiso3c) & (A.sitc4 == str(row.sitc4))]
+    #         A_VAL = A_VAL.get_value(index=A_VAL.index[0], col='value')
+    #         assert A_VAL == row.value
+    #     #-Test DropAX=True Import Data-#
+    #     B = construct_sitcr2(self.rawdata, data_type='import', level=4, **OPTIONS['B'])
+    #     #-Prepare RAW DATA-#
+    #     RAW = pd.read_csv(TEST_DATA_DIR + "stata_wtf98_BGR_sitc4_51##_WORLD_import.csv")
+    #     RAW['AX'] = RAW.sitc4.apply(lambda x: 1 if re.search("[AX]", x) else 0)
+    #     RAW = RAW.loc[RAW.AX != 1]
+    #     del RAW['AX']
+    #     #-Test Each Remaining Row of Data-#
+    #     for idx,row in RAW.iterrows():
+    #         B_VAL = B.loc[(B.year == row.year) & (B.iiso3c == row.iiso3c) & (B.sitc4 == str(row.sitc4))]
+    #         B_VAL = B_VAL.get_value(index=B_VAL.index[0], col='value')
+    #         assert B_VAL == row.value_adj
 
     def Test_sitcr2(self):
         raise NotImplementedError
