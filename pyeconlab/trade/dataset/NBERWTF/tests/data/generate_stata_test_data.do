@@ -478,11 +478,85 @@ restore
 *** ------------------------------------> SPECIAL CASE TEST DATA <-------------------------------------------- ***
 
 
-**------------------------**
-** Special Case Test Data **
-**------------------------**
+** ------------------------------------------- **
+** Tests data for constructor_dataset_sitcr2() **
+** ------------------------------------------- **
 
+** SITC Level 4 **
+** ~~~~~~~~~~~~ **
 
-**-----------------------------------**
-** Country x Product Level Test Data **
-**-----------------------------------**
+use "$SOURCE_DIR/wtf62.dta", clear
+foreach year of num 63(1)99 {
+	append using "$SOURCE_DIR/wtf`year'.dta"
+}
+append using "$SOURCE_DIR/wtf00.dta"
+
+format value %12.0f
+
+keep year importer exporter sitc4 value
+
+** Option: DropAX **
+** ~~~~~~~~~~~~~~ **
+
+preserve
+gen sitc2 = substr(sitc4,1,2)
+keep if year == 1998 & importer == "Bulgaria" & exporter == "World" & sitc2 == "51"
+gen sitc3 = substr(sitc4,1,3)
+gen iiso3c = "BGR"
+drop importer
+gen eiso3c = "World"
+drop exporter
+order year iiso3c eiso3c sitc4 value
+outsheet using "stata_wtf98_BGR_sitc4_51##_WORLD_import.csv", comma nolabel replace
+restore
+
+** Option: SITCR2 **
+** ~~~~~~~~~~~~~~ **
+
+//Not Applicable - Test outside of Stata
+
+** Option: drop_nonsitcr2 **
+** ~~~~~~~~~~~~~~~~~~~~~~ **
+
+// Not Applicable - Test outside of Stata
+
+** Option: adjust_hk **
+** ~~~~~~~~~~~~~~~~~ **
+
+//Import Hong Kong Adjustment Data //
+use "$SOURCE_DIR/china_hk88.dta", clear
+foreach year of num 89(1)99 {
+	append using "$SOURCE_DIR/china_hk`year'.dta"
+}
+append using "$SOURCE_DIR/china_hk00.dta"
+
+gen marker = 0
+//HONG KONG
+replace marker = 1 if year == 1990 & importer == "World" & exporter == "China HK SAR" & sitc4 == "0111"
+replace marker = 2 if year == 1990 & importer == "Oman" & exporter == "China HK SAR" & sitc4 == "6522"
+replace marker = 3 if year == 1990 & importer == "Japan" & exporter == "China HK SAR" & sitc4 == "8748"
+//CHINA
+replace marker = 4 if year == 1990 & importer == "World" & exporter == "China" & sitc4 == "7436"
+replace marker = 5 if year == 1990 & importer == "Thailand" & exporter == "China" & sitc4 == "5989"
+replace marker = 6 if year == 1990 & importer == "Netherlands" & exporter == "China" & sitc4 == "8982"
+replace marker = 7 if year == 1990 & importer == "China MC SAR" & exporter == "China" & sitc4 == "6115"
+keep if marker != 0
+gen iiso3c = "WLD" if importer == "World"
+replace iiso3c = "JPN" if importer == "Japan"
+replace iiso3c = "OMN" if importer == "Oman"
+replace iiso3c = "THA" if importer == "Thailand"
+replace iiso3c = "MAC" if importer == "China MC SAR"
+replace iiso3c = "NLD" if importer == "Netherlands"
+gen eiso3c = "CHN" if exporter == "China"
+replace eiso3c = "HKG" if exporter == "China HK SAR"
+outsheet using "stata_wtf90_hk_china_adjust_sitc4_check_sample.csv", comma nolabel replace
+
+** Option: intertemp_cntrycode **
+** ~~~~~~~~~~~~~~~~~~~~~~~~~~~ **
+
+// Not Applicable - Test outside of Stata
+
+** Option: drop_incp_cntrycode **
+** ~~~~~~~~~~~~~~~~~~~~~~~~~~~ **
+
+// Not Applicable - Test outside of Stata

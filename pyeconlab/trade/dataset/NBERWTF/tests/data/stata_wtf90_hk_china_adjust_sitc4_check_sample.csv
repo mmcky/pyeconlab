@@ -1,0 +1,11 @@
+year,icode,importer,ecode,exporter,sitc4,unit,dot,value,value_adj,quantity,marker,iiso3c,eiso3c
+1990,"100000","World","453440","China HK SAR","0111","",,0,29,0,1,"WLD","HKG"
+1990,"100000","World","453440","China HK SAR","0111","W",,1063,1063,367,1,"WLD","HKG"
+1990,"100000","World","481560","China","7436","",,8986,7482,,4,"WLD","CHN"
+1990,"100000","World","481560","China","7436","N",,7845,7818,1127201,4,"WLD","CHN"
+1990,"100000","World","481560","China","7436","W",,2113,1969,466,4,"WLD","CHN"
+1990,"413920","Japan","453440","China HK SAR","8748","W",1,147,189,3,3,"JPN","HKG"
+1990,"445120","Oman","453440","China HK SAR","6522","A",2,1394,1438,1106,2,"OMN","HKG"
+1990,"454460","China MC SAR","481560","China","6115","W",2,374,351,46,7,"MAC","CHN"
+1990,"457640","Thailand","481560","China","5989","W",1,1758,1743,5878,5,"THA","CHN"
+1990,"535280","Netherlands","481560","China","8982","W",1,124,96,10,6,"NLD","CHN"
