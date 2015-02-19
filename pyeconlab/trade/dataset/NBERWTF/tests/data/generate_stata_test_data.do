@@ -554,6 +554,7 @@ gen eiso3c = "CHN" if exporter == "China"
 replace eiso3c = "HKG" if exporter == "China HK SAR"
 sort marker iiso3c
 keep year iiso3c eiso3c sitc4 value value_adj
+order year iiso3c eiso3c sitc4
 outsheet using "stata_wtf90_hk_china_adjust_sitc4_check_sample.csv", comma nolabel replace
 
 ** Option: intertemp_cntrycode **
