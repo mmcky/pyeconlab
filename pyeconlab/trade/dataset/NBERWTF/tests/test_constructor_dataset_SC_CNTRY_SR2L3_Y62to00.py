@@ -1,5 +1,5 @@
 """
-Test Dataset: SC_CNTRY_SR2L3_Y62to00 from NBERFeenstraWTFConstructor
+Test Dataset: SC_CNTRY_SR2L3_Y62to00 from NBERWTFConstructor
 	
 	dropAX 			: 	Drop AX Codes 
 	sitcr2 			: 	Add SITCR2 Indicator
@@ -22,13 +22,19 @@ Future Work
 [2] Consider using to_export, and to_import attributes rather than recomputing everything
 """
 
-TEST_DATA_DIR 	= "D:\\work-data\\repos-pyeconlab-testdata\\" 
-SOURCE_DATA_DIR = "D:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\" #win7
-
+import os
 import pandas as pd
 from numpy.testing import assert_allclose
 
-from pyeconlab import NBERFeenstraWTFConstructor
+from pyeconlab import NBERWTFConstructor
+
+#-Win7-#
+# TEST_DATA_DIR 	= "D:\\work-data\\repos-pyeconlab-testdata\\"  						#win7
+# SOURCE_DATA_DIR = "D:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\" 	#win7
+
+#-Linux/OSX-#
+TEST_DATA_DIR = os.path.expanduser("~/work-data/repos-pyeconlab-testdata/")
+SOURCE_DATA_DIR = os.path.expanduser("~/work-data/datasets/36a376e5a01385782112519bddfac85e/")
 
 class TestSC_CNTRY_SR2L3_Y62to00():
 	"""
@@ -70,7 +76,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 	
 	@classmethod
 	def setUpClass(cls):
-		cls.obj = NBERFeenstraWTFConstructor(source_dir=SOURCE_DATA_DIR)
+		cls.obj = NBERWTFConstructor(source_dir=SOURCE_DATA_DIR)
 
 	def setUp(self):
 		self.obj.reset_dataset()
@@ -79,7 +85,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_bilateral_data_A(self):
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data='trade')
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data_type='trade')
 		#-stata-#
 		self.A = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta')
 		self.A.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'], inplace=True)
@@ -90,7 +96,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_export_data_A(self):
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data='export') 											#a to_export would be more efficient here
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data_type='export') 											#a to_export would be more efficient here
 		#-stata-#
 		self.A = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta')
 		self.A.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
@@ -101,7 +107,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_import_data_A(self): 																					#a to_import would be more efficient here
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data='import')
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data_type='import')
 		#-stata-#
 		self.A = pd.read_stata(TEST_DATA_DIR + 'A-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta')
 		self.A.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
@@ -114,7 +120,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_bilateral_data_B(self):
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data='trade')
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data_type='trade')
 		#-stata-#
 		self.B = pd.read_stata(TEST_DATA_DIR + 'B-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta')
 		self.B.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'], inplace=True)
@@ -125,7 +131,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_export_data_B(self):
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data='export') 											#a to_export would be more efficient here
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data_type='export') 											#a to_export would be more efficient here
 		#-stata-#
 		self.B = pd.read_stata(TEST_DATA_DIR + 'B-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta')
 		self.B.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
@@ -136,7 +142,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_import_data_B(self): 																					#a to_import would be more efficient here
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data='import')
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data_type='import')
 		#-stata-#
 		self.B = pd.read_stata(TEST_DATA_DIR + 'B-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta')
 		self.B.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
@@ -149,7 +155,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_bilateral_data_C(self):
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(data='trade')
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(data_type='trade')
 		#-stata-#
 		self.C = pd.read_stata(TEST_DATA_DIR + 'C-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta')
 		self.C = self.C.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
@@ -160,7 +166,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_export_data_C(self):
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(data='export') 											#a to_export would be more efficient here
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(data_type='export') 											#a to_export would be more efficient here
 		#-stata-#
 		self.C = pd.read_stata(TEST_DATA_DIR + 'C-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta')
 		self.C.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
@@ -171,7 +177,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_import_data_C(self): 																					#a to_import would be more efficient here
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(data='import')
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(data_type='import')
 		#-stata-#
 		self.C = pd.read_stata(TEST_DATA_DIR + 'C-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta')
 		self.C.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
@@ -184,7 +190,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_bilateral_data_D(self):
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(data='trade')
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(data_type='trade')
 		#-stata-#
 		self.D = pd.read_stata(TEST_DATA_DIR + 'D-nberfeenstrawtf_do_stata_basic_country_sitc3_bilateral.dta')
 		self.D = self.D.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
@@ -195,7 +201,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_export_data_D(self):
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(data='export') 											#a to_export would be more efficient here
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(data_type='export') 											#a to_export would be more efficient here
 		#-stata-#
 		self.D = pd.read_stata(TEST_DATA_DIR + 'D-nberfeenstrawtf_do_stata_basic_country_sitc3_exports.dta')
 		self.D.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
@@ -206,7 +212,7 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 
 	def test_import_data_D(self): 																					#a to_import would be more efficient here
 		#-pyeconlab-#
-		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(data='import')
+		self.obj.construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(data_type='import')
 		#-stata-#
 		self.D = pd.read_stata(TEST_DATA_DIR + 'D-nberfeenstrawtf_do_stata_basic_country_sitc3_imports.dta')
 		self.D.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
