@@ -244,7 +244,7 @@ class NBERWTFConstructor(NBERWTF):
     # - Dataset Reference - #
     __raw_data_hdf_fn   = u'wtf62-00_raw.h5'
     __raw_data_hdf_yearindex_fn = u'wtf62-00_yearindex.h5'
-    __cache_dir = u"cache\\"
+    __cache_dir = u"cache/"
 
     def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, skip_setup=False, force=False, reduce_memory=False, verbose=True):
         """ 

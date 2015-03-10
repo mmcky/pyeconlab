@@ -129,7 +129,7 @@ foreach item of global DATASETS {
 	**/meta/csv/countrycodes_to_iso3c.csv contains this listing**
 	**Copied: 27-08-2014
 	**Note: This is not intertemporally consistent**
-	insheet using "$META\csv\countryname_to_iso3c.csv", clear names
+	insheet using "$META/csv/countryname_to_iso3c.csv", clear names
 	gen exporter = countryname
 	drop countryname
 	rename iso3c eiso3c
