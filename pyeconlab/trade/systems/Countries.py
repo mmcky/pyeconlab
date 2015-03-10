@@ -66,11 +66,11 @@ import pycountry as pc 								#May need to pip install pycountry as not include
 #     print "[wdi_lab] The WDI_LAB Repository cannot be found!"
 #     sys.exit()
 
-try: 
-	import mydatasets as md
-except:
-	print "[mydatasets] The MyDatasets Repository cannot be found!"
-	sys.exit()
+# try: 
+# 	import mydatasets as md
+# except:
+# 	print "[mydatasets] The MyDatasets Repository cannot be found!"
+# 	sys.exit()
 
 
 ### --- Add Local Folder Libraries --- ###

@@ -52,11 +52,11 @@ import numpy as np
 # for project in projects:
 #     sys.path.append(abs_path+"/"+project)
 
-try: 
-	import mydatasets as md
-except:
-	print "[mydatasets] The MyDatasets Repository cannot be found!"
-	sys.exit()
+# try: 
+# 	import mydatasets as md
+# except:
+# 	print "[mydatasets] The MyDatasets Repository cannot be found!"
+# 	sys.exit()
 
 ### --- Product Class --- ###
 
