@@ -2924,7 +2924,7 @@ class NBERWTFConstructor(NBERWTF):
         table.columns = table.columns.droplevel()
         return table 
 
-    def intertemporal_productcode_countries(self, meta=True, force=False, verbose=False):
+    def intertemporal_productcode_exporters(self, meta=True, force=False, verbose=False):
         """
         Compute Number of Country Exporters for Any Given ProductCode
 
