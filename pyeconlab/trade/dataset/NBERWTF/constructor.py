@@ -717,6 +717,50 @@ class NBERWTFConstructor(NBERWTF):
                 if gc_collect:
                     gc.collect()
 
+    def check_cache(self, check="year", verbose=True):
+        """
+        Check cache files match dta
+        
+        Parameters
+        ----------
+        check       :       str, optional(default="both")
+                            Check "raw", "year" or "both" types of cache files
+
+        Notes
+        -----
+        1. Best to use skip_setup=True when generating initial object to reduce the memory footprint in checking files
+
+        """
+        #-Check RAW File-#
+        years = self.source_years
+        if check == "raw" or check == "both":   
+            print "[INFO] Checking Raw Data Cache File"
+            fn = self._source_dir + self.__cache_dir + self.__raw_data_hdf_fn
+            if verbose: print "[INFO] Loading RAW DATA from %s" % fn
+            raw_data = pd.read_hdf(fn, key='raw_data')
+            #-Check Against Year Files-#                                   
+            for year in years:
+                raw_year = raw_data.ix[raw_data.year==year]
+                fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
+                if verbose: print "Loading Year: %s from file: %s" % (year, fn)
+                dta_year = pd.read_stata(fn)
+                assert_merged_series_items_equal(raw_year['value'], dta_year['value'])              #This assumes the SAME order of Data
+        #-Check RAW Year File-#
+        if check == "year" or check == "both":
+            #-Check Against Year Files-#                                   
+            for year in years:
+                print "[INFO] Checking Year: %s" % year
+                #-Cache Data-#
+                fn = self._source_dir + self.__cache_dir + self.__raw_data_hdf_yearindex_fn 
+                if verbose: print "Loading Year: %s from file: %s" % (year, fn)
+                raw_year = pd.read_hdf(fn, key='Y'+str(year))
+                #-Raw DTA Files-#
+                fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
+                if verbose: print "Loading Year: %s from file: %s" % (year, fn)
+                dta_year = pd.read_stata(fn)
+                assert_merged_series_items_equal(raw_year['value'], dta_year['value'])              #This assumes the SAME order of Data
+
+
     def dataset_to_hdf(self, flname='default', key='default', format='table', verbose=True):
         """
         Save a dataset to HDF File
@@ -728,6 +772,8 @@ class NBERWTFConstructor(NBERWTF):
         if verbose: print "[INFO] Saving dataset to: %s" % flname
         self.dataset.to_hdf(flname, key='dataset', mode='w', complevel=9, complib='zlib', format=format)
         gc.collect()
+
+
 
     # ---------------------- #
     # - Supplementary Data - #
