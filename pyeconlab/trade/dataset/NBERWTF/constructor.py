@@ -45,6 +45,7 @@ import copy
 import re
 import gc
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 import numpy as np
 import countrycode as cc
 import cPickle as pickle
@@ -729,6 +730,7 @@ class NBERWTFConstructor(NBERWTF):
         Notes
         -----
         1. Best to use skip_setup=True when generating initial object to reduce the memory footprint in checking files
+        2. This currently FAILS for "raw" becuase when tables get appended together this forces the 'values' to be floats in all years and it is only found in some year specific files
 
         """
         #-Check RAW File-#
@@ -744,7 +746,20 @@ class NBERWTFConstructor(NBERWTF):
                 fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
                 if verbose: print "Loading Year: %s from file: %s" % (year, fn)
                 dta_year = pd.read_stata(fn)
-                assert_merged_series_items_equal(raw_year['value'], dta_year['value'])              #This assumes the SAME order of Data
+                try:
+                    # assert_merged_series_items_equal(raw_year['value'], dta_year['value'])     #Should I use this merge utility or assert_frames?
+                    assert_frame_equal(raw_year, dta_year)
+                except:
+                    ### ---> WORKING HERE <--- ###
+                    print "Not an EXACT Match ... trying approximately"
+                    print "HDF-RAW DTYPES:"
+                    print raw_year.dtypes
+                    print "DTA DTYPES:"
+                    print dta_year.dtypes
+                    print "Converting dta_year 'value' to float"
+                    dta_year['value'] = dta_year['value'].astype(float)
+                    assert_frame_equal(raw_year, dta_year, check_less_precise=True)
+                    ### ---> END WORKING HERE <--- ###
         #-Check RAW Year File-#
         if check == "year" or check == "both":
             #-Check Against Year Files-#                                   
@@ -758,7 +773,7 @@ class NBERWTFConstructor(NBERWTF):
                 fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
                 if verbose: print "Loading Year: %s from file: %s" % (year, fn)
                 dta_year = pd.read_stata(fn)
-                assert_merged_series_items_equal(raw_year['value'], dta_year['value'])              #This assumes the SAME order of Data
+                assert_merged_series_items_equal(raw_year['value'], dta_year['value'])              #This is done via an Inner Merge so order isn't as important
 
 
     def dataset_to_hdf(self, flname='default', key='default', format='table', verbose=True):
