@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import hashlib
+import pandas as pd
 
 # --------- #
 # Utilities #
@@ -112,3 +113,5 @@ def verify_md5hash(fl, md5hash):
     """
     computed_md5hash = hashlib.md5(open(fl, 'rb').read()).hexdigest()
     return (md5hash == computed_md5hash)
+
+

@@ -248,13 +248,8 @@ def find_row(df, row):
         1. This needs testing
         2. This needs an example to confirm ``row`` types 
 
-    Notes
-    -----
-    1. [ISSUE] Isn't this just returning the last comparison!
     """
-    for col in df:
-        result = df.loc[(df[col] == row[col]) | (df[col].isnull() & pd.isnull(row[col]))]           #!ISSUE HERE!
-    return result
+    return df.loc[((df == row) | (df.isnull() & row.isnull())).all(1)]
 
 
 # ------------------------ #
@@ -312,7 +307,7 @@ def compare_idx_items(left, right, left_column, right_column, how='outer', tol=1
     if return_merged:
         return merged
 
-def compare_dataframe_rows(base, comparison, verbose=True):
+def compare_dataframe_rows(base, comparison):
     """
     Compare Rows in base DataFrame to see if they are contained in the comparison dataframe and return differences
 
@@ -324,18 +319,8 @@ def compare_dataframe_rows(base, comparison, verbose=True):
                     Supply a Pandas DataFrame 
 
     """
-    base = base.reset_index()
-    base_idx = set(base.index)
-    comparison = comparison.reset_index()
-    #-Matched Rows-#
-    matched = comparison.loc[((comparison == base) | (comparison.isnull() & base.isnull())).all(1)]
-    matched_idx = set(matched.index)
-    #-Not Matched Rows-#
-    notmatched_idx = base_idx.difference(matched_idx)
-    mask = [False]*len(base_idx)
-    for row_idx in notmatched_idx:
-        mask[row_idx] = True
-    notmatched = base[mask]
+    matched = base.loc[((base == comparison) | (base.isnull() & comparison.isnull())).all(1)]
+    notmatched = base.loc[((base == comparison) | (base.isnull() & comparison.isnull())).all(1) == False]
     return (matched, notmatched)
 
 
