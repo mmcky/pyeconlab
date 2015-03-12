@@ -20,7 +20,7 @@ class NBERWTF(object):
 
     # - Attributes - #
     source_name             = u'Feenstra (NBER) World Trade Dataset'
-    source_years            = xrange(1962, 2000, 1)
+    source_years            = xrange(1962, 2000+1, 1)
     source_classification   = 'SITC'
     source_revision         = 2
     source_level            = 4
