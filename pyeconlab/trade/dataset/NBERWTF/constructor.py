@@ -742,24 +742,23 @@ class NBERWTFConstructor(NBERWTF):
             raw_data = pd.read_hdf(fn, key='raw_data')
             #-Check Against Year Files-#                                   
             for year in years:
-                raw_year = raw_data.ix[raw_data.year==year]
+                raw_year = raw_data.ix[raw_data.year==year].reset_index()                       #Reset the Index as object view retains old index line numbers
+                del raw_year['index']                                                           #Remove old index reference for comparison to dta_year
                 fn = self._source_dir + self._fn_prefix + str(year)[-2:] + self._fn_postfix
                 if verbose: print "Loading Year: %s from file: %s" % (year, fn)
                 dta_year = pd.read_stata(fn)
+                dta_year['value'] = dta_year['value'].astype(float)                             #Note all dta_year items are imported as floats
                 try:
-                    # assert_merged_series_items_equal(raw_year['value'], dta_year['value'])     #Should I use this merge utility or assert_frames?
+                    # assert_merged_series_items_equal(raw_year['value'], dta_year['value'])    #Should I use this merge utility or assert_frames?
                     assert_frame_equal(raw_year, dta_year)
                 except:
-                    ### ---> WORKING HERE <--- ###
                     print "Not an EXACT Match ... trying approximately"
-                    print "HDF-RAW DTYPES:"
-                    print raw_year.dtypes
-                    print "DTA DTYPES:"
-                    print dta_year.dtypes
-                    print "Converting dta_year 'value' to float"
-                    dta_year['value'] = dta_year['value'].astype(float)
-                    assert_frame_equal(raw_year, dta_year, check_less_precise=True)
-                    ### ---> END WORKING HERE <--- ###
+                    try:
+                        assert_frame_equal(raw_year, dta_year, check_less_precise=True)
+                    except:
+                        return raw_year, dta_year  #debug
+            if check == "raw":
+                return True, None
         #-Check RAW Year File-#
         if check == "year" or check == "both":
             #-Check Against Year Files-#                                   
@@ -774,6 +773,9 @@ class NBERWTFConstructor(NBERWTF):
                 if verbose: print "Loading Year: %s from file: %s" % (year, fn)
                 dta_year = pd.read_stata(fn)
                 assert_merged_series_items_equal(raw_year['value'], dta_year['value'])              #This is done via an Inner Merge so order isn't as important
+            if check == "year":
+                return True, None
+        return True, True
 
 
     def dataset_to_hdf(self, flname='default', key='default', format='table', verbose=True):
