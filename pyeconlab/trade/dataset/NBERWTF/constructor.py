@@ -1085,7 +1085,7 @@ class NBERWTFConstructor(NBERWTF):
         if dataset:
             data = self.dataset
         else:
-            data = self.raw_data
+            data = self.__raw_data
         #-Check if Operation has been conducted-#
         op_string = u"(split_countrycodes)"
         if check_operations(self, op_string, verbose=verbose): 
@@ -2537,9 +2537,9 @@ class NBERWTFConstructor(NBERWTF):
             if force == False:
                 raise ValueError("[ERROR] Not a Complete Dataset!")
         #-Get Raw Data -#
-        data = self.raw_data        
+        data = self.__raw_data        
         #-Split Codes-#
-        if not check_operations(self, u"(split_countrycodes"):                          #Requires iiso3n, eiso3n
+        if not check_operations(self, u"(split_countrycodes)"):                          #Requires iiso3n, eiso3n
             if verbose: print "[INFO] Running .split_countrycodes() as is required ..."
             self.split_countrycodes(dataset=False, verbose=verbose)
         #-Core-#
@@ -2606,6 +2606,7 @@ class NBERWTFConstructor(NBERWTF):
         table_iiso3n = table_iiso3n.set_index(idx)
         table_iiso3n = table_iiso3n.unstack(level='year')
         table_iiso3n.columns = table_iiso3n.columns.droplevel()     #Removes Unnecessary 'iiso3n' label
+        table_iiso3n.index = table_iiso3n.index.reorder_levels(order=['iiso3c', 'importer', 'icode'])
         #-Exporters-#
         if verbose: print "[INFO] ecid: %s" % list(ecid)
         table_eiso3n = data[['year'] + list(ecid)].drop_duplicates()
@@ -2614,6 +2615,7 @@ class NBERWTFConstructor(NBERWTF):
         table_eiso3n = table_eiso3n.set_index(idx)
         table_eiso3n = table_eiso3n.unstack(level='year')
         table_eiso3n.columns = table_eiso3n.columns.droplevel()     #Removes Unnecessary 'eiso3n' label
+        table_eiso3n.index = table_eiso3n.index.reorder_levels(order=['eiso3c', 'exporter', 'ecode'])
         return table_iiso3n, table_eiso3n
 
     # - Product Codes Meta - #
