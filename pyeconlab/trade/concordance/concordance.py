@@ -27,6 +27,112 @@ DATA_PATH = check_directory(os.path.join(this_dir, "data"))
 #-Product Codes-#
 #---------------#
 
+class HS_To_SITC(object):
+    """ 
+    Concordance from HS to SITC
+
+    Parameters
+    ----------
+    hs          :   str
+                    Specify HS Code ('HS92', 'HS96', 'HS02')
+    sitc        :   str 
+                    Specify SITC Code ('SITCR1', 'SITCR2', 'SITCR2', 'SITCR4')
+    source_institution  :   str, optional(default='un')
+                            Specify Source Institution for Concordance Information
+
+    Future Work
+    -----------
+    Add Optional Level Arguments for Automatic Conversion
+    hs_level    :   int
+                    Specify Chapter Level for HS (1,2,3,4,5, or 6)
+    sitc_level  :   int 
+                    Specify Chapter Level for SITC (1,2,3,4, or 5)
+    """
+
+    def __init__(self, hs, sitc, source_institution="un", verbose=True):
+        self.hs_revision = hs
+        self.hs_level = 6
+        self.sitc_revision = sitc 
+        self.sitc_level = 5
+        #-Fetch Data-#
+        if source_institution == "un":
+            self.source_web = u"http://unstats.un.org/unsd/trade/conversions/HS%20Correlation%20and%20Conversion%20tables.htm"
+            self.sitc_header = self.sitc_revision
+            if self.hs_revision in ["HS92", "HS96"]:
+                self.hs_header = "HS19%s"%self.hs_revision[2:] 
+            else:
+                self.hs_header = "HS20%s"%self.hs_revision[2:] 
+            fl = self.hs_header + "_to_" + self.sitc_header + ".csv"
+            if verbose: print "[INFO] Retrieving information from file: %s" % fl
+            self.__data = pd.read_csv(DATA_PATH + "un/" + fl, dtype={self.hs_header : str, self.sitc_header : str}).set_index(self.hs_header)
+        else:
+            raise NotImplementedError("'un' is the only source institution that has been Implimented")
+
+    def __str__(self):
+        return "Concordance between %s (L:%s) and %s (L:%s)" % (self.hs_revision, self.hs_level, self.sitc_revision, self.sitc_level)
+
+    @property 
+    def data(self):
+        return self.__data.copy(deep=True)      #-Should this Return COPY or View?-#
+
+    @property 
+    def concordance(self):
+        """ 
+        Return the Concordance Dictionary
+        """
+        return self.__data['SITCR2'].to_dict()
+
+    def to_hs_level(self, level, verbose=True):
+        """ 
+        Convert HS to Another Level
+        
+        Parameters
+        ----------
+        level   :   int (1,2,3,4,5)
+                    Select HS Chapter Level
+                    
+        """
+        if level >= 6:
+            raise ValueError("HS Level must be between 1 and 5")
+        #-Core-#
+        data = self.__data.reset_index()
+        init_numobs = data.shape[0]
+        data[hs_header] = data[hs_header].apply(lambda x: x[0:level])
+        data.drop_duplicates(inplace=True)
+        data.set_index(self.hs_header, inplace=True)
+        if verbose: print "[DROPPING] %s observations" % (init_numobs - data.shape[0])
+        #-Save Results To Object-#
+        self.hs_level = level
+        self.__data = data                                                  
+
+    def to_sitc_level(self, level, verbose=True):
+        """ 
+        Convert SITC to Another Level         
+        
+        Parameters
+        ----------
+        level   :   int (1,2,3,4)
+                    Select SITC Chapter Level
+        """
+        if level >= 5:
+            raise ValueError("SITC Level must be between 1 and 4")
+        #-Core-#
+        data = self.__data.reset_index()
+        init_numobs = data.shape[0]
+        data[self.sitc_header] = data[self.sitc_header].apply(lambda x: x[0:level])
+        data.drop_duplicates(inplace=True)
+        data.set_index(self.hs_header, inplace=True)
+        if verbose: print "[DROPPING] %s observations" % (init_numobs - data.shape[0])
+        #-Save Results To Object-#
+        self.sitc_level = level
+        self.__data = data
+
+
+## What is the best way to construct HS2002_To_SITCR2? ##
+
+### ----> Below Kept for Legacy <---- ###
+
+
 class HS2002_To_SITCR2(object):
     """
     Concordance for HS 2002 to SITC Revision 2
@@ -125,21 +231,6 @@ class HS2002_To_SITCR2(object):
         self.__data = data
 
 
-#-----------------#
-#---FUTURE WORK---#
-#-----------------#
 
-# class HSToSITC(object):
-#   """
-#   General Version of HS TO SITC
-#   """
-#   def __init__(self, hs_revision, sitc_revision, source_institution='un', verbose=True):
-#       #-Attributes-#
-#       self.hs_revision = hs_revision
-#       self.sitc_revision = sitc_revision 
-#       self.source_institution = source_institution
-
-#       if source_institution == 'un':
-#           self.data = 
 
 
