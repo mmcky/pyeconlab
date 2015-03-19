@@ -49,7 +49,7 @@ class HS_To_SITC(object):
                     Specify Chapter Level for SITC (1,2,3,4, or 5)
     """
 
-    def __init__(self, hs, sitc, source_institution="un", verbose=True):
+    def __init__(self, hs, sitc, hs_level=6, sitc_level=5, source_institution="un", verbose=True):
         self.hs_revision = hs
         self.hs_level = 6
         self.sitc_revision = sitc 
@@ -67,6 +67,11 @@ class HS_To_SITC(object):
             self.__data = pd.read_csv(DATA_PATH + "un/" + fl, dtype={self.hs_header : str, self.sitc_header : str}).set_index(self.hs_header)
         else:
             raise NotImplementedError("'un' is the only source institution that has been Implimented")
+        #-Adjust Levels-#
+        if hs_level != 6:
+            self.to_hs_level(level=hs_level, verbose=verbose)
+        if sitc_level != 5:
+            self.to_sitc_level(level=sitc_level, verbose=verbose)
 
     def __str__(self):
         return "Concordance between %s (L:%s) and %s (L:%s)" % (self.hs_revision, self.hs_level, self.sitc_revision, self.sitc_level)
@@ -97,10 +102,10 @@ class HS_To_SITC(object):
         #-Core-#
         data = self.__data.reset_index()
         init_numobs = data.shape[0]
-        data[hs_header] = data[hs_header].apply(lambda x: x[0:level])
+        data[self.hs_header] = data[self.hs_header].apply(lambda x: x[0:level])
         data.drop_duplicates(inplace=True)
         data.set_index(self.hs_header, inplace=True)
-        if verbose: print "[DROPPING] %s observations" % (init_numobs - data.shape[0])
+        if verbose: print "[DROPPING] %s duplicate pairs" % (init_numobs - data.shape[0])
         #-Save Results To Object-#
         self.hs_level = level
         self.__data = data                                                  
@@ -122,7 +127,7 @@ class HS_To_SITC(object):
         data[self.sitc_header] = data[self.sitc_header].apply(lambda x: x[0:level])
         data.drop_duplicates(inplace=True)
         data.set_index(self.hs_header, inplace=True)
-        if verbose: print "[DROPPING] %s observations" % (init_numobs - data.shape[0])
+        if verbose: print "[DROPPING] %s duplicate pairs" % (init_numobs - data.shape[0])
         #-Save Results To Object-#
         self.sitc_level = level
         self.__data = data
