@@ -7,7 +7,7 @@ Py Files
 ~~~~~~~~
 
 Computed
-^^^^^^^^
+~~~~~~~~
 
 [1] hs02_iso3n_to_countryname.py
 	Description: 	iso3n to countryname dictionary
@@ -17,6 +17,16 @@ Computed
 [2] hs02_iso3n_to_iso3c.py
 	Description: 	iso3n to iso3c dictionary
 	Source: 		compiled from a country_code_baci02.csv file
+	Notes: 			computed by .iso3n_to_iso3c_pyfile() method
+
+[3] hs96_iso3n_to_countryname.py
+	Description: 	iso3n to countryname dictionary
+	Source: 		compiled from a country_code_baci96.csv file
+	Notes: 			computed by .iso3n_to_countryname_pyfile() method
+
+[4] hs96_iso3n_to_iso3c.py
+	Description: 	iso3n to iso3c dictionary
+	Source: 		compiled from a country_code_baci96.csv file
 	Notes: 			computed by .iso3n_to_iso3c_pyfile() method
 
 Curated Files
