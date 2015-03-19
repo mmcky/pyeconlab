@@ -21,9 +21,10 @@ un/
 
 	Manually Constructed Children
 	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	HS2002_to_SITCR2.csv (md5hash = 7c4865845fc8bbfc4f057994d071c425)
+	HS2002_to_SITCR2.csv (md5hash = e5799dca9d763dfc6e4c0fe815fe3e40)
 		This file contains the "conversion table" sheet with titles ['HS2002', 'SITCR2'] saved as a csv file format
 		Because pd.read_excel() cannot set dtype's the codes are entered as integers, this allows the use of read_csv() which can import product codes as strings (if required)
+
 
 
 wits/
