@@ -50,3 +50,8 @@ wits/
 	Original Name: 		JobID-37_Concordance_H2_to_S2.CSV
 	Source: 			https://wits.worldbank.org/product_concordance.html
 	Downloaded: 		09/09/2014
+
+
+Notes
+-----
+  1. Should I include the binary files here? No Real Point except for validation of the CSV File
