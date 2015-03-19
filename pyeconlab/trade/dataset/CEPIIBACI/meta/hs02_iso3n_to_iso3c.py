@@ -5,6 +5,9 @@ Manual Check: 09/09/2014
 
 Notes
 -----
+
+Checking Code Snippets
+
 [1] This list contains some country codes that are NOT found in ISO3166
 	<code snippet>
 	#-BACI-#
@@ -13,7 +16,7 @@ Notes
 	#-ISO3166-#
 	from pyeconlab.country import ISO3166
 	iso = ISO3166()
-	iso3n = [str(item) for item in iso.iso3n]
+	iso3n = [int(item) for item in iso.iso3n]
 	#-Compare Sets-#
 	x = set(baci_iso3n)
 	y = set(iso3n)
@@ -29,9 +32,10 @@ Not Countries
 '536' : 'NTZ' 	=> Neutral Zone
 
 [2] Checking the Inverse of the Dictionary using ISO3C
+	<code snippet>
 	#-BACI-#
 	from pyeconlab.trade.dataset.CEPIIBACI.meta import iso3n_to_iso3c
-	iso3c_to_iso3n = {v:k for k,v in iso3n_to_iso3c['HS02'].items()}
+	hs02_iso3c_to_iso3n = {v:k for k,v in iso3n_to_iso3c['HS02'].items()}
 	baci_iso3c = set(hs02_iso3c_to_iso3n.keys())
 	#-ISO3166-#
 	from pyeconlab.country import ISO3166
