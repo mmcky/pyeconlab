@@ -33,7 +33,7 @@ def describe(dataset, table_name="", productcode="productcode", importer="iiso3c
 	try:
 		table_data.append(len(dataset[importer].unique()))
 		table_idx.append("Importers")
-		if table_name == "Exports": table_name == "Trade"
+		if table_name == "Exports": table_name = "Trade"
 	except:
 		pass
 	#-General Statistics-#
