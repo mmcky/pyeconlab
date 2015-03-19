@@ -133,7 +133,7 @@ class BACIConstructor(BACI):
     country_datafl_fixed = bool
 
 
-    def __init__(self, source_dir, source_classification, ftype='csv', years=[], standard_names=True, skip_setup=False, reduce_memory=False, verbose=True):
+    def __init__(self, source_dir, source_classification, ftype='csv', years=[], standard_names=False, skip_setup=False, reduce_memory=False, verbose=True):
         """ 
         Load RAW Data into Object
 
@@ -172,7 +172,7 @@ class BACIConstructor(BACI):
         self.complete_dataset = False
         self.units_value_str = self.source_units_value_str
         #-Cache Directory-#
-        self.__cache_dir = "cache\\"
+        self.__cache_dir = "cache/"
 
         #-Country, Product Source File Fixed Indicator-#
         self.product_datafl_fixed = False                       #Should this be more sophisticated, this is a constructor so probably not
@@ -342,19 +342,15 @@ class BACIConstructor(BACI):
                             Apply standard names adjustment
 
         Notes
-        ----- 
-        1. Write a wrapper for self.classification selection?
+        -----
+        1. Could check for _adjust file before re-writing corrected file. LOW PRIORITY
 
         """
         #-Parse Options-#
         if fix_source and self.country_datafl_fixed == False:
-            if self.classification == "HS92" or self.classification == "HS96":
-                self.fix_country_code_baci9296(verbose=verbose)
-            if self.classification == "HS02":
-                self.fix_country_code_baci02(verbose=verbose)
-        if self.country_datafl_fixed == False and self.classification == "HS02":
-            print "[WARNING] Has the country_code_baci02 data been adjusted in the source_dir!"
+            self.fix_country_code_baci(verbose=verbose)
         fn = self.source_dir + self.country_data_fn[self.classification]
+        if verbose: print "[INFO] Reading data from file: %s" % fn
         self.country_data = pd.read_csv(fn)
         if standard_names:
             self.country_data.rename(columns={'i' : 'iso3n', 'iso3' : 'iso3c'}, inplace=True)
@@ -537,6 +533,9 @@ class BACIConstructor(BACI):
         This method selects the appropriate collection of fixes based on source data revision
         """
         opstring = u"(fix_country_code)"
+        if check_operations(self, opstring):
+            print "[INFO] Process has already been applied to source file"
+            return
         if self.classification == "HS92":
             self.fix_country_code_baci9296(verbose=verbose)
         elif self.classification == "HS96":
@@ -555,6 +554,7 @@ class BACIConstructor(BACI):
         -----
         1. baci92 and baci96 share similar issues and have therefore been combined
         """
+        warnings.warn("[FORMATER ISSUE] Unicode French Characters are removed in the adjusted file")
         if verbose: print "[INFO] Fixing original %s country data file in source_dir: %s" % (self.classification, self.source_dir)
         if self.classification != "HS92" and self.classification != "HS96":
             raise ValueError("This method only runs on HS92 or HS96 Data")
@@ -587,6 +587,7 @@ class BACIConstructor(BACI):
         """ 
         Fix issues with country_code_baci02 csv file
         """
+        warnings.warn("[FORMATER ISSUE] Unicode French Characters are removed in the adjusted file")
         if verbose: print "[INFO] Fixing original HS02 country data file in source_dir: %s" % self.source_dir
         if self.classification != "HS02":
             raise ValueError("This method only runs on HS02 Data")
@@ -888,12 +889,12 @@ class BACIConstructor(BACI):
         if not self.country_datafl_fixed:
             self.fix_country_code_baci()
         #-Set Filename-#
-        fl = '%s_iso3n_to_countryname.py' % (self.classification.lower())
+        fl = '%s_iso3n_to_name.py' % (self.classification.lower())
         docstring = "ISO3N to CountryName Dictionary for Classification: %s" % self.classification
         data = pd.read_csv(self.source_dir + self.country_data_fn[self.classification])
         data = data[['i', 'name_english']].set_index('i')
         data = data['name_english']
-        data.name = u"iso3n_to_countryname"
+        data.name = u"iso3n_to_name"
         from_idxseries_to_pydict(data, target_dir=target_dir, fl=fl, docstring=docstring, verbose=verbose)
 
     def iso3n_to_iso3c_pyfile(self, target_dir='meta/', force=False, verbose=True):
@@ -910,7 +911,7 @@ class BACIConstructor(BACI):
         """
         if not self.complete_dataset:
             if not force: raise ValueError("This is not a complete dataset!")
-        if not self.country_data_fixed:
+        if not self.country_datafl_fixed:
             self.fix_country_code_baci()
         #-Set Filename-#
         fl = '%s_iso3n_to_iso3c.py' % (self.classification.lower())
@@ -1044,6 +1045,84 @@ class BACIConstructor(BACI):
     #--------------#
     #---Datasets---#
     #--------------#
+
+
+    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True, dataset_object=False, verbose=True):
+        """
+        Constructor of Predefined SITC Datasets
+
+        Status: IN-WORK
+
+        Parameters
+        ----------
+        data_type       :   str
+                            Specify type of data ('trade', 'export', 'import')
+        dataset         :   str
+                            Specify Predefined set of Parameters ('A', 'B' etc.)
+        product_level   :   int
+                            Specify a Product Level for Final Dataset (1, 2, 3, or 4)
+        sitc_revision   :   int, optional(default=2)
+                            Specify SITC Revision
+        dataset_object  :   bool, optional(default=False)
+                            Specify if the method should return an nberwtf object
+
+        ..  Future Work
+            -----------
+            1. If dataset == dict then use it as the dataset parameters for compilation
+
+        """
+        #-Dataset Definitions-#
+        from .constructor_dataset import SITC_DATASET_DESCRIPTION, SITC_DATASET_OPTIONS
+        #-Checks-#
+        if self.operations != "":
+            raise ValueError("This Method requires a complete RAW dataset")
+        #-Parse Options-#
+        if type(dataset) == dict:
+            print "[INFO] Using Passed Arguments as Dataset Construction Options"
+            OPTIONS = dataset
+            #-Note: self.notes with description etc needs to be set using this option-#
+        elif dataset not in SITC_DATASET_OPTIONS.keys():
+            raise ValueError("Specified Dataset (%s) is not found in the SITC_DATASET_OPTIONS property")
+        else:
+            #-Use Predefined Dictionaries as defined in constructor_dataset.py-#
+            DESCRIPTION = SITC_DATASET_DESCRIPTION[dataset]
+            OPTIONS = SITC_DATASET_OPTIONS[dataset]
+            #-OpString-#
+            str_kwargs = [", %s=%s" % (key, SITC_DATASET_OPTIONS[dataset][key]) for key in sorted(SITC_DATASET_OPTIONS[dataset].keys())]
+            op_string = u"(construct_sitc_dataset(data_type=%s, dataset=%s, product_level=%s, sitc_revision=%s, report=%s, dataset_object=%s, verbose=%s%s))" % (data_type, dataset, product_level, sitc_revision, report, dataset_object, verbose, "".join(str_kwargs))
+            self.notes = op_string #-Save Settings-#
+        #-MAIN WORK-#
+        from .constructor_dataset_sitc import construct_sitc as construct_dataset
+        self._dataset = construct_dataset(self.dataset, data_classification=self.classification, data_type=data_type, level=product_level, revision=sitc_revision, verbose=verbose)     #**OPTIONS
+        self.dataset_name = "SITCR%s-%s"%(sitc_revision, str(dataset))
+        #-Construct Report-#
+        if report:
+            rdf = self.raw_data                                                     #Note: This produces a copy!
+            #-Year Values-#
+            rdfy = rdf.groupby(['year']).sum()['value'].reset_index()
+            dfy = self._dataset.groupby(['year']).sum()['value'].reset_index()
+            y = rdfy.merge(dfy, how="outer", on=['year']).set_index(['year'])
+            y['%'] = y['value_y'] / y['value_x'] * 100
+            report =    "Report %s\n"%(op_string) + \
+                        "---------------------------------------\n"
+            for year in self.years:
+                report += "This dataset in year: %s captures %s percent of Total Values\n" % (year, int(y.ix[year]['%']))
+            print report
+        #-Update Attributes-#
+        self.classification = 'SITC'
+        self.revision = sitc_revision
+        self.level = product_level
+        #-OpString-#
+        update_operations(self, op_string)
+        #-Dataset Option-#
+        if dataset_object:
+            return self.to_dataset()
+
+    # -------------------------------------------------------------------------------------- #
+    # -- NOTICE: With the Addition of construct_sitc_dataset() this section is deprecated -- #
+    # -------------------------------------------------------------------------------------- #
+
+    # ------------------------------------ START REMOVAL ----------------------------------- #
 
     #-Self Contained Datasets-#
 
@@ -1193,6 +1272,8 @@ class BACIConstructor(BACI):
         if dataset_object:
             return self.to_dataset()
     
+    # ------------------------------------ END REMOVAL ----------------------------------- #
+
     def attach_attributes_to_dataset(self, df):
         """ 
         Attach Attributes to the Dataset DataFrame for Transfer when building new objects
