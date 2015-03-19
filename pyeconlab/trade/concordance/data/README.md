@@ -25,6 +25,20 @@ un/
 		This file contains the "conversion table" sheet with titles ['HS2002', 'SITCR2'] saved as a csv file format
 		Because pd.read_excel() cannot set dtype's the codes are entered as integers, this allows the use of read_csv() which can import product codes as strings (if required)
 
+[2] HS1996_to_SITCR2.xls
+	Description: 		UN HS1996 to SITC Revision 2 Concordance and Correlation Table
+	Sheets: 			"Conversion Table, "Correlation Table"
+	MD5 Hash: 			5068c6b22f54763b058c809a77f5e88c
+	Original Name: 		HS1996 to SITC2 Conversion and Correlation Tables.xls
+	Source: 			http://unstats.un.org/unsd/trade/conversions/HS%20Correlation%20and%20Conversion%20tables.htm
+	Downloaded: 		09/09/2014
+	Notes: 				The internal structure is not straight forward when writing parser
+
+	Manually Constructed Children
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	HS1996_to_SITCR2.csv (md5hash = 5ab1898aba4c4ce21257b73845c6ca34)
+		This file contains the "conversion table" sheet with titles ['HS1996', 'SITCR2'] saved as a csv file format
+		Because pd.read_excel() cannot set dtype's the codes are entered as integers, this allows the use of read_csv() which can import product codes as strings (if required)		
 
 
 wits/
