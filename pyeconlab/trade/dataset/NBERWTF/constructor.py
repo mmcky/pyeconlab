@@ -1918,7 +1918,8 @@ class NBERWTFConstructor(NBERWTF):
 
         Future Work
         -----------
-        1. Add in a way to process HK-CHINA Adjustments
+        1. Is there a better way to add in Hong Kong Data?
+        2. If dataset == dict then use it as the dataset parameters for compilation
 
         """
         #-Dataset Definitions-#
