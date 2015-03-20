@@ -927,7 +927,7 @@ class BACIConstructor(BACI):
     #-Country Codes Meta-#
     #--------------------#
 
-    def intertemporal_countrycodes(self, cid='iso3c', dataset=False, force=False, verbose=True):
+    def intertemporal_countrycodes(self, cid='iso3c', dataset=False, force=False, wmeta=False, verbose=True):
         """
         Wrapper for Generating intertemporal_countrycodes from 'raw_data' or 'dataset'
 
@@ -939,18 +939,24 @@ class BACIConstructor(BACI):
                         Specify wether to use the dataset attribute (defaults to raw_data)
         force       :   bool, optional(defaults=False)
                         Apply force (i.e. useful if data is incomplete). Useful for debugging
+        wmeta       :   bool, optional(defaults=False)
+                        Include Meta Data (i.e. CountryName and CountryISO3C)
+
+        Notes
+        -----
+        1. Is this really necessary?
 
         """
         if dataset:
             if verbose: print "Constructing Intertemporal Country Code Tables from Dataset ..."
-            table_iiso3n, table_eiso3n = self.intertemporal_countrycodes_dataset(cid=cid, force=force, verbose=verbose)
+            table_iiso3n, table_eiso3n = self.intertemporal_countrycodes_dataset(cid=cid, force=force, meta=meta, verbose=verbose)
             return table_iiso3n, table_eiso3n
         else:
             if verbose: print "Constructing Intertemporal Country Code Tables from RAW DATA ..."
-            table_iiso3n, table_eiso3n = self.intertemporal_countrycodes_raw_data(force=force, verbose=verbose)
+            table_iiso3n, table_eiso3n = self.intertemporal_countrycodes_raw_data(force=force, meta=meta, verbose=verbose)
             return table_iiso3n, table_eiso3n
 
-    def intertemporal_countrycodes_raw_data(self, force=False, verbose=False):
+    def intertemporal_countrycodes_raw_data(self, force=False, wmeta=False, verbose=False):
         """
         Construct a table of importer and exporter country codes by year from RAW DATA
         Intertemporal Country Code Tables can also be computed from dataset using .intertemporal_countrycodes_dataset()
@@ -960,6 +966,8 @@ class BACIConstructor(BACI):
         ----------
         force       :   bool, optional(default=False)
                         Apply force (i.e. useful if data is incomplete). Useful for debugging
+        wmeta       :   bool, optional(default=False)
+                        Include Meta Data (i.e. CountryNames, CountryISO3C)
 
         Returns
         -------
@@ -983,7 +991,7 @@ class BACIConstructor(BACI):
             if force == False:
                 raise ValueError("[ERROR] Not a Complete Dataset!")
         #-Get Raw Data -#
-        data = self.raw_data        
+        data = self.__raw_data        
         #-Core-#
         #-Importers-#
         table_iiso3n = data[['t', 'j']]
@@ -991,15 +999,22 @@ class BACIConstructor(BACI):
         table_iiso3n = table_iiso3n.drop_duplicates().set_index(['j', 't'])
         table_iiso3n = table_iiso3n.unstack(level='t')
         table_iiso3n.columns = table_iiso3n.columns.droplevel()     #Removes Unnecessary 'code' label
+        if wmeta:
+            from .meta import iso3n_to_iso3c, iso3n_to_name
+            iso3n_to_iso3c = iso3n_to_iso3c[self.classification]
+            iso3n_to_name = iso3n_to_name[self.classification]
+            table_iiso3n = table_iiso3n.reset_index()
         #-Exporters-#
         table_eiso3n = data[['t', 'i']]
         table_eiso3n['code'] = table_eiso3n['i']                    #keep a 'j' in the index
         table_eiso3n = table_eiso3n.drop_duplicates().set_index(['i', 't'])
         table_eiso3n = table_eiso3n.unstack(level='t')
         table_eiso3n.columns = table_eiso3n.columns.droplevel()     #Removes Unnecessary 'code' label
+        if wmeta:
+            pass
         return table_iiso3n, table_eiso3n
 
-    def intertemporal_countrycodes_dataset(self, cid='iso3n', force=False, verbose=False):
+    def intertemporal_countrycodes_dataset(self, cid='iso3n', force=False, wmeta=False, verbose=False):
         """
         Construct a table of importer and exporter country codes by year from DATASET
         This includes iso3c and is useful when using .countries_only() etc.
@@ -1010,6 +1025,8 @@ class BACIConstructor(BACI):
                         Specify country code identifier ('iso3n', 'iso3c')
         force       :   bool, optional(default=False)
                         Apply force (i.e. useful if data is incomplete). Useful for debugging
+        wmeta       :   bool, optional(default=False)
+                        Include Meta Data (i.e. CountryNames, CountryISO3C)
 
         Returns
         -------

@@ -20,9 +20,6 @@ Note: The below configurations are available as Trade, Export or Import.
 #-Dataset Configuration Values-#
 #------------------------------#
 
-#-Level Independant SITC Options-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
 SITC_DATASET_DESCRIPTION = {
     'A' :   u"A basic dataset that collapses data to a specified level but maintaining initial countrycodes and productcodes as in the raw dataset",
     'B' :   u"Same as [A] except with intertemporally consistent country codes [1998 to Latest Available]",
@@ -30,33 +27,29 @@ SITC_DATASET_DESCRIPTION = {
 } 
 
 #-IN WORK-#
-# drop_nonsitcr2 necessary? (Is there a perfect match on the sitc concordance)
 # intertemp_cntrycode necessary? (Check Meta Data)
 
 SITC_DATASET_OPTIONS = {
     'A' :   {   
-                'sitcr2' : False,                     #Adds an Official SITC Revision 2 Indicator
-                'drop_nonsitcr2' : False,             #Removes Non-Official SITC Revision 2 Codes From the Dataset
+                'check_concordance' : True,           #Check Entire Concordance has matched internal product codes
                 'intertemp_cntrycode' : False,        #Recode Country Codes to be Intertemporally Consistent
                 'drop_incp_cntrycode' : False,        #Drop Incomplete Intertemporal Countries
-                'adjust_units' : False,
-                'source_institution' : 'un',
+                'adjust_units' : False,               #Adjust Units from 1000's of $'s to $'s
+                'concordance_institution' : 'un',     #Specify concordance source institution
             },
     'B' :   {   
-                'sitcr2' : True,                      #Adds an Official SITC Revision 2 Indicator
-                'drop_nonsitcr2' : True,              #Removes Non-Official SITC Revision 2 Codes From the Dataset
-                'intertemp_cntrycode' : False,        #Recode Country Codes to be Intertemporally Consistent
+                'check_concordance' : True,           #Check Entire Concordance has matched internal product codes
+                'intertemp_cntrycode' : True,        #Recode Country Codes to be Intertemporally Consistent
                 'drop_incp_cntrycode' : False,        #Drop Incomplete Intertemporal Countries
-                'adjust_units' : False,
-                'source_institution' : 'un',
+                'adjust_units' : False,               #Adjust Units from 1000's of $'s to $'s
+                'concordance_institution' : 'un',     #Specify concordance source institution
             },
     'C' :   {   
-                'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
-                'drop_nonsitcr2' : True,             #Removes Non-Official SITC Revision 2 Codes From the Dataset
-                'intertemp_cntrycode' : False,       #Recode Country Codes to be Intertemporally Consistent
-                'drop_incp_cntrycode' : False,       #Drop Incomplete Intertemporal Countries
-                'adjust_units' : False,
-                'source_institution' : 'un',
+                'check_concordance' : True,           #Check Entire Concordance has matched internal product codes
+                'intertemp_cntrycode' : True,         #Recode Country Codes to be Intertemporally Consistent
+                'drop_incp_cntrycode' : True,         #Drop Incomplete Intertemporal Countries
+                'adjust_units' : False,               #Adjust Units from 1000's of $'s to $'s
+                'concordance_institution' : 'un',     #Specify concordance source institution
             },       
 }
 
