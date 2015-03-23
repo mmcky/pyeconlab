@@ -390,7 +390,7 @@ class BACIConstructor(BACI):
         if self.product_datafl_fixed == False and self.classification == "HS02":
             print "[WARNING] Has the product_code_baci02 data been adjusted in the source_dir!"         #-Should this be a warn.warnings?-#
         fn = self.source_dir + self.product_data_fn[self.classification]
-        self.product_data = pd.read_csv(fn, data_type={'Code' : object})
+        self.product_data = pd.read_csv(fn, dtype={'Code' : object})
         if standard_names:
             self.use_standard_column_names(self.product_data)
 
@@ -1151,7 +1151,7 @@ class BACIConstructor(BACI):
                 table_iiso3n_hs6 = table_iiso3n_hs6.merge(iso3n_to_name, left_index=True, right_index=True).reset_index().set_index(keys=['index', 'iiso3c', 'importer', 'hs6'])
                 table_iiso3n_hs6.index.set_names(names=['iiso3n', 'iiso3c', 'importer', 'hs6'], inplace=True)      
             if index == "pc":
-                if meta:
+                if wmeta:
                     table_eiso3n_hs6 = table_eiso3n_hs6.reorder_levels([3,0,1,2]).sort_index()
                     table_iiso3n_hs6 = table_iiso3n_hs6.reorder_levels([3,0,1,2]).sort_index()
                 else:
@@ -1165,6 +1165,9 @@ class BACIConstructor(BACI):
             table_hs6 = table_hs6.set_index(['hs6', 'year']).unstack(level='year')
             #-Drop TopLevel Name in Columns MultiIndex-#
             table_hs6.columns = table_hs6.columns.droplevel()   #Removes Unnecessary 'code' label
+            if wmeta:
+                #-Add Product Name-#
+                pass
             return table_hs6
     
 
