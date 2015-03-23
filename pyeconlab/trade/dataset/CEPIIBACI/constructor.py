@@ -1002,9 +1002,10 @@ class BACIConstructor(BACI):
         if wmeta:
             from .meta import iso3n_to_iso3c, iso3n_to_name
             iso3n_to_iso3c = pd.Series({int(k):v for k,v in iso3n_to_iso3c[self.classification].iteritems()}).to_frame(name="iiso3c")
-            # iso3n_to_name = pd.Series({int(k):v for k,v in iso3n_to_name[self.classification].iteritems()}).to_frame(name="importer")                 #Just include shorter iso3c version
-            table_iiso3n = table_iiso3n.merge(iso3n_to_iso3c, left_index=True, right_index=True).reset_index().set_index(keys=['index', 'iiso3c', ])
-            table_iiso3n.index.set_names(names=['j', 'iiso3c'], inplace=True)
+            iso3n_to_name = pd.Series({int(k):v for k,v in iso3n_to_name[self.classification].iteritems()}).to_frame(name="importer")                 #Just include shorter iso3c version
+            table_iiso3n = table_iiso3n.merge(iso3n_to_iso3c, left_index=True, right_index=True).reset_index().set_index(keys=['index'])
+            table_iiso3n = table_iiso3n.merge(iso3n_to_name, left_index=True, right_index=True).reset_index().set_index(keys=['index', 'iiso3c', 'importer'])
+            table_iiso3n.index.set_names(names=['j', 'iiso3c', 'importer'], inplace=True)
         #-Exporters-#
         table_eiso3n = data[['t', 'i']]
         table_eiso3n['code'] = table_eiso3n['i']                    #keep a 'j' in the index
@@ -1014,9 +1015,10 @@ class BACIConstructor(BACI):
         if wmeta:
             from .meta import iso3n_to_iso3c, iso3n_to_name
             iso3n_to_iso3c = pd.Series({int(k):v for k,v in iso3n_to_iso3c[self.classification].iteritems()}).to_frame(name="eiso3c")
-            # iso3n_to_name = pd.Series({int(k):v for k,v in iso3n_to_name[self.classification].iteritems()}).to_frame(name="exporter")                 #Just include shorter iso3c version
-            table_eiso3n = table_eiso3n.merge(iso3n_to_iso3c, left_index=True, right_index=True).reset_index().set_index(keys=['index', 'eiso3c'])
-            table_eiso3n.index.set_names(names=['i', 'eiso3c'], inplace=True)
+            iso3n_to_name = pd.Series({int(k):v for k,v in iso3n_to_name[self.classification].iteritems()}).to_frame(name="exporter")                 #Just include shorter iso3c version
+            table_eiso3n = table_eiso3n.merge(iso3n_to_iso3c, left_index=True, right_index=True).reset_index().set_index(keys=['index'])
+            table_eiso3n = table_eiso3n.merge(iso3n_to_name, left_index=True, right_index=True).reset_index().set_index(keys=['index', 'eiso3c', 'exporter'])
+            table_eiso3n.index.set_names(names=['i', 'eiso3c', 'exporter'], inplace=True)
         return table_iiso3n, table_eiso3n
 
     def intertemporal_countrycodes_dataset(self, cid='iso3n', force=False, wmeta=False, verbose=False):
