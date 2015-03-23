@@ -1157,8 +1157,7 @@ class BACIConstructor(BACI):
                 else:
                     table_eiso3n_hs6 = table_eiso3n_hs6.reorder_levels([1,0]).sort_index()
                     table_iiso3n_hs6 = table_iiso3n_hs6.reorder_levels([1,0]).sort_index()
-            
-            return table_eiso3c_hs6, table_iiso3c_hs6
+            return table_eiso3n_hs6, table_iiso3n_hs6
         else:
             #-Simple Product Index-#
             table_hs6 = data[['year', 'hs6']].drop_duplicates()
