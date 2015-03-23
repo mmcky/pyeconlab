@@ -1125,14 +1125,16 @@ class BACIConstructor(BACI):
         #-Core-#
         if index == "cp" or index == "pc":
             #-Exporter-Product Index-#
-            table_eiso3c_hs6 = data[['year', 'hs6', 'eiso3c']].drop_duplicates()
+            table_eiso3c_hs6 = data[['year', 'hs6', 'eiso3n', 'eiso3c']].drop_duplicates()
             table_eiso3c_hs6['code'] = 1
-            table_eiso3c_hs6 = table_eiso3c_hs6.set_index(['eiso3c', 'hs6', 'year']).unstack(level='year')
+            table_eiso3c_hs6 = table_eiso3c_hs6.set_index(['eiso3c', 'eiso3n', 'hs6', 'year']).drop_duplicates()
+            table_eiso3c_hs6 = table_eiso3c_hs6.unstack(level='year')
             table_eiso3c_hs6.columns = table_eiso3c_hs6.columns.droplevel()   #Removes Unnecessary 'code' label
             #-Importer-Product Index-#
-            table_iiso3c_hs6 = data[['year', 'hs6', 'iiso3c']].drop_duplicates()
+            table_iiso3c_hs6 = data[['year', 'hs6', 'iiso3c', 'iiso3n']].drop_duplicates()
             table_iiso3c_hs6['code'] = 1
-            table_iiso3c_hs6 = table_iiso3c_hs6.set_index(['iiso3c', 'hs6', 'year']).unstack(level='year')
+            table_iiso3c_hs6 = table_iiso3c_hs6.set_index(['iiso3c', 'iiso3n', 'hs6', 'year']).drop_duplicates()
+            table_iiso3c_hs6 = table_iiso3c_hs6.unstack(level='year')
             table_iiso3c_hs6.columns = table_iiso3c_hs6.columns.droplevel()   #Removes Unnecessary 'code' label        
             if index == "pc":
                 table_eiso3c_hs6 = table_eiso3c_hs6.reorder_levels([1,0]).sort_index()
