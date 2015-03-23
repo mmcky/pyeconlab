@@ -1118,8 +1118,9 @@ class BACIConstructor(BACI):
             data = self.dataset
         else:
             self.reset_dataset(verbose=verbose)             #Ensure RAW DATA Starting Point
-            self.add_country_iso3c(verbose=verbose)         #Add ISO3C
+            self.load_country_data(verbose=verbose)
             self.use_standard_column_names(self.dataset)    #Use Standard Column Names
+            self.add_country_iso3c(verbose=verbose)         #Add ISO3C
             data = self.dataset
         #-Core-#
         table_hs6 = data[['year', 'hs6']].drop_duplicates()
