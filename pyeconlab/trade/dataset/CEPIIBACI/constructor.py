@@ -1137,8 +1137,8 @@ class BACIConstructor(BACI):
             table_iiso3c_hs6 = table_iiso3c_hs6.unstack(level='year')
             table_iiso3c_hs6.columns = table_iiso3c_hs6.columns.droplevel()   #Removes Unnecessary 'code' label        
             if index == "pc":
-                table_eiso3c_hs6 = table_eiso3c_hs6.reorder_levels([1,0]).sort_index()
-                table_iiso3c_hs6 = table_iiso3c_hs6.reorder_levels([1,0]).sort_index()
+                table_eiso3c_hs6 = table_eiso3c_hs6.reorder_levels([2,0,1]).sort_index()
+                table_iiso3c_hs6 = table_iiso3c_hs6.reorder_levels([2,0,1]).sort_index()
             return table_eiso3c_hs6, table_iiso3c_hs6
         else:
             #-Simple Product Index-#
