@@ -1093,7 +1093,7 @@ class BACIConstructor(BACI):
 
     # - Product Codes Meta - #
 
-    def intertemporal_productcodes(self, dataset=False, index="p", force=False, verbose=False):
+    def intertemporal_productcodes(self, dataset=False, index="p", force=False, wmeta=True, verbose=False):
         """
         Construct a table of productcodes by year
         
@@ -1125,20 +1125,35 @@ class BACIConstructor(BACI):
         #-Core-#
         if index == "cp" or index == "pc":
             #-Exporter-Product Index-#
-            table_eiso3c_hs6 = data[['year', 'hs6', 'eiso3n', 'eiso3c']].drop_duplicates()
+            table_eiso3c_hs6 = data[['year', 'hs6', 'eiso3n']].drop_duplicates()
             table_eiso3c_hs6['code'] = 1
-            table_eiso3c_hs6 = table_eiso3c_hs6.set_index(['eiso3c', 'eiso3n', 'hs6', 'year']).drop_duplicates()
+            table_eiso3c_hs6 = table_eiso3c_hs6.set_index(['eiso3n', 'hs6', 'year']).sort_index()
             table_eiso3c_hs6 = table_eiso3c_hs6.unstack(level='year')
             table_eiso3c_hs6.columns = table_eiso3c_hs6.columns.droplevel()   #Removes Unnecessary 'code' label
+            if wmeta:
+                from .meta import iso3n_to_iso3c, iso3n_to_name
+                iso3n_to_iso3c = pd.Series({int(k):v for k,v in iso3n_to_iso3c[self.classification].iteritems()}).to_frame(name="eiso3c")
+                iso3n_to_name = pd.Series({int(k):v for k,v in iso3n_to_name[self.classification].iteritems()}).to_frame(name="exporter")                 #Just include shorter iso3c version
+                table_eiso3n_hs6 = table_eiso3n_hs6.reset_index().set_index(['eiso3n']).merge(iso3n_to_iso3c, left_index=True, right_index=True)
+                table_eiso3n_hs6 = table_eiso3n_hs6.merge(iso3n_to_name, left_index=True, right_index=True).reset_index().set_index(keys=['index', 'eiso3c', 'exporter', 'hs6'])
+                table_eiso3n_hs6.index.set_names(names=['eiso3n', 'eiso3c', 'exporter', 'hs6'], inplace=True)  
             #-Importer-Product Index-#
-            table_iiso3c_hs6 = data[['year', 'hs6', 'iiso3c', 'iiso3n']].drop_duplicates()
+            table_iiso3c_hs6 = data[['year', 'hs6', 'iiso3n']].drop_duplicates()
             table_iiso3c_hs6['code'] = 1
-            table_iiso3c_hs6 = table_iiso3c_hs6.set_index(['iiso3c', 'iiso3n', 'hs6', 'year']).drop_duplicates()
+            table_iiso3c_hs6 = table_iiso3c_hs6.set_index(['iiso3n', 'hs6', 'year']).sort_index()
             table_iiso3c_hs6 = table_iiso3c_hs6.unstack(level='year')
-            table_iiso3c_hs6.columns = table_iiso3c_hs6.columns.droplevel()   #Removes Unnecessary 'code' label        
+            table_iiso3c_hs6.columns = table_iiso3c_hs6.columns.droplevel()   #Removes Unnecessary 'code' label  
+            if wmeta:
+                from .meta import iso3n_to_iso3c, iso3n_to_name
+                iso3n_to_iso3c = pd.Series({int(k):v for k,v in iso3n_to_iso3c[self.classification].iteritems()}).to_frame(name="iiso3c")
+                iso3n_to_name = pd.Series({int(k):v for k,v in iso3n_to_name[self.classification].iteritems()}).to_frame(name="importer")                 #Just include shorter iso3c version
+                table_iiso3n_hs6 = table_iiso3n_hs6.reset_index().set_index(['iiso3n']).merge(iso3n_to_iso3c, left_index=True, right_index=True)
+                table_iiso3n_hs6 = table_iiso3n_hs6.merge(iso3n_to_name, left_index=True, right_index=True).reset_index().set_index(keys=['index', 'iiso3c', 'importer', 'hs6'])
+                table_iiso3n_hs6.index.set_names(names=['iiso3n', 'iiso3c', 'importer', 'hs6'], inplace=True)      
             if index == "pc":
-                table_eiso3c_hs6 = table_eiso3c_hs6.reorder_levels([2,0,1]).sort_index()
-                table_iiso3c_hs6 = table_iiso3c_hs6.reorder_levels([2,0,1]).sort_index()
+                table_eiso3c_hs6 = table_eiso3c_hs6.reorder_levels([1,0]).sort_index()
+                table_iiso3c_hs6 = table_iiso3c_hs6.reorder_levels([1,0]).sort_index()
+            
             return table_eiso3c_hs6, table_iiso3c_hs6
         else:
             #-Simple Product Index-#
