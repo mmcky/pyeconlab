@@ -1093,7 +1093,7 @@ class BACIConstructor(BACI):
 
     # - Product Codes Meta - #
 
-    def intertemporal_productcodes(self, dataset=False, force=False, verbose=False):
+    def intertemporal_productcodes(self, dataset=False, index="p", force=False, verbose=False):
         """
         Construct a table of productcodes by year
         
@@ -1123,12 +1123,30 @@ class BACIConstructor(BACI):
             self.add_country_iso3c(verbose=verbose)         #Add ISO3C
             data = self.dataset
         #-Core-#
-        table_hs6 = data[['year', 'hs6']].drop_duplicates()
-        table_hs6['code'] = 1
-        table_hs6 = table_hs6.set_index(['hs6', 'year']).unstack(level='year')
-        #-Drop TopLevel Name in Columns MultiIndex-#
-        table_hs6.columns = table_hs6.columns.droplevel()   #Removes Unnecessary 'code' label
-        return table_hs6
+        if index == "cp" or index == "pc":
+            #-Exporter-Product Index-#
+            table_eiso3c_hs6 = data[['year', 'hs6', 'eiso3c']].drop_duplicates()
+            table_eiso3c_hs6['code'] = 1
+            table_eiso3c_hs6 = table_eiso3c_hs6.set_index(['eiso3c', 'hs6', 'year']).unstack(level='year')
+            table_eiso3c_hs6.columns = table_eiso3c_hs6.columns.droplevel()   #Removes Unnecessary 'code' label
+            #-Importer-Product Index-#
+            table_iiso3c_hs6 = data[['year', 'hs6', 'iiso3c']].drop_duplicates()
+            table_iiso3c_hs6['code'] = 1
+            table_iiso3c_hs6 = table_iiso3c_hs6.set_index(['iiso3c', 'hs6', 'year']).unstack(level='year')
+            table_iiso3c_hs6.columns = table_iiso3c_hs6.columns.droplevel()   #Removes Unnecessary 'code' label        
+            if index == "pc":
+                table_eiso3c_hs6 = table_eiso3c_hs6.reorder_levels([1,0]).sort_index()
+                table_iiso3c_hs6 = table_iiso3c_hs6.reorder_levels([1,0]).sort_index()
+            return table_eiso3c_hs6, table_iiso3c_hs6
+        else:
+            #-Simple Product Index-#
+            table_hs6 = data[['year', 'hs6']].drop_duplicates()
+            table_hs6['code'] = 1
+            table_hs6 = table_hs6.set_index(['hs6', 'year']).unstack(level='year')
+            #-Drop TopLevel Name in Columns MultiIndex-#
+            table_hs6.columns = table_hs6.columns.droplevel()   #Removes Unnecessary 'code' label
+            return table_hs6
+    
 
     #--------------#
     #---Datasets---#
