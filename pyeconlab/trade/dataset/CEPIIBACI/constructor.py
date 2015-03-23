@@ -133,7 +133,7 @@ class BACIConstructor(BACI):
     country_datafl_fixed = bool
 
 
-    def __init__(self, source_dir, source_classification, ftype='csv', years=[], standard_names=False, skip_setup=False, reduce_memory=False, verbose=True):
+    def __init__(self, source_dir, source_classification, ftype='hdf', years=[], standard_names=False, skip_setup=False, reduce_memory=False, verbose=True):
         """ 
         Load RAW Data into Object
 
@@ -264,6 +264,18 @@ class BACIConstructor(BACI):
         rdf = self.raw_data.rename(columns={'t' : 'year', 'v' : 'value'})
         rdfy = rdf[['year', 'value']].groupby('year').sum()
         return rdfy
+
+    def reset_dataset(self, verbose=True):
+        """
+        Reset Dataset to raw_data
+        """
+        if type(self.__raw_data) != pd.DataFrame:
+            raise ValueError("RAW DATA is not a DataFrame! Most likely it has been deleted")
+        if verbose: print "[INFO] Reseting Dataset to Raw Data"
+        del self.dataset                                                                           #Clean-up old dataset
+        self.dataset = self.__raw_data.copy(deep=True)
+        self.operations = ''
+        self.level = 6
 
     #----#
     #-IO-#
@@ -1077,6 +1089,45 @@ class BACIConstructor(BACI):
             table_eiso3n = table_eiso3n.merge(iso3n_to_iso3c, left_index=True, right_index=True).reset_index().set_index(keys=['index', 'eiso3c'])
             table_eiso3n.index.set_names(names=['i', 'eiso3c'], inplace=True)
         return table_iiso3, table_eiso3
+
+
+    # - Product Codes Meta - #
+
+    def intertemporal_productcodes(self, dataset=False, force=False, verbose=False):
+        """
+        Construct a table of productcodes by year
+        
+        Parameters
+        ----------
+        dataset     :   bool, optional(default=False)
+                        Build from RAW Data or Dataset Attribute
+        force       :   bool, optional(default=False)
+                        Force method to be performed on incomplete data. Useful for testing. 
+
+
+        Future Work
+        -----------
+        1.  Implement a Table returned in a different classification or level
+            classification="HS96", level=6,
+        """
+        if self.complete_dataset != True:
+            if force == False:
+                raise ValueError("[ERROR] Not a Complete Dataset!")
+        #-Parse Data Source-#
+        if dataset:
+            data = self.dataset
+        else:
+            self.reset_dataset(verbose=verbose)             #Ensure RAW DATA Starting Point
+            self.add_country_iso3c(verbose=verbose)         #Add ISO3C
+            self.use_standard_column_names(self.dataset)    #Use Standard Column Names
+            data = self.dataset
+        #-Core-#
+        table_hs6 = data[['year', 'hs6']].drop_duplicates()
+        table_hs6['code'] = 1
+        table_hs6 = table_hs6.set_index(['hs6', 'year']).unstack(level='year')
+        #-Drop TopLevel Name in Columns MultiIndex-#
+        table_hs6.columns = table_hs6.columns.droplevel()   #Removes Unnecessary 'code' label
+        return table_hs6
 
     #--------------#
     #---Datasets---#
