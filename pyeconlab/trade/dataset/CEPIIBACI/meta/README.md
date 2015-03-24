@@ -91,7 +91,7 @@ These files are found in curated/
 Check Files
 ~~~~~~~~~~~
 
-Check Data can be found in /check
+Check Data can be found in /xlsx
 This can be useful diagnostic data such as intertemporal country_codes found in the raw_data
 
 

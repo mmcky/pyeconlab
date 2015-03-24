@@ -1120,6 +1120,7 @@ class BACIConstructor(BACI):
             self.load_country_data(verbose=verbose)
             self.use_standard_column_names(self.dataset)    #Use Standard Column Names
             self.add_country_iso3c(verbose=verbose)         #Add ISO3C
+            self.load_product_data(verbose=verbose)         #Add Product Data
             data = self.dataset
         #-Core-#
         if index == "cp" or index == "pc":
