@@ -671,10 +671,10 @@ class BACIConstructor(BACI):
             if idx == 0:
                 nf.write("\"Code\",\"Description\"\n")
                 continue
-            code = re.match("([0-9]*);?", line).group(1)                                            #look for productcodes
+            code = re.match("^([0-9]*);?", line).group(1)                                            #look for productcodes
             rest = line.lstrip(code+";")
             rest = rest.replace("\"", "")
-            rest = rest.rstrip("\n")
+            rest = rest.rstrip()
             line = "\"%s\",\"%s\"" % (code, rest)
             nf.write(line + "\n")
         #-Close Files-#
@@ -1104,7 +1104,6 @@ class BACIConstructor(BACI):
         force       :   bool, optional(default=False)
                         Force method to be performed on incomplete data. Useful for testing. 
 
-
         Future Work
         -----------
         1.  Implement a Table returned in a different classification or level
@@ -1167,7 +1166,9 @@ class BACIConstructor(BACI):
             table_hs6.columns = table_hs6.columns.droplevel()   #Removes Unnecessary 'code' label
             if wmeta:
                 #-Add Product Name-#
-                pass
+                pdata = self.product_data.rename(columns={"Code" : "hs6"}).set_index(keys=["hs6"])
+                table_hs6 = table_hs6.merge(pdata, left_index=True, right_index=True)
+                table_hs6 = table_hs6.reset_index().set_index(keys=['hs6', 'Description'])
             return table_hs6
     
 
