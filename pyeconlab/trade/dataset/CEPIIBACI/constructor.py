@@ -133,7 +133,7 @@ class BACIConstructor(BACI):
     country_datafl_fixed = bool
 
 
-    def __init__(self, source_dir, source_classification, ftype='hdf', years=[], standard_names=False, skip_setup=False, reduce_memory=False, verbose=True):
+    def __init__(self, source_dir, source_classification, ftype='hdf', years=[], standard_names=True, skip_setup=False, reduce_memory=False, verbose=True):
         """ 
         Load RAW Data into Object
 
@@ -1231,7 +1231,7 @@ class BACIConstructor(BACI):
             self.notes = op_string #-Save Settings-#
         #-MAIN WORK-#
         from .constructor_dataset_sitc import construct_sitc as construct_dataset
-        self.dataset = construct_dataset(self.dataset, data_classification=self.classification, data_type=data_type, level=product_level, revision=sitc_revision, verbose=verbose, multiindex=False, **OPTIONS)
+        self.dataset = construct_dataset(self.dataset, data_classification=self.classification, data_type=data_type, level=product_level, revision=sitc_revision, multiindex=False, verbose=verbose, **OPTIONS)
         self.dataset_name = "SITCR%s-%s"%(sitc_revision, str(dataset))
         #-Construct Report-#
         if report:
