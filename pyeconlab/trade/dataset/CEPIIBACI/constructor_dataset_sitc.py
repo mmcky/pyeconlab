@@ -19,7 +19,7 @@ import numpy as np
 from pyeconlab.util import concord_data
 
 
-def construct_sitc(data, data_classification, data_type, level, revision, check_concordance=True, adjust_units=False, concordance_institution="un", report=True, verbose=True):
+def construct_sitc(data, data_classification, data_type, level, revision, check_concordance=True, adjust_units=False, concordance_institution="un", multiindex=True, verbose=True):
     """
     A Self Contained Function for Producing SITC Datasets from the BACI Dataset
     **Note:** Self Contained methods reduce the Need to Debug other routines and methods.
@@ -43,8 +43,6 @@ def construct_sitc(data, data_classification, data_type, level, revision, check_
                         Adjust units to $'s from 1000 of $'s. Default is to keep the base dataset values in 1000's
     concordance_institution     :   str, optional(default="un")
                                     Specify which institution to use for product concordance information
-    report          :   bool, optional(default=True)
-                        Compile and Issue a simple Stats Report
 
     Notes
     -----
@@ -132,4 +130,6 @@ def construct_sitc(data, data_classification, data_type, level, revision, check_
     else:
         raise ValueError("'data' must be 'trade', 'export', or 'import'")
     #-Data-#
+    if not multiindex:
+        data = data.reset_index()
     return data

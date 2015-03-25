@@ -82,7 +82,7 @@ class BACIConstructor(BACI):
                                 [Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
                                 This is mainly used for loading test data to check attributes and methods etc. 
     reduce_memory           :   bool, optional(default=False)
-                                This will delete self.__raw_data after initializing self._dataset with the raw_data
+                                This will delete self.__raw_data after initializing self.dataset with the raw_data
                                 [Warning: This will render properties that depend on self.__raw_data inoperable]
                                 Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
 
@@ -151,7 +151,7 @@ class BACIConstructor(BACI):
                                     [Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
                                     This is mainly used for loading test data to check attributes and methods etc. 
         reduce_memory           :   bool, optional(default=False)
-                                    This will delete self.__raw_data after initializing self._dataset with the raw_data
+                                    This will delete self.__raw_data after initializing self.dataset with the raw_data
                                     [Warning: This will render properties that depend on self.__raw_data inoperable]
                                     Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
     
@@ -1178,7 +1178,7 @@ class BACIConstructor(BACI):
     #--------------#
 
 
-    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True, dataset_object=False, verbose=True):
+    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True, dataset_object=False, force=False, verbose=True):
         """
         Constructor of Predefined SITC Datasets
 
@@ -1197,6 +1197,10 @@ class BACIConstructor(BACI):
         dataset_object  :   bool, optional(default=False)
                             Specify if the method should return an nberwtf object
 
+        ..  Notes
+            -----
+            1. Other options defined by construct_sitc() function can be set using constructor_dataset options dict. 
+
         ..  Future Work
             -----------
             1. If dataset == dict then use it as the dataset parameters for compilation
@@ -1205,8 +1209,11 @@ class BACIConstructor(BACI):
         #-Dataset Definitions-#
         from .constructor_dataset import SITC_DATASET_DESCRIPTION, SITC_DATASET_OPTIONS
         #-Checks-#
-        if self.operations != "":
-            raise ValueError("This Method requires a complete RAW dataset")
+        if self.complete_dataset == False:
+            if force:
+                print "[WARNING] Building SITC Dataset with Subset of the full Dataset"
+            else:
+                raise ValueError("This Method requires a complete RAW dataset")
         #-Parse Options-#
         if type(dataset) == dict:
             print "[INFO] Using Passed Arguments as Dataset Construction Options"
@@ -1224,14 +1231,14 @@ class BACIConstructor(BACI):
             self.notes = op_string #-Save Settings-#
         #-MAIN WORK-#
         from .constructor_dataset_sitc import construct_sitc as construct_dataset
-        self._dataset = construct_dataset(self.dataset, data_classification=self.classification, data_type=data_type, level=product_level, revision=sitc_revision, verbose=verbose)     #**OPTIONS
+        self.dataset = construct_dataset(self.dataset, data_classification=self.classification, data_type=data_type, level=product_level, revision=sitc_revision, verbose=verbose, multiindex=False, **OPTIONS)
         self.dataset_name = "SITCR%s-%s"%(sitc_revision, str(dataset))
         #-Construct Report-#
         if report:
-            rdf = self.raw_data                                                     #Note: This produces a copy!
+            rdf = self.__raw_data                                                     #Note: This produces a copy!
             #-Year Values-#
-            rdfy = rdf.groupby(['year']).sum()['value'].reset_index()
-            dfy = self._dataset.groupby(['year']).sum()['value'].reset_index()
+            rdfy = rdf.rename(columns={"t" : "year", "v" : "value"}).groupby(['year']).sum()['value'].reset_index()
+            dfy = self.dataset.groupby(['year']).sum()['value'].reset_index()
             y = rdfy.merge(dfy, how="outer", on=['year']).set_index(['year'])
             y['%'] = y['value_y'] / y['value_x'] * 100
             report =    "Report %s\n"%(op_string) + \
@@ -1243,6 +1250,7 @@ class BACIConstructor(BACI):
         self.classification = 'SITC'
         self.revision = sitc_revision
         self.level = product_level
+        self.data_type = data_type
         #-OpString-#
         update_operations(self, op_string)
         #-Dataset Option-#
@@ -1425,8 +1433,10 @@ class BACIConstructor(BACI):
         Convert to a Dataset Object
         """
         #-Prepare Data for Object Standard Input-#
-        data = self.dataset.reset_index()
-        data = data.rename_axis({'sitc3' : 'productcode'}, axis=1)
+        data = self.dataset
+        if type(data.index) == pd.MultiIndex:
+            data = data.reset_index()
+        data = data.rename_axis({'sitc%s'%self.level : 'productcode'}, axis=1)
         data = self.attach_attributes_to_dataset(data)                          #Alternatively we could create the object and then attach names directly!
         if self.data_type == "trade":
             if generic:
