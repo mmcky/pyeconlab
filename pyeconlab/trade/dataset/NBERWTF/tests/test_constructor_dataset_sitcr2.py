@@ -1,7 +1,7 @@
 """
 Test for Generic Dataset Function Against dissaggregated routines
 
-STATUS: IN-USE (2015-02-09)
+STATUS: IN-USE (2015-02-09) & IN-WORK (Lots of missing tests)
 
 Files
 -----
@@ -23,8 +23,10 @@ Notes
 import sys
 import os
 import re
+import gc
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
+from numpy.testing import assert_allclose
 
 if sys.platform.startswith('win'):
     DATA_DIR = r"D:/work-data/datasets/"
@@ -49,6 +51,7 @@ def load_raw_dataset(fn, start_year, end_year, verbose=False):
     if verbose: print data.year.unique()
     return data
 
+from pyeconlab import NBERWTFConstructor
 from pyeconlab.trade.dataset.NBERWTF import construct_sitcr2
 from pyeconlab.trade.dataset.NBERWTF import construct_sitcr2l1, construct_sitcr2l2, construct_sitcr2l3, construct_sitcr2l4 
 from pyeconlab.util import package_folder
@@ -60,21 +63,21 @@ TEST_DATA_DIR = package_folder(__file__, "data")
 from ..constructor_dataset import SITC_DATASET_OPTIONS
 DATA_TYPE = ['trade', 'export', 'import']
 
-class TestRandomSamples():
-    """
-    Test Random Samples in Each Dataset
-    """
+# class TestRandomSamples():
+#     """
+#     Test Random Samples in Each Dataset
+#     """
 
-    @classmethod
-    def setUpClass(cls):
-        cls.raw_data = load_raw_dataset(TEST_DATA_DIR+"nberwtf_raw_years-1990-1991-1992.h5", 1990, 1990, verbose=True)
-        cls.hkchina_rawdata = load_raw_dataset(TEST_DATA_DIR+"nberwtf_hkchina_supp_raw_years-1990-1991-1992.h5", 1990, 1990, verbose=True)
+#     @classmethod
+#     def setUpClass(cls):
+#         cls.raw_data = load_raw_dataset(TEST_DATA_DIR+"nberwtf_raw_years-1990-1991-1992.h5", 1990, 1990, verbose=True)
+#         cls.hkchina_rawdata = load_raw_dataset(TEST_DATA_DIR+"nberwtf_hkchina_supp_raw_years-1990-1991-1992.h5", 1990, 1990, verbose=True)
 
-    def TestRandomRawSample1990(self):
-        """
-        Test Random Sample Data from 1990
-        """
-        pass
+#     def TestRandomRawSample1990(self):
+#         """
+#         Test Random Sample Data from 1990
+#         """
+#         pass
 
 class TestOptions():
     """
@@ -131,11 +134,11 @@ class TestOptions():
     #         B_VAL = B_VAL.get_value(index=B_VAL.index[0], col='value')
     #         assert B_VAL == row.value_adj
 
-    def Test_sitcr2(self):
-        raise NotImplementedError
+    # def Test_sitcr2(self):
+    #     raise NotImplementedError
 
-    def Test_drop_nonsitcr2(self):
-        raise NotImplementedError
+    # def Test_drop_nonsitcr2(self):
+    #     raise NotImplementedError
 
     def Test_adjust_hk(self):
         """
@@ -183,6 +186,10 @@ class TestOptions():
 class TestGenericVsSpecificNBERFunctions():
     """
     Test the Generic Function vs. Specific NBER Functions for Generating SITC Data for NBER WTF
+
+    Note
+    ----
+    1. This test should eventually be used to remove the non-generic files as they are duplicates and should be deprecated
     """
 
     @classmethod
@@ -257,3 +264,203 @@ class TestGenericVsSpecificNBERFunctions():
                 data1 = construct_sitcr2(self.rawdata, data_type=data_type, level=1, **SITC_DATASET_OPTIONS[dataset])   #-Default Options-#
                 data2 = construct_sitcr2l1(self.rawdata, data_type=data_type, **SITC_DATASET_OPTIONS[dataset])
                 assert_frame_equal(data1, data2)
+
+
+### ------------------------------------ #
+### --- BELOW REQUIRES EXTERNAL DATA --- #
+### ------------------------------------ #
+
+TEST_DATA_DIR = os.path.expanduser("~/work-data/repos-pyeconlab-testdata/")
+SOURCE_DATA_DIR = os.path.expanduser("~/work-data/datasets/36a376e5a01385782112519bddfac85e/")
+
+class TestAgainstStataData():
+    """
+    Test Suite for Comparing Data with STATA script
+    Stata: do/basic_sitc3_country_data.do
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.obj = NBERWTFConstructor(source_dir=SOURCE_DATA_DIR)
+
+    def setUp(self):
+        self.obj.reset_dataset() #-Reset to RAW Data after each test-#
+        gc.collect()
+
+    #-Dataset A-#
+
+    def test_bilateral_data_A(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='trade', dataset="A", product_level=3, sitc_revision=2, report=False, verbose=False)
+        #-stata-#
+        self.A = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_trade_sitcr2l3_1962to2000_A.dta")
+        self.A.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'], inplace=True)
+        self.A.reset_index(inplace=True)
+        del self.A['index']
+        try:
+            assert_frame_equal(self.obj.dataset, self.A)
+        except:
+            assert_allclose(self.obj.dataset['value'].values, self.A['value'].values)
+        del self.A
+
+    def test_export_data_A(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='export', dataset="A", product_level=3, sitc_revision=2, report=False, verbose=False)
+        #-stata-#
+        self.A = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_export_sitcr2l3_1962to2000_A.dta")
+        self.A.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
+        self.A.reset_index(inplace=True)
+        del self.A['index']
+        assert_allclose(self.obj.dataset['value'].values, self.A['value'].values)
+        del self.A
+
+    def test_import_data_A(self):                                                                                  
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='import', dataset="A", product_level=3, sitc_revision=2, report=False, verbose=False)
+        #-stata-#
+        self.A = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_import_sitcr2l3_1962to2000_A.dta")
+        self.A.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
+        self.A.reset_index(inplace=True)
+        del self.A['index']
+        assert_allclose(self.obj.dataset['value'].values, self.A['value'].values)
+        del self.A
+
+    #-Dataset B-#
+
+    def test_bilateral_data_B(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='trade', dataset="B", product_level=3, sitc_revision=2, report=False, verbose=False)
+        #-stata-#
+        self.B = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_trade_sitcr2l3_1962to2000_B.dta")
+        self.B.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'], inplace=True)
+        self.B.reset_index(inplace=True)
+        del self.B['index']
+        assert_allclose(self.obj.dataset['value'].values, self.B['value'].values)
+        del self.B
+
+    def test_export_data_B(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='export', dataset="B", product_level=3, sitc_revision=2, report=False, verbose=False)                                          
+        #-stata-#
+        self.B = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_export_sitcr2l3_1962to2000_B.dta")
+        self.B.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
+        self.B.reset_index(inplace=True)
+        del self.B['index']
+        assert_allclose(self.obj.dataset['value'].values, self.B['value'].values)
+        del self.B
+
+    def test_import_data_B(self):                                                                                   
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='import', dataset="B", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.B = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_import_sitcr2l3_1962to2000_B.dta")
+        self.B.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
+        self.B.reset_index(inplace=True)
+        del self.B['index']
+        assert_allclose(self.obj.dataset['value'].values, self.B['value'].values) 
+        del self.B
+
+    #-Dataset C-#
+
+    def test_bilateral_data_C(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='trade', dataset="C", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.C = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_trade_sitcr2l3_1962to2000_C.dta")
+        self.C = self.C.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
+        self.C = self.C.reset_index()
+        del self.C['index']
+        assert_allclose(self.obj.dataset['value'].values, self.C['value'].values)
+        del self.C
+
+    def test_export_data_C(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='export', dataset="C", product_level=3, sitc_revision=2, report=False, verbose=False)                                         
+        #-stata-#
+        self.C = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_export_sitcr2l3_1962to2000_C.dta")
+        self.C.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
+        self.C.reset_index(inplace=True)
+        del self.C['index']
+        assert_allclose(self.obj.dataset['value'].values, self.C['value'].values)
+        del self.C
+
+    def test_import_data_C(self):                                                                                  
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='import', dataset="C", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.C = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_import_sitcr2l3_1962to2000_C.dta")
+        self.C.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
+        self.C.reset_index(inplace=True)
+        del self.C['index']
+        assert_allclose(self.obj.dataset['value'].values, self.C['value'].values) 
+        del self.C
+
+    #-Dataset D-#
+
+    def test_bilateral_data_D(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='trade', dataset="D", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.D = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_trade_sitcr2l3_1962to2000_D.dta")
+        self.D = self.D.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
+        self.D = self.D.reset_index()
+        del self.D['index']
+        assert_allclose(self.obj.dataset['value'].values, self.D['value'].values)
+        del self.D
+
+    def test_export_data_D(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='export', dataset="D", product_level=3, sitc_revision=2, report=False, verbose=False)                                              
+        #-stata-#
+        self.D = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_export_sitcr2l3_1962to2000_D.dta")
+        self.D.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
+        self.D.reset_index(inplace=True)
+        del self.D['index']
+        assert_allclose(self.obj.dataset['value'].values, self.D['value'].values)
+        del self.D
+
+    def test_import_data_D(self):                                                                                   
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='import', dataset="D", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.D = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_import_sitcr2l3_1962to2000_D.dta")
+        self.D.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
+        self.D.reset_index(inplace=True)
+        del self.D['index']
+        assert_allclose(self.obj.dataset['value'].values, self.D['value'].values) 
+        del self.D
+
+    #-Dataset E-#
+
+    def test_bilateral_data_E(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='trade', dataset="E", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.E = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_trade_sitcr2l3_1962to2000_E.dta")
+        self.E = self.E.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
+        self.E = self.E.reset_index()
+        del self.E['index']
+        assert_allclose(self.obj.dataset['value'].values, self.E['value'].values)
+        del self.E
+
+    def test_export_data_E(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='export', dataset="E", product_level=3, sitc_revision=2, report=False, verbose=False)                                              
+        #-stata-#
+        self.E = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_export_sitcr2l3_1962to2000_E.dta")
+        self.E.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
+        self.E.reset_index(inplace=True)
+        del self.E['index']
+        assert_allclose(self.obj.dataset['value'].values, self.E['value'].values)
+        del self.E
+
+    def test_import_data_E(self):                                                                                   
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='import', dataset="E", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.E = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_import_sitcr2l3_1962to2000_E.dta")
+        self.E.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
+        self.E.reset_index(inplace=True)
+        del self.E['index']
+        assert_allclose(self.obj.dataset['value'].values, self.E['value'].values) 
+        del self.E

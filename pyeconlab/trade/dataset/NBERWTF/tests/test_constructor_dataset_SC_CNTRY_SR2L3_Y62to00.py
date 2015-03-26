@@ -33,8 +33,10 @@ from pyeconlab import NBERWTFConstructor
 # SOURCE_DATA_DIR = "D:\\work-data\\x_datasets\\36a376e5a01385782112519bddfac85e\\" 	#win7
 
 #-Linux/OSX-#
-TEST_DATA_DIR = os.path.expanduser("~/work-data/repos-pyeconlab-testdata/")
+TEST_DATA_DIR = os.path.expanduser("~/work-data/repos-pyeconlab-testdata/SC_CNTRY_SR2L3_Y62to00/")
 SOURCE_DATA_DIR = os.path.expanduser("~/work-data/datasets/36a376e5a01385782112519bddfac85e/")
+
+MANUAL = False
 
 class TestSC_CNTRY_SR2L3_Y62to00():
 	"""
@@ -220,3 +222,68 @@ class TestSC_CNTRY_SR2L3_Y62to00():
 		del self.D['index']
 		assert_allclose(self.obj.dataset['value'].values, self.D['value'].values) 
 		del self.D
+
+### ------------------------------- ###
+### --- MANUAL TESTS AND CHECKS --- ###
+### ------------------------------- ###
+
+if MANUAL:
+
+	### --- Test: Old (SC_CNTRY_SR2L3 Routines to construct_sitc_dataset() method) --- ###
+
+	from pyeconlab import NBERWTFConstructor
+	from pandas.util.testing import assert_frame_equal
+	from pyeconlab.util import compare_dataframe_rows
+	SOURCE = "/home/matthewmckay/work-data/datasets/36a376e5a01385782112519bddfac85e/"
+
+	#-A-#
+	nber = NBERWTFConstructor(source_dir=SOURCE)
+	a = nber.construct_dataset_SC_CNTRY_SR2L3_Y62to00_A(data_type="export")
+	nber.reset_dataset()
+	b = nber.construct_sitc_dataset(data_type="export", dataset="A", product_level=3, sitc_revision=2, dataset_object=True)
+	try:
+	    assert_frame_equal(a.data, b.data)
+	except:
+	    s,d = compare_dataframe_rows(a.data, b.data.reindex_like(a.data))
+	    d.to_excel("diff_A.xlsx")
+	    s,d = compare_dataframe_rows(b.data, a.data.reindex_like(a.data))
+	    d.to_excel("diff_A_alt.xlsx")
+
+	### --- Note the Following will differ on CHN and HKG Exports due to construct_sitc_dataset() makes use of the HK-CHINA adjustment data --- ####
+
+	#-B-#
+	nber = NBERWTFConstructor(source_dir=SOURCE)
+	a = nber.construct_dataset_SC_CNTRY_SR2L3_Y62to00_B(data_type="export") 	#-Note B ~= C
+	nber.reset_dataset()
+	b = nber.construct_sitc_dataset(data_type="export", dataset="C", product_level=3, sitc_revision=2, dataset_object=True)
+	try:
+	    assert_frame_equal(a.data, b.data)
+	except:
+	    s,d = compare_dataframe_rows(a.data, b.data.reindex_like(a.data))
+	    d.to_excel("diff_A.xlsx")
+	    s,d = compare_dataframe_rows(b.data, a.data.reindex_like(a.data))
+	    d.to_excel("diff_A_alt.xlsx")
+
+	#-C-#
+	nber = NBERWTFConstructor(source_dir=SOURCE)
+	a = nber.construct_dataset_SC_CNTRY_SR2L3_Y62to00_C(data_type="export") 	#note C ~= D
+	nber.reset_dataset()
+	b = nber.construct_sitc_dataset(data_type="export", dataset="D", product_level=3, sitc_revision=2, dataset_object=True)
+	try:
+	    assert_frame_equal(a.data, b.data)
+	except:
+	    s,d = compare_dataframe_rows(a.data, b.data.reindex_like(a.data))
+	    d.to_excel("diff_C.xlsx")
+	    s,d = compare_dataframe_rows(b.data, a.data.reindex_like(b.data))
+	    d.to_excel("diff_C_alt.xlsx")
+
+	#-D-#
+	nber = NBERWTFConstructor(source_dir=SOURCE)
+	a = nber.construct_dataset_SC_CNTRY_SR2L3_Y62to00_D(data_type="export")
+	nber.reset_dataset()
+	b = nber.construct_sitc_dataset(data_type="export", dataset="E", product_level=3, sitc_revision=2, dataset_object=True)
+	try:
+	    assert_frame_equal(a.data, b.data)
+	except:
+	    s,d = compare_dataframe_rows(b.data, a.data.reindex_like(b.data))
+	    d.to_excel("diff_D_alt.xlsx")
