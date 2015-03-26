@@ -401,7 +401,7 @@ def update_operations(self, add_op_string):
     try:
         if type(self.operations) == str or type(self.operations) == unicode:
             self.operations += add_op_string
-            self.complete_dataset = False
+            self.complete_dataset = False           #In General this is true
     except:
         self.operations = add_op_string
 

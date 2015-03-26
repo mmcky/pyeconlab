@@ -69,6 +69,11 @@ def construct_sitc(data, data_classification, data_type, level, revision, check_
             data.drop(data.loc[(data.eiso3c.isnull())].index, inplace=True)
         return data
 
+    def check_concordance_helper(data, level):
+        check = data.loc[data['sitc%s'%level].isnull()]
+        if len(check) > 0:
+            raise ValueError("Concordance doesn't provide match for the following products: %s" % (check.hs6.unique()))
+
     #-Obtain Key Index Variables-#
     data.rename(columns={'t' : 'year', 'i' : 'eiso3n', 'j' : 'iiso3n', 'v' : 'value', 'q': 'quantity'}, inplace=True)   #'hs6' is unchanged
     #-Exclude Quantity-#
@@ -99,9 +104,11 @@ def construct_sitc(data, data_classification, data_type, level, revision, check_
         data = dropna_iso3c(data, column='eiso3c')
         data = dropna_iso3c(data, column='iiso3c')
         #-Merge in SITCR2 Level 3-#
-        data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+        data['sitc%s'%level] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+        if check_concordance:
+            check_concordance_helper(data, level)
         del data['hs6']
-        data = data.groupby(['year', 'eiso3c', 'iiso3c', 'sitc3']).sum()
+        data = data.groupby(['year', 'eiso3c', 'iiso3c', 'sitc%s'%level]).sum()
         print "[Returning] BACI HS96 Source => TRADE data for SITCR%sL%s with ISO3C Countries" % (revision, level)
     elif data_type == "export" or data_type == "exports":
         #-Export Level-#
@@ -111,9 +118,11 @@ def construct_sitc(data, data_classification, data_type, level, revision, check_
         data = merge_iso3c_and_replace_iso3n(data, cntry_data, column='eiso3n')
         data = dropna_iso3c(data, column='eiso3c')
         #-Merge in SITCR2 Level 3-#
-        data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+        data['sitc%s'%level] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+        if check_concordance:
+            check_concordance_helper(data, level)
         del data['hs6']
-        data = data.groupby(['year', 'eiso3c', 'sitc3']).sum()
+        data = data.groupby(['year', 'eiso3c', 'sitc%s'%level]).sum()
         print "[Returning] BACI HS96 Source => EXPORT data for SITCR%sL%s with ISO3C Countries" % (revision, level)
     elif data_type == "import" or data_type == "imports":
         #-Import Level-#
@@ -123,9 +132,11 @@ def construct_sitc(data, data_classification, data_type, level, revision, check_
         data = merge_iso3c_and_replace_iso3n(data, cntry_data, column='iiso3n')
         data = dropna_iso3c(data, column='iiso3c')
         #-Merge in SITCR2 Level 3-#
-        data['sitc3'] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+        data['sitc%s'%level] = data['hs6'].apply(lambda x: concord_data(concordance, x, issue_error=np.nan))
+        if check_concordance:
+            check_concordance_helper(data, level)
         del data['hs6']
-        data = data.groupby(['year', 'iiso3c', 'sitc3']).sum()
+        data = data.groupby(['year', 'iiso3c', 'sitc%s'%level]).sum()
         print "[Returning] BACI HS96 Source => IMPORT data for SITCR%sL%s with ISO3C Countries" % (revision, level)
     else:
         raise ValueError("'data' must be 'trade', 'export', or 'import'")

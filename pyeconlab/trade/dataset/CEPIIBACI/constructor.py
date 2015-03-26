@@ -121,7 +121,7 @@ class BACIConstructor(BACI):
     name            = str 
     classification  = str 
     revision        = str 
-    years           = list 
+    years           = list
     notes           = str
     complete_dataset = bool
     standard_names  = bool
@@ -223,6 +223,7 @@ class BACIConstructor(BACI):
         self.standard_names = standard_names
         if self.standard_names:
             self.use_standard_column_names(self.dataset, verbose=verbose)
+
 
 
     def __repr__(self):
@@ -331,12 +332,10 @@ class BACIConstructor(BACI):
 
         """
         self.__raw_data = pd.DataFrame() 
-        print years
         if years == [] or years == self.source_available_years[self.classification]:
             fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_fn[self.classification]
             if verbose: print "[INFO] Loading RAW DATA from %s" % fn
             self.__raw_data = pd.read_hdf(fn, key='raw_data')
-            self.complete_dataset = True
         else:
             fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_yearindex_fn[self.classification] 
             for year in years:
@@ -417,7 +416,10 @@ class BACIConstructor(BACI):
         self.standard_names = True
         df.rename(columns=self.source_interface, inplace=True)
         #-Update Operations Attribute-#
+        exception_complete_dataset = self.complete_dataset 
         update_operations(self, opstring)
+        if exception_complete_dataset:                          #This Exception is Necessary as the update_operations by default sets complete_dataset to False but this is a harmless operation
+            self.complete_dataset = True
 
     #------------#
     #-Conversion-#
