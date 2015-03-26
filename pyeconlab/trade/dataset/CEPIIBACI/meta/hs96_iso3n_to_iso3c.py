@@ -1,7 +1,57 @@
 """
-ISO3N to CountryName Dictionary for Classification: HS96Source: BACI Country Concordance File
+ISO3N to ISO3C Dictionary for Classification: HS96Source: BACI Country Concordance File
 
 Manual Check: 19/03/2015
+
+Missing Codes
+-------------
+[1] To find a list of unique missing iso3n to iso3c identifiers
+	<code snippet>
+	from pyeconlab import BACIConstructor
+	SOURCE_DIR = "/home/matthewmckay/work-data/datasets/e988b6544563675492b59f397a8cb6bb/"
+	baci = BACIConstructor(source_dir=SOURCE_DIR, source_classification="HS96", reduce_memory=True)
+	baci.load_country_data()
+	baci.add_country_iso3c()
+	exporters = set(baci.dataset.loc[baci.dataset.eiso3c.isnull()].eiso3n.unique())
+	importers = set(baci.dataset.loc[baci.dataset.iiso3c.isnull()].iiso3n.unique())
+	missing = exporters.union(importers)
+
+	<results 27-March-2015>
+	{10, 74, 80, 129, 221, 239, 275, 290, 334, 336, 471, 473, 492, 499, 527, 531, 534, 535, 568, 577, 581, 636, 637, 688, 697, 728, 729, 807, 837, 838, 839, 879, 899}
+	10 	: "Antarctica" (ATA)
+	74  : "Bosnia and Herzegovina" (BIH)
+	80 	: "British Antarctic Territory"  							#Withdrawn Code
+	129 : "." 							 							#Not Found in ISO3166
+	221 : "." 														#Not Found in ISO3166
+	239 : "South Georgia and the South Sandwich Islands" (SGS)
+	275 : "Palestine, State of" (PSE)
+	290 : "." 														#Not Found in ISO3166
+	334 : "Heard Island and McDonald Islands" (HMD)
+	336 : "Holy See (Vatican City State)" (VAT)
+	471 : "." 														#Not Found in ISO3166
+	473 : "." 														#Not Found in ISO3166
+	492 : "Monaco" (MCO)
+	499 : "Montenegro" (MNE)
+	527 : "." 														#Not Found in ISO3166
+	531 : "Curaçao" (CUW)
+	534 : "Sint Maarten (Dutch part)" ()
+	535 : "Bonaire, Sint Eustatius and Saba" (BES)
+	568 : "." 														#Not Found in ISO3166
+	577 : "." 														#Not Found in ISO3166
+	581 : "United States Minor Outlying Islands" (UMI)
+	636 : "." 														#Not Found in ISO3166
+	637 : "." 														#Not Found in ISO3166
+	688 : "Serbia" (SRB)
+	697 : "." 														#Not Found in ISO3166
+	728 : "South Sudan"	(SSD)										#Note: Spanish North Africa (note: this code is now used by South Sudan)
+	729 : "Sudan" (SDN)
+	807 : "Macedonia, the former Yugoslav Republic of" (MKD)
+	837 : "." 														#Not Found in ISO3166
+	838 : "." 														#Not Found in ISO3166
+	839 : "." 														#Not Found in ISO3166
+	879 : "." 														#Not Found in ISO3166
+	899 : "." 														#Not Found in ISO3166
+
 
 Notes
 -----
