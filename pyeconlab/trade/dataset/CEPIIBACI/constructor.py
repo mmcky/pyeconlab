@@ -336,6 +336,7 @@ class BACIConstructor(BACI):
             fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_fn[self.classification]
             if verbose: print "[INFO] Loading RAW DATA from %s" % fn
             self.__raw_data = pd.read_hdf(fn, key='raw_data')
+            self.complete_dataset = True
         else:
             fn = self.source_dir + self.__cache_dir + self.raw_data_hdf_yearindex_fn[self.classification] 
             for year in years:
