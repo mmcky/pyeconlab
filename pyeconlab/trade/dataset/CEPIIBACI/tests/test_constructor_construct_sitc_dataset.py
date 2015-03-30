@@ -28,9 +28,9 @@ class TestConstructSITCDatasetAgainstStataData():
 
     def setUp(self):
         self.obj.reset_dataset() #-Reset to RAW Data after each test-#
-        self.obj.complete_dataset=True
-        self.obj.classification="HS96"
-        gc.collect()
+        self.obj.complete_dataset=True  
+        self.obj.classification="HS96"  #Reset from SITC Conversion Process
+        gc.collect() 
 
     #-Dataset A-#
 
