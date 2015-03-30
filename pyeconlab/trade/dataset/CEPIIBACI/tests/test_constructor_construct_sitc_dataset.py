@@ -9,7 +9,9 @@ Additional Files
 
 import os
 import gc
+import pandas as pd
 from pyeconlab import BACIConstructor
+from numpy.testing import assert_allclose
 
 TEST_DATA_DIR = os.path.expanduser("~/work-data/repos-pyeconlab-testdata/")
 SOURCE_DATA_DIR = os.path.expanduser("~/work-data/datasets/e988b6544563675492b59f397a8cb6bb/")
@@ -26,6 +28,8 @@ class TestConstructSITCDatasetAgainstStataData():
 
     def setUp(self):
         self.obj.reset_dataset() #-Reset to RAW Data after each test-#
+        self.obj.complete_dataset=True
+        self.obj.classification="HS96"
         gc.collect()
 
     #-Dataset A-#
