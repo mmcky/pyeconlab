@@ -44,7 +44,7 @@ class TestConstructSITCDatasetAgainstStataData():
             assert_allclose(self.obj.dataset['value'].values, self.A['value'].values)
         del self.A
 
-     def test_export_data_A(self):
+    def test_export_data_A(self):
         #-pyeconlab-#
         self.obj.construct_sitc_dataset(data_type='export', dataset="A", product_level=3, sitc_revision=2, report=False, verbose=False)
         #-stata-#
