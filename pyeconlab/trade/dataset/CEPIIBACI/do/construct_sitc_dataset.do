@@ -22,6 +22,7 @@ if c(os) == "MacOSX" | c(os) == "Unix" {
 	global SOURCE="~/work-data/datasets/e988b6544563675492b59f397a8cb6bb"
 	global META = "~/repos/pyeconlab/pyeconlab/trade/dataset/CEPIIBACI/meta" 				//Hard Coded For Now
 	global METACLASS = "~/repos/pyeconlab/pyeconlab/trade/classification/meta" 				//Hard Coded For Now
+	global METACONCORD = "~/repos/pyeconlab/pyeconlab/trade/concordance/data" 				//Hard Coded For Now
 	// Targets //
 	global WORKINGDIR="~/work-temp"
 }
@@ -30,6 +31,7 @@ if c(os) == "Windows" {
 	global SOURCE="D:\work-data\datasets\e988b6544563675492b59f397a8cb6bb"
 	global META = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\dataset\CEPIIBACI\meta" 		//Hard Coded For Now
 	global METACLASS = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\classification\meta" 	//Hard Coded For Now
+	global METACONCORD = "C:\Users\Matt-Work\work\repos\pyeconlab\pyeconlab\trade\concordance\data" 	//Hard Coded For Now
 	// Targets //
 	global WORKINGDIR="D:/work-temp"
 }
@@ -46,7 +48,7 @@ global DATASETS "A"
 foreach item of global DATASETS {
 	
 	global DATASET="`item'"
-	//global DATASET = "A"
+	global DATASET = "A"
 	
 	capture log close
 	local fl = "cepiibaci_stata_sitcl3_data_"+"$DATASET"+".log"
@@ -59,12 +61,14 @@ foreach item of global DATASETS {
 	if "$DATASET" == "A" {
 		global check_concordance = 1
 		global adjust_units = 0
+		global intertemporal_cntry_recode = 0 		//Future Use
+		global incomplete_cntry_recode = 0 		//Future Use
+		
 	}
 	else {
 		di "Option %DATASET not valid"
 		exit
 	}
-
 
 	** ------------------ ** 
 	** Write Concordances **
@@ -74,24 +78,36 @@ foreach item of global DATASETS {
 	**/meta/csv/countrycodes_to_iso3c.csv contains this listing**
 	**Copied: 27-08-2014
 	**Note: This is not intertemporally consistent**
-	insheet using "$SOURCE/country_code_baci96_adjust.csv", clear names
-	keep iso3 i
-	rename iso3 eiso3c
-	order i eiso3c
+	insheet using "$META/csv/hs96_iso3n_to_iso3c.csv", clear names
+	rename iso3n i
+	rename iso3c eiso3c
 	save "i_to_eiso3c.dta", replace
-	insheet using "$SOURCE/country_code_baci96_adjust.csv", clear names
-	keep iso3 i
-	rename i j
-	rename iso3 iiso3c
-	order j iiso3c
+	insheet using "$META/csv/hs96_iso3n_to_iso3c.csv", clear names
+	rename iso3n j
+	rename iso3c iiso3c
 	save "j_to_iiso3c.dta", replace
+	
+	**Compare pyeconlab meta with baci country tables**
+	insheet using "$SOURCE/country_code_baci96_adjust.csv", clear names
+	merge 1:1 i using "i_to_eiso3c.dta", keepusing(eiso3c)
+	gen j = i 								//For Merging with IISO3C
+	list if _merge == 1
+	list if _merge == 2
+	drop _merge
+	save "country_code_baci96_adjust.dta", replace
 
-	**Concord to SITC Revision 2 Level 2 Codes**
+	** HS6 to SITC Classification **
+	infix str hs6 1-6 str sitc 8-12 using "$METACONCORD/un/HS1996_to_SITCR2.csv", clear 
+	drop in 1/1 //Drop Variable Names
+	save "hs96_hs6_to_sitc.dta", replace
+	
+
+	**SITC Revision 2 Level 2 Indicator Codes**
 	**classification/meta/SITC-R2-L3-codes.csv contains this listing**
 	**Source: UN
 	**Copied: 28-08-2014
 	infix using "$METACLASS/SITC-R2-L3-codes.dct", using("$METACLASS/SITC-R2-L3-codes.csv") clear
-	save "SITC-R2-L3-codes.dta", replace
+	save "MARKER_SITC-R2-L3-codes.dta", replace
 
 	** ----------------- **
 	** Convert RAW Files **
@@ -103,6 +119,7 @@ foreach item of global DATASETS {
 			gen fixleadingzero = 6 - length(hs6)
 			codebook fixleadingzero
 			replace hs6 = "0"+hs6 if fixleadingzero == 1
+			drop fixleadingzero
 			save "$SOURCE/cache/baci96_`year'.dta", replace
 		}
 	}
@@ -114,16 +131,56 @@ foreach item of global DATASETS {
 	**Dataset #1: Bilateral TRADE Data 	**
 	******************************************
 
-	** WORKING HERE **
-
 	// Compile WTF Source Files //
-	insheet using "$SOURCE/cache/baci96_1998.dta", clear names
+	use "$SOURCE/cache/baci96_1998.dta", clear
 	foreach year of num 1999(1)2012 {
-		append using "$SOURCE/baci96_`year'.dta"
+		append using "$SOURCE/cache/baci96_`year'.dta"
 	}
-	//save "$SOURCE/baci96.dta", replace
+	//save "$SOURCE/cache/baci96.dta", replace
+	
+	** Concord Country ISO3n to ISO3c **
+	//Exporter Codes//
+	di "Importing EISO3C ..."
+	merge m:1 i using "i_to_eiso3c.dta", keepusing(eiso3c)
+	preserve
+	keep if _merge == 1
+	keep i
+	duplicates drop
+	merge 1:1 i using "country_code_baci96_adjust.dta", keepusing(name_english iso3 iso2)
+	keep if _merge == 3
+	di "The Following List will be dropped!"
+	list
+	restore
+	keep if _merge == 3 	//Keep Only Matched Items
+	drop _merge
+	//Importer Codes//
+	di "Importing IISO3C ..."
+	merge m:1 j using "j_to_iiso3c.dta", keepusing(iiso3c)
+	preserve
+	keep if _merge == 1
+	keep j
+	duplicates drop
+	merge 1:1 j using "country_code_baci96_adjust.dta", keepusing(name_english iso3 iso2)
+	keep if _merge == 3
+	di "The Following List will be dropped!"
+	list
+	restore
+	keep if _merge == 3 	//Keep Only Matched Items
+	drop _merge
+	
+	//Double Check//
+	list if eiso3c == ""
+	list if eiso3c == "."
+	list if iiso3c == ""
+	list if iiso3c == "."
+	
+	rename t year
+	rename i eiso3n
+	rename j iiso3n
+	rename v value
+	rename q quantity
 
-	format value %12.0f
+	format value %12.0f 			//Same as NBER
 
 	//Log Check
 	**Record Total Value by Year in Log**
@@ -132,62 +189,32 @@ foreach item of global DATASETS {
 	list
 	restore
 
-	if $adjust_hk == 1{
-		// Values //
-		merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
-		replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
-		drop _merge value_adj
-	}
+	//Year, Exporters, Importers
+	codebook year
+	codebook eiso3n
+	codebook iiso3n
 
-	**Split Codes to THREE DIGIT**
-	gen sitc3 = substr(sitc4,1,3)
-	drop sitc4
-	collapse (sum) value, by(year importer exporter sitc3)
-	drop if sitc3 == "" 			//Bad Data
-
-	drop if importer == "World"
-	drop if exporter == "World"
-
-	merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
+	** Concord Classification System **
+	merge m:1 hs6 using "hs96_hs6_to_sitc.dta", keepusing(sitc)
 	list if _merge == 1
 	list if _merge == 2
-	keep if _merge == 3 	//Keep Only Matched Items
 	drop _merge
-	//drop exporter
-	drop if eiso3c == "."
-	merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
-	list if _merge == 1
-	list if _merge == 2
-	keep if _merge == 3 	//Keep Only Matched Items
-	drop _merge
-	//drop importer
-	drop if iiso3c == "."
+	
+	gen sitc3 = substr(sitc,1,3)
 
+	// SITC Revision 3 Level 3 Dataset //
 	collapse (sum) value, by(year eiso3c iiso3c sitc3)
 
-	if $dropAX == 1{
-		gen marker = regexm(sitc3, "[AX]")
-		drop if marker == 1
-		drop marker
-		//Log Check
-		preserve
-		collapse (sum) value, by(year)
-		list
-		restore
-	}
+	preserve
+	keep sitc3
+	duplicates drop
+	count
+	sort sitc3
+	list
+	restore
+	
 
-	if $dropNonSITCR2 == 1{
-		merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
-		drop _merge
-		keep if marker == 1
-		drop marker
-		//Log Check
-		preserve
-		collapse (sum) value, by(year)
-		list
-		restore
-	}
-
+	// The Below require eiso3c_intertemporal_recoda.dta" from nber stata file or some other intertemporal coding
 	if $intertemporal_cntry_recode == 1{
 		merge m:1 eiso3c using "eiso3c_intertemporal_recodes.dta"
 		list if _merge == 2 	
@@ -225,8 +252,9 @@ foreach item of global DATASETS {
 		restore
 	}
 
+
 	order year eiso3c iiso3c sitc3 value
-	local fl = "nberwtf_stata_trade_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
+	local fl = "bacihs96_stata_trade_sitcr2l3_1998to2012_"+"$DATASET"+".dta"
 	save `fl', replace
 
 
@@ -237,134 +265,65 @@ foreach item of global DATASETS {
 	**Dataset #2: Export Data **
 	****************************
 
-	**---------------------------------**
-	**Method#1: Keep Country => "World"**
-	**Note: these aggregations will capture NES as they are exports to the world **
-	**---------------------------------**
-
-	use "$SOURCE/wtf62.dta", clear
-	foreach year of num 63(1)99 {
-		append using "$SOURCE/wtf`year'.dta"
+	// Compile WTF Source Files //
+	use "$SOURCE/cache/baci96_1998.dta", clear
+	foreach year of num 1999(1)2012 {
+		append using "$SOURCE/cache/baci96_`year'.dta"
 	}
-	append using "$SOURCE/wtf00.dta"
-	//save "$SOURCE/wtf.dta", replace
-
-	format value %12.0f
-
-	if $adjust_hk == 1{
-		// Values //
-		merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
-		replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
-		drop _merge value_adj
-	}
-
-	**Split Codes to THREE DIGIT**
-	gen sitc3 = substr(sitc4,1,3)
-	drop sitc4
-	collapse (sum) value, by(year importer exporter sitc3)
-	drop if sitc3 == "" 			//Bad Data
-
-	drop if exporter == "World"
-	keep if importer == "World"
-	drop importer
-
-	merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
-	list if _merge == 1
-	list if _merge == 2
+	//save "$SOURCE/cache/baci96.dta", replace
+	
+	** Concord Country ISO3n to ISO3c **
+	** ------------------------------ **
+	//Exporter Codes//
+	di "Importing EISO3C ..."
+	merge m:1 i using "i_to_eiso3c.dta", keepusing(eiso3c)
+	preserve
+	keep if _merge == 1
+	keep i
+	duplicates drop
+	merge 1:1 i using "country_code_baci96_adjust.dta", keepusing(name_english iso3 iso2)
+	keep if _merge == 3
+	di "The Following List will be dropped!"
+	list
+	restore
 	keep if _merge == 3 	//Keep Only Matched Items
 	drop _merge
-	//drop exporter
-	drop if eiso3c == "." //Drops NES
 
-	collapse (sum) value, by(year eiso3c sitc3)
-	rename value value_m1
+	rename t year
+	rename i eiso3n
+	rename j iiso3n
+	rename v value
+	rename q quantity
 
-	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
-	save `fl', replace
+	format value %12.0f 			//Same as NBER
 
+	//Collapse to Export Data//
+	collapse (sum) value, by(year eiso3n eiso3c)
 
-	**------------------------------------------**
-	**Method#2: Keep Country Pairs and Aggregate**
-	**------------------------------------------**
+	//Log Check
+	**Record Total Value by Year in Log**
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
 
-	use "$SOURCE/wtf62.dta", clear
-	foreach year of num 63(1)99 {
-		append using "$SOURCE/wtf`year'.dta"
-	}
-	append using "$SOURCE/wtf00.dta"
-	//save "$SOURCE/wtf.dta", replace
+	//Year, Exporters
+	codebook year
+	codebook eiso3n
 
-	format value %12.0f
-
-	if $adjust_hk == 1{
-		// Values //
-		merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
-		replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
-		drop _merge value_adj
-	}
-
-	**Split Codes to THREE DIGIT**
-	gen sitc3 = substr(sitc4,1,3)
-	drop sitc4
-	collapse (sum) value, by(year importer exporter sitc3)
-	drop if sitc3 == "" 			//Bad Data
-
-	drop if exporter == "World"
-	drop if importer == "World"
-
-	merge m:1 exporter using "exporter_to_eiso3c.dta", keepusing(eiso3c)
+	** Concord Classification System **
+	** ----------------------------- **
+	merge m:1 hs6 using "hs96_hs6_to_sitc.dta", keepusing(sitc)
 	list if _merge == 1
 	list if _merge == 2
-	keep if _merge == 3 	//Keep Only Matched Items
 	drop _merge
-	//drop exporter
-	drop if eiso3c == "."
+	
+	gen sitc3 = substr(sitc,1,3)
 
+	// SITC Revision 3 Level 3 Dataset //
 	collapse (sum) value, by(year eiso3c sitc3)
-	rename value value_m2
-
-	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
-	save `fl', replace
-
-	**
-	** Compare Methods
-	**
-	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
-	merge 1:1 year sitc3 eiso3c using `fl'
-	gen diff = value_m1 - value_m2
-	codebook diff
-	list if diff != 0
-
-	**Note: Check These Methods are Equivalent**
-	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
-	use `fl', clear
-	//rename value_m1 value
-	rename value_m2 value
 
 	**Parse Options for Export Files**
-
-	if $dropAX == 1{
-		gen marker = regexm(sitc3, "[AX]")
-		drop if marker == 1
-		drop marker
-		//Log Check
-		preserve
-		collapse (sum) value, by(year)
-		list
-		restore
-	}
-
-	if $dropNonSITCR2 == 1{
-		merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
-		drop _merge
-		keep if marker == 1
-		drop marker
-		//Log Check
-		preserve
-		collapse (sum) value, by(year)
-		list
-		restore
-	}
 
 	if $intertemporal_cntry_recode == 1{
 		merge m:1 eiso3c using "eiso3c_intertemporal_recodes.dta"
@@ -394,15 +353,8 @@ foreach item of global DATASETS {
 	}
 
 	order year eiso3c sitc3 value
-	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
+	local fl = "bacihs96_stata_export_sitcr2l3_1998to2012_"+"$DATASET"+".dta"
 	save `fl', replace
-
-	if $cleanup == 1{
-		local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
-		rm `fl'
-		local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
-		rm `fl'
-	}
 
 	*** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
 
@@ -411,131 +363,65 @@ foreach item of global DATASETS {
 	**Dataset #3: Country Import Data **
 	************************************ 
 
-	**---------------------------------**
-	**Method#1: Keep Country => "World"**
-	**---------------------------------**
-
-	use "$SOURCE/wtf62.dta", clear
-	foreach year of num 63(1)99 {
-		append using "$SOURCE/wtf`year'.dta"
+	// Compile WTF Source Files //
+	use "$SOURCE/cache/baci96_1998.dta", clear
+	foreach year of num 1999(1)2012 {
+		append using "$SOURCE/cache/baci96_`year'.dta"
 	}
-	append using "$SOURCE/wtf00.dta"
-	//save "$SOURCE/wtf.dta", replace
-
-	format value %12.0f
-
-	if $adjust_hk == 1{
-		// Values //
-		merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
-		replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
-		drop _merge value_adj
-	}
-
-	**Split Codes to THREE DIGIT**
-	gen sitc3 = substr(sitc4,1,3)
-	drop sitc4
-	collapse (sum) value, by(year importer exporter sitc3)
-	drop if sitc3 == "" 			//Bad Data
-
-	keep if exporter == "World"
-	drop if importer == "World"
-	drop exporter
-
-	merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
-	list if _merge == 1
-	list if _merge == 2
-	keep if _merge == 3 	//Keep Only Matched Items
-	drop _merge
-	//drop exporter
-	drop if iiso3c == "." //Drops NES
-
-	collapse (sum) value, by(year iiso3c sitc3)
-	rename value value_m1
-
-	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
-	save `fl', replace
-
-
-	**------------------------------------------**
-	**Method#2: Keep Country Pairs and Aggregate**
-	**------------------------------------------**
-
-	use "$SOURCE/wtf62.dta", clear
-	foreach year of num 63(1)99 {
-		append using "$SOURCE/wtf`year'.dta"
-	}
-	append using "$SOURCE/wtf00.dta"
-	//save "$SOURCE/wtf.dta", replace
-
-	format value %12.0f
-
-	if $adjust_hk == 1{
-		// Values //
-		merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
-		replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
-		drop _merge value_adj
-	}
+	//save "$SOURCE/cache/baci96.dta", replace
 	
-	**Split Codes to THREE DIGIT**
-	gen sitc3 = substr(sitc4,1,3)
-	drop sitc4
-	collapse (sum) value, by(year importer exporter sitc3)
-	drop if sitc3 == "" 			//Bad Data
-
-	drop if exporter == "World"
-	drop if importer == "World"
-
-	merge m:1 importer using "importer_to_iiso3c.dta", keepusing(iiso3c)
-	list if _merge == 1
-	list if _merge == 2
+	** Concord Country ISO3n to ISO3c **
+	** ------------------------------ **
+	//Importer Codes//
+	di "Importing IISO3C ..."
+	merge m:1 j using "j_to_iiso3c.dta", keepusing(iiso3c)
+	preserve
+	keep if _merge == 1
+	keep j
+	duplicates drop
+	merge 1:1 j using "country_code_baci96_adjust.dta", keepusing(name_english iso3 iso2)
+	keep if _merge == 3
+	di "The Following List will be dropped!"
+	list
+	restore
 	keep if _merge == 3 	//Keep Only Matched Items
 	drop _merge
-	//drop exporter
-	drop if iiso3c == "."
 
+	rename t year
+	rename i eiso3n
+	rename j iiso3n
+	rename v value
+	rename q quantity
+
+	format value %12.0f 			//Same as NBER
+
+	//Collapse to Import Data//
+	collapse (sum) value, by(year iiso3n iiso3c)
+
+	//Log Check
+	**Record Total Value by Year in Log**
+	preserve
+	collapse (sum) value, by(year)
+	list
+	restore
+
+	//Year, Exporters
+	codebook year
+	codebook eiso3n
+
+	** Concord Classification System **
+	** ----------------------------- **
+	merge m:1 hs6 using "hs96_hs6_to_sitc.dta", keepusing(sitc)
+	list if _merge == 1
+	list if _merge == 2
+	drop _merge
+	
+	gen sitc3 = substr(sitc,1,3)
+
+	// SITC Revision 3 Level 3 Dataset //
 	collapse (sum) value, by(year iiso3c sitc3)
-	rename value value_m2
 
-	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
-	save `fl', replace
-
-	**
-	** Compare Methods
-	**
-	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
-	merge 1:1 year sitc3 iiso3c using `fl'
-	gen diff = value_m1 - value_m2
-	codebook diff
-	list if diff != 0
-
-	**Note: Check These Methods are Equivalent
-	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
-	use `fl', clear
-	//rename value_m1 value
-	rename value_m2 value
-
-	**Parse Options**
-
-	if $dropAX == 1{
-		gen marker = regexm(sitc3, "[AX]")
-		drop if marker == 1
-		drop marker
-		preserve
-		collapse (sum) value, by(year)
-		list
-		restore
-	}
-
-	if $dropNonSITCR2 == 1{
-		merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
-		drop _merge
-		keep if marker == 1
-		drop marker
-		preserve
-		collapse (sum) value, by(year)
-		list
-		restore
-	}
+	**Parse Options for Import Files**
 
 	if $intertemporal_cntry_recode == 1{
 		merge m:1 iiso3c using "iiso3c_intertemporal_recodes.dta"
@@ -565,17 +451,8 @@ foreach item of global DATASETS {
 	}
 
 	order year iiso3c sitc3 value
-	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
+	local fl = "baci96_stata_import_sitcr2l3_1998to2012_"+"$DATASET"+".dta"
 	save `fl', replace
-
-	if $cleanup == 1{
-
-	save `fl', replace
-		local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method1.dta"
-		rm `fl'
-		local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+"_method2.dta"
-		rm `fl'
-	}
 
 log close
 	
