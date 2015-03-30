@@ -298,7 +298,7 @@ foreach item of global DATASETS {
 	format value %12.0f 			//Same as NBER
 
 	//Collapse to Export Data//
-	collapse (sum) value, by(year eiso3n eiso3c)
+	collapse (sum) value, by(year eiso3n eiso3c hs6)
 
 	//Log Check
 	**Record Total Value by Year in Log**
@@ -396,7 +396,7 @@ foreach item of global DATASETS {
 	format value %12.0f 			//Same as NBER
 
 	//Collapse to Import Data//
-	collapse (sum) value, by(year iiso3n iiso3c)
+	collapse (sum) value, by(year iiso3n iiso3c hs6)
 
 	//Log Check
 	**Record Total Value by Year in Log**
@@ -405,9 +405,9 @@ foreach item of global DATASETS {
 	list
 	restore
 
-	//Year, Exporters
+	//Year, Importers
 	codebook year
-	codebook eiso3n
+	codebook iiso3n
 
 	** Concord Classification System **
 	** ----------------------------- **
@@ -451,7 +451,7 @@ foreach item of global DATASETS {
 	}
 
 	order year iiso3c sitc3 value
-	local fl = "baci96_stata_import_sitcr2l3_1998to2012_"+"$DATASET"+".dta"
+	local fl = "bacihs96_stata_import_sitcr2l3_1998to2012_"+"$DATASET"+".dta"
 	save `fl', replace
 
 log close
