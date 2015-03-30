@@ -1,5 +1,8 @@
 """
 Test CSV and HDF File Construction to ensure they are consistent
+
+STATUS: IN-WORK
+
 """
 
 from pandas.util.testing import assert_frame_equal
