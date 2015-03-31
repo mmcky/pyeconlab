@@ -88,9 +88,11 @@ def construct_sitc(data, data_classification, data_type, level, revision, check_
     from pyeconlab.trade.concordance import HS_To_SITC
     concordance = HS_To_SITC(hs=data_classification, sitc="SITCR%s"%revision, hs_level=6, sitc_level=level, source_institution=concordance_institution, verbose=verbose).concordance
     #-Add Special Cases to the concordance-#
-    from .base import BACI
-    for k,v in BACI.adjust_hs6_to_sitc[data_classification].items():
-        concordance[k] = v
+    
+    # from .base import BACI
+    # for k,v in BACI.adjust_hs6_to_sitc[data_classification].items():  #This Needs a Level Consideration
+    #     concordance[k] = v
+    
     #-Parse Options-#
     #-Change Value Units-#
     if adjust_units:
