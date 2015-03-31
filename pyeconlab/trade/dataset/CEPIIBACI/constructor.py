@@ -1274,6 +1274,8 @@ class BACIConstructor(BACI):
         **Note:** Self Contained methods reduce the Need to Debug other routines and methods. 
         The other methods are however useful to diagnose issues and to understand properties of the dataset
 
+        STATUS: DEPRECATED
+
         Dataset:
             
             Source Classification -> HS96
@@ -1296,6 +1298,8 @@ class BACIConstructor(BACI):
         1. NBER Adjustment will happen when joining the two datasets together
         2. Method has useful comments throughtout for further information
         """
+
+        warnings.warn("[DEPRECATED] in prefernence for .construct_sitc_dataset() separate method")
 
         #-Helper Functions-#
         def merge_iso3c_and_replace_iso3n(data, cntry_data, column):
@@ -1327,8 +1331,17 @@ class BACIConstructor(BACI):
         cntry_data = self.country_data[['iso3n', 'iso3c']]
         #-Import Product Concordance-#
         #----------------------------#
-        from pyeconlab.trade.concordance import HS2002_To_SITCR2
-        concordance = HS2002_To_SITCR2(sitc_level=3).concordance
+        if self.classification == "HS02": 
+            from pyeconlab.trade.concordance import HS2002_To_SITCR2       
+            concordance = HS2002_To_SITCR2(sitc_level=3).concordance
+        elif self.classification == "HS96":
+            from pyeconlab.trade.concordance import HS1996_To_SITCR2        
+            concordance = HS1996_To_SITCR2(sitc_level=3).concordance
+        elif self.classification == "HS92":
+            from pyeconlab.trade.concordance import HS1992_To_SITCR2        
+            concordance = HS1992_To_SITCR2(sitc_level=3).concordance
+        else:
+            raise ValueError("No Appropriate Concordance was found for classification (%s)" % self.classification)
         #-Add Special Cases to the concordance-#
         for k,v in  self.adjust_hs6_to_sitc[self.classification].items():
             concordance[k] = v
