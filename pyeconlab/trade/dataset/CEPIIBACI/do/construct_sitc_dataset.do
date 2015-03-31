@@ -100,7 +100,6 @@ foreach item of global DATASETS {
 	infix str hs6 1-6 str sitc 8-12 using "$METACONCORD/un/HS1996_to_SITCR2.csv", clear 
 	drop in 1/1 //Drop Variable Names
 	save "hs96_hs6_to_sitc.dta", replace
-	
 
 	**SITC Revision 2 Level 2 Indicator Codes**
 	**classification/meta/SITC-R2-L3-codes.csv contains this listing**
@@ -198,6 +197,7 @@ foreach item of global DATASETS {
 	merge m:1 hs6 using "hs96_hs6_to_sitc.dta", keepusing(sitc)
 	list if _merge == 1
 	list if _merge == 2
+	drop if _merge == 2 	// Remove Unused Codes
 	drop _merge
 	
 	gen sitc3 = substr(sitc,1,3)
@@ -316,6 +316,7 @@ foreach item of global DATASETS {
 	merge m:1 hs6 using "hs96_hs6_to_sitc.dta", keepusing(sitc)
 	list if _merge == 1
 	list if _merge == 2
+	drop if _merge == 2 	// Remove Unused Codes
 	drop _merge
 	
 	gen sitc3 = substr(sitc,1,3)
@@ -414,6 +415,7 @@ foreach item of global DATASETS {
 	merge m:1 hs6 using "hs96_hs6_to_sitc.dta", keepusing(sitc)
 	list if _merge == 1
 	list if _merge == 2
+	drop if _merge == 2 	// Remove Unused Codes
 	drop _merge
 	
 	gen sitc3 = substr(sitc,1,3)
