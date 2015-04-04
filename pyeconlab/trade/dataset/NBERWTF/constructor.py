@@ -1718,6 +1718,7 @@ class NBERWTFConstructor(NBERWTF):
         """
         op_string = u"(drop_alpha_productcodes)"
         if check_operations(self, op_string): return None
+        pre_value = self.dataset["value"].sum()
         #-Core-#
         if not check_operations(self, u"(identify_alpha_productcodes)"):
             self.identify_alpha_productcodes(verbose=verbose)
@@ -1726,7 +1727,8 @@ class NBERWTFConstructor(NBERWTF):
         df = self.dataset
         df = df.loc[(df.SITCA != 1) & (df.SITCX != 1)]
         self._dataset = df
-        if verbose: print "[INFO] Dropped %s Observations" % (obs - self.dataset.shape[0])
+        post_value = self.dataset["value"].sum()
+        if verbose: print "[INFO] Dropped %s Observations (%s percent of Value)" % (obs - self.dataset.shape[0], ((post_value - pre_value)/pre_value) *100)
         #-OpString-#
         update_operations(self, op_string)
         if cleanup:
@@ -2728,6 +2730,8 @@ class NBERWTFConstructor(NBERWTF):
         total_coverage = len(table_sitc.columns)
         table_sitc['Coverage'] = table_sitc.sum(axis=1)
         table_sitc['%Coverage'] = table_sitc['Coverage'] / total_coverage               
+        #-Add Meta Devider-#
+        table_sitc.insert(total_coverage,'META', '|')
         #-Add in Meta for ProductCodes-#
         if meta:
             #-SITCR2-#
@@ -2736,10 +2740,16 @@ class NBERWTFConstructor(NBERWTF):
             sitc = SITC(revision=2, source_institution=source_institution)
             codes = sitc.get_codes(level=self.level)
             table_sitc['SITCR2'] = table_sitc[sitcl].apply(lambda x: 1 if x in codes else 0)
-            table_sitc = table_sitc.set_index(pidx + ['SITCR2'])
+            #-AX IDENTIFIERS-#
+            table_sitc['SITCA'] = table_sitc['sitc%s' % self.level].apply(lambda x: 1 if re.search("[aA]",x) else 0)
+            table_sitc['SITCX'] = table_sitc['sitc%s' % self.level].apply(lambda x: 1 if re.search("[xX]",x) else 0)
+            #-ProductCode Names-#
+            table_sitc["SITCNAME"] = table_sitc['sitc%s' % self.level].apply(lambda x: concord_data(sitc.code_description_dict(), x, issue_error="."))
+            #-Set Index-#
+            table_sitc = table_sitc.set_index(pidx + ['SITCR2', 'SITCA', 'SITCX'])
         if not cpidx and countries in ['exporter', 'importer']:
             if meta:
-                table_sitc = table_sitc.reorder_levels([1,0,2]).sort_index()                                #Swap Country and Product
+                table_sitc = table_sitc.reorder_levels([1,0,2,3,4]).sort_index()                                #Swap Country and Product
             else:
                 table_sitc = table_sitc.reorder_levels([1,0]).sort_index() 
         return table_sitc
@@ -2786,6 +2796,8 @@ class NBERWTFConstructor(NBERWTF):
         table_sitc.columns = table_sitc.columns.droplevel()                                 #Drop 'value' Name in Columns MultiIndex
         #-Add in Meta for ProductCodes-#
         if meta:
+            #-Add Meta Devider-#
+            table_sitc['META'] = "|"
             #-RowTotals-#
             yearcols = []
             for year in self.years:
@@ -2803,10 +2815,16 @@ class NBERWTFConstructor(NBERWTF):
             sitc = SITC(revision=2, source_institution=source_institution)
             codes = sitc.get_codes(level=self.level)
             table_sitc['SITCR2'] = table_sitc[sitcl].apply(lambda x: 1 if x in codes else 0)
-            table_sitc = table_sitc.set_index(pidx + ['SITCR2'])
+            #-AX IDENTIFIERS-#
+            table_sitc['SITCA'] = table_sitc['sitc%s' % self.level].apply(lambda x: 1 if re.search("[aA]",x) else 0)
+            table_sitc['SITCX'] = table_sitc['sitc%s' % self.level].apply(lambda x: 1 if re.search("[xX]",x) else 0)
+            #-ProductCode Names-#
+            table_sitc["SITCNAME"] = table_sitc['sitc%s' % self.level].apply(lambda x: concord_data(sitc.code_description_dict(), x, issue_error="."))
+            #-Set Index-#
+            table_sitc = table_sitc.set_index(pidx + ['SITCR2', 'SITCA', 'SITCX'])
         if not cpidx and countries in ['exporter', 'importer']:
             if meta:
-                table_sitc = table_sitc.reorder_levels([1,0,2]).sort_index()                                #Swap Country and Product
+                table_sitc = table_sitc.reorder_levels([1,0,2,3,4]).sort_index()                                #Swap Country and Product
             else:
                 table_sitc = table_sitc.reorder_levels([1,0]).sort_index() 
         return table_sitc
@@ -2857,6 +2875,8 @@ class NBERWTFConstructor(NBERWTF):
         table_sitc = self.intertemporal_productcode_valuecompositions(level=level, countries=countries)         
         #-Add in Meta for ProductCodes-#
         if meta:
+            #-Add Meta Devider-#
+            table_sitc['META'] = "|"
             #-Mean/Min/Max-#
             yearcols = []
             for year in self.years:
@@ -2874,10 +2894,16 @@ class NBERWTFConstructor(NBERWTF):
             sitc = SITC(revision=2, source_institution=source_institution)
             codes = sitc.get_codes(level=self.level)
             table_sitc['SITCR2'] = table_sitc[sitcl].apply(lambda x: 1 if x in codes else 0)
-            table_sitc = table_sitc.set_index(pidx+['SITCR2'])
+            #-AX IDENTIFIERS-#
+            table_sitc['SITCA'] = table_sitc['sitc%s' % self.level].apply(lambda x: 1 if re.search("[aA]",x) else 0)
+            table_sitc['SITCX'] = table_sitc['sitc%s' % self.level].apply(lambda x: 1 if re.search("[xX]",x) else 0)
+            #-ProductCode Names-#
+            table_sitc["SITCNAME"] = table_sitc['sitc%s' % self.level].apply(lambda x: concord_data(sitc.code_description_dict(), x, issue_error="."))
+            #-Set Index-#
+            table_sitc = table_sitc.set_index(pidx+['SITCR2', 'SITCA', 'SITCX'])
         if not cpidx and countries in ['exporter', 'importer']:
             if meta:
-                table_sitc = table_sitc.reorder_levels([1,0,2]).sort_index()                                #Swap Country and Product
+                table_sitc = table_sitc.reorder_levels([1,0,2,3,4]).sort_index()                                #Swap Country and Product
             else:
                 table_sitc = table_sitc.reorder_levels([1,0]).sort_index() 
         return table_sitc

@@ -28,9 +28,20 @@ from .iso3c_to_countryname 	import 	iso3c_to_countryname
 # - Recode Objects - #
 # ------------------ #
 
-from .recodes import intertemporal
-iso3c_recodes_for_1962_2000 = intertemporal.iso3c_for_1962_2000
-incomplete_iso3c_for_1962_2000 = intertemporal.incomplete_iso3c_for_1962_2000
+
+# --- > DEPRECATED <--- #
+# from .recodes import intertemporal
+# iso3c_recodes_for_1962_2000 = intertemporal.iso3c_for_1962_2000
+# incomplete_iso3c_for_1962_2000 = intertemporal.incomplete_iso3c_for_1962_2000
+# --- > END DEPRECATED <--- #
+
+# ------------------------- #
+# - Intertemporal Recodes - #
+# ------------------------- #
+
+from .intertemporal import IntertemporalCountries, IntertemporalProducts
+iso3c_recodes_for_1962_2000 = IntertemporalCountries.iso3c_for_1962_2000
+incomplete_iso3c_for_1962_2000 = IntertemporalCountries.incomplete_iso3c_for_1962_2000
 
 # -------------------- #
 # - Deletion Objects - #

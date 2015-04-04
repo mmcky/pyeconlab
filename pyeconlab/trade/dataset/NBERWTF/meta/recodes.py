@@ -2,6 +2,8 @@
 NBERFeenstraWTF Recodes Meta Data
 =================================
 
+STATUS: DEPRECATED (Moved to Current Info to Intertemporal)
+
 This Module contains custom recodes for NBERFeenstraWTF Dataset
 
 Notes
