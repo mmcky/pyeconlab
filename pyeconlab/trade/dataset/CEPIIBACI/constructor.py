@@ -178,6 +178,12 @@ class BACIConstructor(BACI):
         self.product_datafl_fixed = False                       #Should this be more sophisticated, this is a constructor so probably not
         self.country_datafl_fixed = False
 
+        #-This is a temporary fix for an inheritance bug when importing new instances of BACIConstructor()
+        if re.search("_adjust", self.country_data_fn[self.classification]):
+            self.country_data_fn = BACI().country_data_fn
+        if re.search("_adjust", self.product_data_fn[self.classification]):
+            self.product_data_fn = BACI().product_data_fn
+
         #-Parse Years-#
         if verbose: print "[INFO] Fetching BACI Data from %s" % source_dir
         if years == []:
@@ -360,7 +366,10 @@ class BACIConstructor(BACI):
         """
         #-Parse Options-#
         if fix_source and self.country_datafl_fixed == False:
-            self.fix_country_code_baci(verbose=verbose)
+            if re.search("_adjust", self.country_data_fn[self.classification]):                 #Adding these becuase using BACI inheritance causes new instances of BACIConsructor() to have updated state information in BACI() causing issues with filenames
+                pass
+            else:
+                self.fix_country_code_baci(verbose=verbose)
         fn = self.source_dir + self.country_data_fn[self.classification]
         if verbose: print "[INFO] Reading data from file: %s" % fn
         self.country_data = pd.read_csv(fn)
@@ -381,12 +390,15 @@ class BACIConstructor(BACI):
         """
         #-Parse Options-#
         if fix_source and self.product_datafl_fixed == False:
-            if self.classification == "HS92":
-                self.fix_product_code_baci92(verbose=verbose)
-            if self.classification == "HS96":
-                self.fix_product_code_baci96(verbose=verbose)
-            if self.classification == "HS02":
-                self.fix_product_code_baci02(verbose=verbose)
+            if re.search("_adjust", self.product_data_fn[self.classification]):                 #Adding these becuase using BACI inheritance causes new instances of BACIConsructor() to have updated state information in BACI() causing issues with filenames
+                pass
+            else:
+                if self.classification == "HS92":
+                    self.fix_product_code_baci92(verbose=verbose)
+                if self.classification == "HS96":
+                    self.fix_product_code_baci96(verbose=verbose)
+                if self.classification == "HS02":
+                    self.fix_product_code_baci02(verbose=verbose)
         if self.product_datafl_fixed == False and self.classification == "HS02":
             print "[WARNING] Has the product_code_baci02 data been adjusted in the source_dir!"         #-Should this be a warn.warnings?-#
         fn = self.source_dir + self.product_data_fn[self.classification]
