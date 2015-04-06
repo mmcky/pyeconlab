@@ -989,7 +989,9 @@ class NBERWTFConstructor(NBERWTF):
         update_operations(self, op_string)
 
         #-Set Dataset to the Update Values-#
+        updated_raw_values["year"] = updated_raw_values["year"].apply(lambda x: int(x))      #merge_columns is causing year to change from int to float?
         self._dataset = updated_raw_values
+
         
 
     def standardise_data(self, force=False, verbose=False):
@@ -1838,65 +1840,6 @@ class NBERWTFConstructor(NBERWTF):
         return data
 
 
-    def intertemporal_consistent_productcodes(self, verbose=False):
-        """ 
-        Construct a set of ProductCodes that are Inter-temporally Consistent based around SITC Revision 2
-
-        STATUS: NOT IMPLEMENTED
-
-        Full Time Frames
-        ----------------
-
-        Dataset #1 [1962 to 2000]
-        ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-            The longest time horizon in the dataset. 
-            Need to aggregate a lot of Product Codes to Level 3 + 0 to allow for dynamic consistency
-        
-        Dataset #2 [1962 to 2000] [SITCR2L3]
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-            Aggregate ALL Codes to SITCR2 Level 3 
-            This brings in the vast majority of data and Level4 'Corrections'
-            Easy to Construct
-
-            **Current Focus** [See meta data for reasons]
-
-        Subset TimeFrames
-        -----------------
-
-        Dataset #3 [1974 to 2000]
-        ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-            A lot of SITCR2 Codes get introduced into the dataset in 1974. 
-            Starting from 1974 would allow a greater diversity of products but removes 10 years of dynamics
-
-            TBD     
-
-        Dataset #4 [1984 to 2000]
-        ~~~~~~~~~~~~~~~~~~~~~~~~~
-
-            A lot of SITCR2 Codes get introduced into the dataset in 1984. 
-            Starting from 1984 would allow a greater diversity of products but removes 10 years of dynamics
-
-            TBD 
-
-        """
-        raise NotImplementedError
-
-    def intertemporal_consistent_productcodes_concord(self, verbose=False):
-        """
-        Produce a concordance for inter-temporal consistent product codes for converting data post year 2000
-
-        STATUS: NOT IMPLEMENTED
-
-        """
-        # ---------------- #
-        # - Working Here - #
-        # ---------------- #
-        raise NotImplementedError
-
-
     # ------------------------------------------- #
     # - Construct Predefined Datasets Wrappers  - #
     # ------------------------------------------- #
@@ -2471,6 +2414,11 @@ class NBERWTFConstructor(NBERWTF):
         table_sitc4.to_excel(target_dir + 'intertemporal_sitc4.xlsx')
 
 
+    ### ------------------------ ###
+    ### - Intertemporal Tables - ###
+    ### ------------------------ ###
+
+
     def intertemporal_tables(self, idx=['eiso3c'], value='value', force=False, verbose=False):
         """
         Construct an Intertemporal Table (Wide Table of Data)
@@ -2621,7 +2569,9 @@ class NBERWTFConstructor(NBERWTF):
         table_eiso3n.index = table_eiso3n.index.reorder_levels(order=['eiso3c', 'exporter', 'ecode'])
         return table_iiso3n, table_eiso3n
 
+    # ---------------------- #
     # - Product Codes Meta - #
+    # ---------------------- #
 
     def intertemporal_productcodes_raw_data(self, force=False, verbose=False):
         """
@@ -2725,8 +2675,8 @@ class NBERWTFConstructor(NBERWTF):
         table_sitc = data[idx].drop_duplicates()
         table_sitc['attr'] = 1                                                                                          
         table_sitc = table_sitc.set_index(idx).unstack(level='year')
-        table_sitc.columns = table_sitc.columns.droplevel()                                 #Drop TopLevel Name 'attr' in Columns MultiIndex
-        #-Add Coverage Stats-#                                                              #Note this isn't classified as meta
+        table_sitc.columns = table_sitc.columns.droplevel()                               #Drop TopLevel Name 'attr' in Columns MultiIndex
+        #-Add Coverage Stats-#                                                            #Note this isn't classified as meta
         total_coverage = len(table_sitc.columns)
         table_sitc['Coverage'] = table_sitc.sum(axis=1)
         table_sitc['%Coverage'] = table_sitc['Coverage'] / total_coverage               
@@ -2995,6 +2945,74 @@ class NBERWTFConstructor(NBERWTF):
             df = df.groupby([sitcl]).sum()
         return df
 
+
+    def intertemporal_productcode_simple_adjustments(self, tabletype="indicator", cleanup=True, verbose=True):
+        """
+        Generate a Simple Product Code Adjustment Table
+
+        This Method Generates an Intertemporal ProductCode Table that uses Meta Data to construct an Indicator for 
+        whether the chapter level above the dataset contains any non-sitcr2 codes. This can assist in identifying 
+        groups of products that contain compositional changes over time and are eligible for collapse to produce 
+        an intertemporal productcode classification
+
+        Parameters
+        ----------
+        tabletype   :   str, optional(default="indicator")
+                        Produces an Intertemporal Table with Simple Indicators as Default (Can Choose "value")
+        cleanup     :   bool, optional(default=True)
+                        Cleanup Construction Variables
+
+        """
+        table = self.intertemporal_productcodes_dataset(tabletype=tabletype, meta=True, verbose=verbose)
+        idx = list(table.index.names)
+        table = table.reset_index()
+        table["NOTSITCR2"] = table["SITCR2"].apply(lambda x: False if x == 1 else True)  #defines sitc revision 2 code
+        if self.level < 2:
+            raise ValueError("Level Cannot be Less than 2")
+        table["sitc%s"%(self.level-1)] = table["sitc%s"%self.level].apply(lambda x: x[0:self.level-1])     #defines higher chapter level
+        #-Group Analysis-#
+        #-Check Any Non SITCR2 in Higher Chapter Level-#
+        indicator = table[["NOTSITCR2","sitc%s"%(self.level-1)]].groupby("sitc%s"%(self.level-1))["NOTSITCR2"].any()              #For Each Higher Chapter Level see if any codes are not SITCR2          
+        indicator.name = "NOTSITCR2-ING"
+        table = table.join(indicator, on="sitc%s"%(self.level-1), how="left")
+        idx.append("NOTSITCR2-ING")
+        #-Compute Number of Items in Group-#
+        num_items = table[["SITCR2","sitc%s"%(self.level-1)]].groupby("sitc%s"%(self.level-1))["SITCR2"].count()
+        num_items.name = "SITC-COUNT-ING"
+        table = table.join(num_items, on="sitc%s"%(self.level-1), how="left")
+        idx.append("SITC-COUNT-ING")
+        #-Compute Number of Non SITCR2 Items in Group-#
+        num_sitcr2 = table[["SITCR2","sitc%s"%(self.level-1)]].groupby("sitc%s"%(self.level-1))["SITCR2"].sum()
+        num_sitcr2.name = "SITCR2-SUM-ING"
+        table = table.join(num_sitcr2, on="sitc%s"%(self.level-1), how="left")
+        idx.append("SITCR2-SUM-ING")
+        table["NUM-NOTSITCR2-ING"] = table["SITC-COUNT-ING"] - table["SITCR2-SUM-ING"]
+        idx.append("NUM-NOTSITCR2-ING")
+        table = table.set_index(idx)
+        if cleanup:
+            del table["NOTSITCR2"]
+            del table["sitc%s"%(self.level-1)]
+        return table
+
+    def intertemporal_productcode_lists(self, return_table=False, verbose=True):
+        """
+        Return a list of items to Drop and Collapse to Produce an Intertemporally Consistent Set of Codes for NBER
+        """
+        table = self.intertemporal_productcode_simple_adjustments(verbose=verbose)
+        idx = list(table.index.names)
+        table = table.reset_index()
+        #-Drop-#
+        table["D"] = (table["SITC-COUNT-ING"] - table["NUM-NOTSITCR2-ING"]).apply(lambda x: "D" if x == 0 else ".")
+        drop_items = set(table.loc[table.D == "D"]["sitc%s"%self.level].unique())
+        #-Collapse-#
+        table["C"] = table["NOTSITCR2-ING"].apply(lambda x: "C" if x == True else ".")
+        collapse_items = set(table.loc[table.C == "C"]["sitc%s"%self.level].unique()) - drop_items 
+        if return_table:
+            return sorted(drop_items), sorted(collapse_items), table.set_index(idx)
+        else:
+            return sorted(drop_items), sorted(collapse_items)
+
+
     def intertemporal_productcode_adjustments_table(self, force=False, verbose=False):
         """
         [EXPERIMENTAL] Documents and Produces the Adjustments Table for Meta Data Reference 
@@ -3041,6 +3059,7 @@ class NBERWTFConstructor(NBERWTF):
         3. This table suggests that SITCL3 should be used for inter-temporal consistency re: 2-A remark. 
 
         """
+        warnings.warn("EXPERIMENTAL")
         #-Core-#
         comp = self.intertemporal_productcodes_dataset(tabletype='composition', meta=True, level=3, force=force)
         idxnames = comp.index.names
@@ -3082,7 +3101,7 @@ class NBERWTFConstructor(NBERWTF):
         """
         [EXPERIMENTAL] Compute a Cases Table for SITC4 Intertemporal ProductCodes at the 3 Digit Level
 
-        STATUS: IN-WORK
+        STATUS: EXPERIMENTAL
 
         Notes
         -----
@@ -3101,7 +3120,7 @@ class NBERWTFConstructor(NBERWTF):
             'Case3'     :   ??
 
         """
-        
+        warnings.warn("EXPERIMENTAL")
         #-Core-#
         comp = self.intertemporal_productcodes_dataset(tabletype='composition', meta=True, level=3, force=force)
         idxnames = comp.index.names
