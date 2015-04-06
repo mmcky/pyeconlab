@@ -222,7 +222,6 @@ def merge_columns(ldf, rdf, on, collapse_columns=('value_x', 'value_y', 'value')
         pass
     else:
         raise ValueError("Output type must be `final` or `stages`") 
-
     #-Parse Verbosity-#
     if verbose: 
         print report
@@ -396,12 +395,11 @@ def update_operations(self, add_op_string):
     Notes
     -----
     1. If no ``operations`` attribute is found then it constructs the attribute.
-
+    2. Should this reset complete_dataset (# self.complete_dataset = False           #In General this is true)
     """
     try:
         if type(self.operations) == str or type(self.operations) == unicode:
             self.operations += add_op_string
-            self.complete_dataset = False           #In General this is true
     except:
         self.operations = add_op_string
 
