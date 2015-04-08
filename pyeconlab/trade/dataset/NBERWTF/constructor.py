@@ -2946,7 +2946,7 @@ class NBERWTFConstructor(NBERWTF):
         return df
 
 
-    def intertemporal_productcode_simple_adjustments(self, tabletype="indicator", cleanup=True, verbose=True):
+    def intertemporal_productcode_simple_adjustments_table(self, tabletype="indicator", cleanup=True, verbose=True):
         """
         Generate a Simple Product Code Adjustment Table
 
@@ -2994,11 +2994,18 @@ class NBERWTFConstructor(NBERWTF):
             del table["sitc%s"%(self.level-1)]
         return table
 
-    def intertemporal_productcode_lists(self, return_table=False, verbose=True):
+    def intertemporal_productcode_lists(self, return_table=False, include_special=True, tabletype="value", verbose=True):
         """
         Return a list of items to Drop and Collapse to Produce an Intertemporally Consistent Set of Codes for NBER
-        """
-        table = self.intertemporal_productcode_simple_adjustments(verbose=verbose)
+
+        Returns
+        -------
+        drop_items, collapse_items
+        OR
+        drop_items, collapse_items, table
+        """ 
+        #-Core-#
+        table = self.intertemporal_productcode_simple_adjustments_table(tabletype=tabletype, verbose=verbose)
         idx = list(table.index.names)
         table = table.reset_index()
         #-Drop-#
@@ -3006,11 +3013,34 @@ class NBERWTFConstructor(NBERWTF):
         drop_items = set(table.loc[table.D == "D"]["sitc%s"%self.level].unique())
         #-Collapse-#
         table["C"] = table["NOTSITCR2-ING"].apply(lambda x: "C" if x == True else ".")
-        collapse_items = set(table.loc[table.C == "C"]["sitc%s"%self.level].unique()) - drop_items 
+        collapse_items = set(table.loc[table.C == "C"]["sitc%s"%self.level].unique())
+        #-Keep-#
+        # Default Rule #
+        if include_special:
+            #-Update with Special IC Codes-#
+            from .meta import IntertemporalProducts
+            special_drop = set(IntertemporalProducts().IC6200Special["L%s"%self.level]["drop"])
+            special_collapse = set(IntertemporalProducts().IC6200Special["L%s"%self.level]["collapse"])
+            special_keep = set(IntertemporalProducts().IC6200Special["L%s"%self.level]["keep"])
+            #-Adjust-#
+            drop_items = drop_items.union(special_drop) - special_keep
+            collapse_items = collapse_items.union(special_collapse) - special_keep
+        #-Remove Drop Items from Collapse Items-#
+        collapse_items = collapse_items - drop_items                            #Can be Overlap based on Identifying Rules
+        #-Rule-#
+        table["RULE"] = "K"
+        table["RULE"] = table[["sitc%s"%self.level,"RULE"]].apply(lambda row: "C" if row["sitc%s"%self.level] in collapse_items else row["RULE"], axis=1)
+        table["RULE"] = table[["sitc%s"%self.level,"RULE"]].apply(lambda row: "D" if row["sitc%s"%self.level] in drop_items else row["RULE"], axis=1)
+        #-Sortedness-#
+        drop_items = sorted(drop_items)
+        collapse_items = sorted(collapse_items)
+        if verbose:
+            print "[INFO] Dropping Rows with SITC Codes: %s" % drop_items
+            print "[INFO] Collapsing Rows with SITC Codes: %s" % collapse_items
         if return_table:
-            return sorted(drop_items), sorted(collapse_items), table.set_index(idx)
+            return drop_items, collapse_items, table.set_index(idx)
         else:
-            return sorted(drop_items), sorted(collapse_items)
+            return drop_items, collapse_items
 
 
     def intertemporal_productcode_adjustments_table(self, force=False, verbose=False):

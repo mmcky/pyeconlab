@@ -125,7 +125,27 @@ class IntertemporalProducts(object):
 
 	"""
 
+	#-Special Cases for use with nber.intertemporal_productcode_lists(return_table=True)-#
+	IC6200Special = {
+		"L4" 	: 	{
+			"drop"	: 		[], 	#TBC
+			"collapse" : 	[], 	#TBC
+			"keep" 	: 		[], 	#TBC
+		},
+		"L3" 	: 	{
+			"drop"	: 		["002", "003"],
+			"collapse" : 	[],
+			"keep" 	: 		[],
+		},
+		"L2" 	: 	{
+			"drop"	: 		[],		#TBC
+			"collapse" : 	[],		#TBC
+			"keep" 	: 		[],		#TBC
+		},		
+	}
+
 	#-Intertemporally Consistent 1962 to 2000-#
+	# Note: Table Informed by intertemporal_productcode_lists(return_table=True, include_special=True)
 	IC6200 = {
 		#-SITCL4-#
 		"L4" : 	{
