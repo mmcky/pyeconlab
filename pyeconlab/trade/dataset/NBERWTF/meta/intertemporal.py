@@ -126,26 +126,33 @@ class IntertemporalProducts(object):
 	"""
 
 	#-Special Cases for use with nber.intertemporal_productcode_lists(return_table=True)-#
-	IC6200Special = {
+	IC6200SpecialCases = {
 		"L4" 	: 	{
-			"drop"	: 		[], 	#TBC
-			"collapse" : 	[], 	#TBC
-			"keep" 	: 		[], 	#TBC
+			"drop"	: 		["9000", "9110", "9310", "9410", "9610", "9710"], 	 	#-Ensure Chapter 9 is Dropped-#
+			"collapse" : 	[],
+			"keep" 	: 		[], 
 		},
 		"L3" 	: 	{
-			"drop"	: 		["002", "003"],
+			# DROP
+			# 002 = Unofficial code that only appears in a few countries 1962 to 1965 shouldn't be merged with 001#
+			# 003 = Unofficial code that only appears in a few countries 1962 to 1965 shouldn't be merged with 001#
+			"drop"	: 		["002", "003", "911", "931", "941", "961", "971"], 		#-Ensure Chapter 9 is Dropped-#
 			"collapse" : 	[],
 			"keep" 	: 		[],
 		},
 		"L2" 	: 	{
-			"drop"	: 		[],		#TBC
-			"collapse" : 	[],		#TBC
-			"keep" 	: 		[],		#TBC
+			# DROP #
+			# At this level it is important to keep the products disaggregated as Chapters contain very different types of products
+			"drop"	: 		["60", "70", "80", "90", "91", "93", "94", "96", "97"],
+			"collapse" : 	[],	
+			"keep" 	: 		["61", "62", "63", "64", "65", "66", "67", "68", "69", 	\
+							 "71", "72", "73", "74", "75", "76", "77", "78", "79", 	\
+							 "81", "82", "83", "84", "85", "87", "88", "89", 		\
+							 "95" 														#Keep Only Armoured Vehicles (Technologically Advanced but very distorted)
+							 ],	
 		},		
 	}
 
-	#-Intertemporally Consistent 1962 to 2000-#
-	# Note: Table Informed by intertemporal_productcode_lists(return_table=True, include_special=True)
 	IC6200 = {
 		#-SITCL4-#
 		"L4" : 	{
@@ -154,20 +161,8 @@ class IntertemporalProducts(object):
 				},
 		#-SITCL3-#
 		"L3" : 	{
-			#-Collapse-#
-			# 675 = Hoop and strip of iron or steel, hot-rolled or cold-rolled (COLLAPSE with 671,2,3,4,6,7,8,9 = Iron and Steel) 
-			# 689 = Miscellaneous non-ferrous base metals, employed in metallurgy (Collapse with 681,2,3,4,5,6,7,8 = Various Metals)
-			# 716 = Rotating electric plant and parts thereof, nes (Collapse with 711,2,3,4,8 = Engines and Motors)
-			# 771 = Electric power machinery, and parts thereof, nes (Collapse with 772,3,4,5,6,8 = Specialist Electronic Equipment)
-			# 843 = Womens, girls, infants outerwear, textile, not knitted or crocheted (Collapse with 842,4,5,6,7,8 = Textile and Apparel)
-			# 844 = [see above]
-			# 845 = [see above]
-			# 846 = [see above]
-			# 893 = Articles, nes of plastic materials (Collapse with 892,4,5,6,7,8,9 = Misc. Manufactures)
-			"collapse" 	: ["67", "68", "71", "74", "75", "77", "84", "89"],
-			# 911 = Postal packages not classified according to kind (Not Complete Across Years and Not Collapsable)
-			# 971 = Gold, non-monetary (excluding gold ores and concentrates) (Not Complete Across Years and Not Collapsible)
 			"drop" 		: ["911", "971"],
+			"collapse" 	: ["67", "68", "71", "74", "75", "77", "84", "89"],
 				},
 		#-SITCL2-#
 		"L2" : 	{
@@ -177,6 +172,10 @@ class IntertemporalProducts(object):
 	}
 
 	# IC6200 = OrderedDict(sorted(IC6200.items(), key=lambda t: t[0]))
+
+	#--------------#
+	#-1974 to 2000-#
+	#--------------#
 
 	#-Intertemporally Consistent 1974 to 2000-#
 	IC7400 = {
@@ -201,7 +200,9 @@ class IntertemporalProducts(object):
 	# IC7400 = OrderedDict(sorted(IC7400.items(), key=lambda t: t[0]))
 
 
-
+	#--------------#
+	#-1984 to 2000-#
+	#--------------#
 
 
 
@@ -214,6 +215,39 @@ class IntertemporalProducts(object):
 	#--------------#
 	#----INWORK----#
 	#--------------#
+
+
+	#-Intertemporally Consistent 1962 to 2000: Manually Constructed-#
+	# Note: Table Informed by intertemporal_productcode_lists(return_table=True, include_special=True)
+	# IC6200Manual = {
+	# 	#-SITCL4-#
+	# 	"L4" : 	{
+	# 		"collapse" 	: [],
+	# 		"drop" 		: [],
+	# 			},
+	# 	#-SITCL3-#
+	# 	"L3" : 	{
+	# 		#-Collapse-#
+	# 		# 675 = Hoop and strip of iron or steel, hot-rolled or cold-rolled (COLLAPSE with 671,2,3,4,6,7,8,9 = Iron and Steel) 
+	# 		# 689 = Miscellaneous non-ferrous base metals, employed in metallurgy (Collapse with 681,2,3,4,5,6,7,8 = Various Metals)
+	# 		# 716 = Rotating electric plant and parts thereof, nes (Collapse with 711,2,3,4,8 = Engines and Motors)
+	# 		# 771 = Electric power machinery, and parts thereof, nes (Collapse with 772,3,4,5,6,8 = Specialist Electronic Equipment)
+	# 		# 843 = Womens, girls, infants outerwear, textile, not knitted or crocheted (Collapse with 842,4,5,6,7,8 = Textile and Apparel)
+	# 		# 844 = [see above]
+	# 		# 845 = [see above]
+	# 		# 846 = [see above]
+	# 		# 893 = Articles, nes of plastic materials (Collapse with 892,4,5,6,7,8,9 = Misc. Manufactures)
+	# 		"collapse" 	: ["67", "68", "71", "74", "75", "77", "84", "89"],
+	# 		# 911 = Postal packages not classified according to kind (Not Complete Across Years and Not Collapsable)
+	# 		# 971 = Gold, non-monetary (excluding gold ores and concentrates) (Not Complete Across Years and Not Collapsible)
+	# 		"drop" 		: ["911", "971"],
+	# 			},
+	# 	#-SITCL2-#
+	# 	"L2" : 	{
+	# 		"collapse" 	: 	[],
+	# 		"drop" 		: 	[],
+	# 			}
+	# }
 
 
 	#-SAME AS ABOVE except "countryname" to SPECIAL CODES Required to Make 1962 to 2000 Dynamically Consistent-#
