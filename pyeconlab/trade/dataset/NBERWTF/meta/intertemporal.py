@@ -128,7 +128,10 @@ class IntertemporalProducts(object):
 	#-Special Cases for use with nber.intertemporal_productcode_lists(return_table=True)-#
 	IC6200SpecialCases = {
 		"L4" 	: 	{
-			"drop"	: 		["9000", "9110", "9310", "9410", "9610", "9710"], 	 	#-Ensure Chapter 9 is Dropped-#
+			"drop"	: 		[	"0021", "0022", "0023", "0024", "0025", 		\
+								"0031", "0035", "0039", 						\
+								"9000", "9110", "9310", "9410", "9610", "9710"   #-Ensure Chapter 9 is Dropped-#
+							], 	 	
 			"collapse" : 	[],
 			"keep" 	: 		[], 
 		},
