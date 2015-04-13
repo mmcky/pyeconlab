@@ -11,7 +11,10 @@ from __future__ import division
 #-Specific-#
 #-NBERWTF-#
 from pyeconlab.trade import NBERWTFConstructor, NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData
+#-BACI-#
 from pyeconlab.trade import BACIConstructor, BACITradeData, BACIExportData, BACIImportData
+#-CID Atlas Of Complexity-#
+from pyeconlab.trade import CIDAtlasDataConstructor, CIDAtlasTradeData, CIDAtlasExportData, CIDAtlasImportData
 
 #-General-#
 from pyeconlab.trade import CTradeDataset, CTradeData, CExportData, CImportData, 	\

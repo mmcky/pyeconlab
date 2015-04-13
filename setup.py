@@ -19,6 +19,8 @@ setup(
                'pyeconlab.trade.dataset.CEPIIBACI.meta',  #Really?
                'pyeconlab.trade.dataset.NBERWTF',
                'pyeconlab.trade.dataset.NBERWTF.meta',    #Really?
+               'pyeconlab.trade.dataset.CIDATLAS',
+               'pyeconlab.trade.dataset.CIDATLAS.meta',
                'pyeconlab.trade.classification',
                'pyeconlab.trade.concordance',
                'pyeconlab.trade.systems',

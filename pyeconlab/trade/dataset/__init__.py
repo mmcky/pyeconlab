@@ -45,3 +45,7 @@ from .NBERWTF.dataset import NBERWTF, NBERWTFTradeData, NBERWTFExportData, NBERW
 from .CEPIIBACI.base import BACI
 from .CEPIIBACI.constructor import BACIConstructor
 from .CEPIIBACI.dataset import BACITradeData, BACIExportData, BACIImportData
+
+#-CID Atlas of Complexity-#
+from .CIDATLAS.base import AtlasOfComplexity
+from .CIDATLAS.dataset import CIDAtlasTradeData, CIDAtlasExportData, CIDAtlasImportData

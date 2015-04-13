@@ -44,6 +44,7 @@ from .dataset import 	CTradeDataset, CTradeData, CExportData, CImportData, 	\
 #-Specific Datasets-#
 from .dataset.CEPIIBACI import BACIConstructor, BACITradeData, BACIExportData, BACIImportData
 from .dataset.NBERWTF import NBERWTFConstructor, NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData
+from .dataset.CIDATLAS import CIDAtlasDataConstructor, CIDAtlasTradeData, CIDAtlasExportData, CIDAtlasImportData
 
 # - Systems - #
 from .systems.ProductLevelExportSystem import ProductLevelExportSystem
