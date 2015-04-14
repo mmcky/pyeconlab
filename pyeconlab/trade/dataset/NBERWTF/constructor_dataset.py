@@ -23,6 +23,7 @@ Future Work
 2. Should I write hierarchical code (i.e. use SITC4 to conduct majority of work and then collapse?) 
 This complicates some issues such as dropAX as this should be done AFTER the collapse to maximise Level 3 information
 [For Now] Write Independant Functions (despite code duplication)
+3. Update this for full set of Datasets
 
 """
 

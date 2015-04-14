@@ -28,10 +28,11 @@ from pyeconlab.util import concord_data, merge_columns
 #-Relative Imports-#
 from .meta import countryname_to_iso3c, iso3c_recodes_for_1962_2000, incomplete_iso3c_for_1962_2000 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #-Generalised SC Constructor Functions-#
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
+def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_productcode=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 3
         
@@ -48,6 +49,8 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
                                 Specify what type of data 'trade', 'export', 'import'
         level               :   int
                                 Specify Level of Final dataset (i.e. SITC Level 1, 2, 3, or 4)
+        AX                  :   bool, optional(default=True)
+                                Add a Marker for Codes that Include 'A' and 'X'
         dropAX              :   bool, optional(default=True)
                                 Drop AX Codes at the Relevant Level (i.e. SITC Level 3 Data will include appropriate A and X codes)
         sitcr2              :   bool, optional(default=True)
@@ -56,6 +59,9 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
                                 Drop non-standard SITC2 Codes
         adjust_hk           :   Tuple(bool, df), optional(default=(False, None))
                                 Adjust the Hong Kong Data using NBER supplemental files which needs to be supplied as a dataframe
+        intertemp_productcode : Tuple(bool, dict), optional(default=False, None)
+                                Apply an Intertemporal Product Code System drop a conversion dictionary (IC["drop"] = [], IC["collapse"] = [])
+                                Note this will override the drop_nonsitcr2 option
         intertemp_cntrycode :   bool, optional(default=False)
                                 Generate Intertemporal Consistent Country Units (from meta)
         drop_incp_cntrycode :   bool, optional(default=False)
@@ -78,8 +84,9 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
             ---------
             [A] Drop sitc3 codes that contain 'A' and 'X' codes [Default: True]
             [B] Drop Non-Standard SITC3 Codes [i.e. Aren't in the Classification]
+            [C] Construct an Intertemporal Product Code Classification and Adjust Dataset
             [C] Adjust iiso3c, eiso3c country codes to be intertemporally consistent
-            [D] Drop countries with incomplete data across 1962 to 2000 (strict measure)
+            [D] Drop countries with incomplete 'total' data across 1962 to 2000 (strict measure) [Identification Debatable]
   
 
         3. This makes use of countryname_to_iso3c in the meta data subpackage
@@ -90,6 +97,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
             -----------
             1. Check SITC Revision 2 Official Codes
             2. Add in a Year Filter
+
         """
         
         #-Operations Requiring RAW SITC Level 4-#
@@ -114,7 +122,7 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
             #-Note: Adjust Quantity has not been implemented. See NBERWTF constructor -#
 
         #-Filter Data-#
-        idx = [u'year', u'exporter', u'importer', u'sitc4']         #Note: This collapses duplicate entries with unit differences
+        idx = [u'year', u'exporter', u'importer', u'sitc4']         #Note: This collapses duplicate entries with unit differences (collapse_valuesonly())
         df = df.loc[:,idx + ['value']]
 
         #-Collapse to SITC Level -#
@@ -158,12 +166,25 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
         #-Remove Product Code Errors in Dataset-#
         df = df.loc[(df['sitc%s'%level] != "")]                                                                   #Does this need a reset_index?
         
-        #-dropAX-#
-        if dropAX:
-            if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
+        #-productcodes-#
+        if intertemp_productcode[0]:
+            if level == 1:
+                intertemp_productcode = (False, intertemp_productcode[1])
+            else:
+                AX = True
+                dropAX = True               #Small Impact Post 1984 (Levels < 4 Include 'A' and 'X' values due to the collapse)
+                sitcr2 = True               #Encode SITCR2 for Parsing
+                drop_nonsitcr2 = False
+
+        #-AX-#
+        if AX:
+            if verbose: print "[INFO] Adding Indicator Codes of 'A' and 'X'"
             df['AX'] = df['sitc%s'%level].apply(lambda x: 1 if re.search("[AX]", x) else 0)
-            df = df.loc[df.AX != 1]
-            del df['AX']
+            #-dropAX-#
+            if dropAX:
+                if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
+                df = df.loc[df.AX != 1]
+                del df['AX']
         
         #-Official SITCR2 Codes-#
         if sitcr2:
@@ -176,6 +197,27 @@ def construct_sitcr2(df, data_type, level, dropAX=True, sitcr2=True, drop_nonsit
                 df = df.loc[(df.sitcr2 == 1)]
                 del df['sitcr2']                #No Longer Needed
         
+        if intertemp_productcode[0]:
+            if verbose: print "[INFO] Computing Intertemporally Consistent ProductCodes ..."
+            #-This Method relies on meta data computed by pyeconlab nberwtf constructor-#
+            IC = intertemp_productcode[1] #Dict("drop" and "collapse" code lists)
+            #-Drop Codes-#
+            drop_codes = IC["drop"]
+            if verbose: 
+                print "Dropping the following productcodes ..."
+                print drop_codes
+            keep_codes = set(df['sitc%s'%level].unique()).difference(set(drop_codes))
+            df = df.loc[df["sitc%s"%level].isin(keep_codes)]
+            #-Collapse Codes-#
+            collapse_codes = IC["collapse"]
+            if verbose:
+                print "Collapsing the following productcodes ..."
+                print collapse_codes
+            for code in collapse_codes:
+                df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: x[0:level-1] if x == code else x)
+            df = df.groupby(list(df.columns.drop("value"))).sum()
+            df = df.reset_index()
+
         #-Adjust Country Codes to be Intertemporally Consistent-#
         if intertemp_cntrycode:
             #-Export-#
