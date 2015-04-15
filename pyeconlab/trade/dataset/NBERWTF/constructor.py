@@ -1844,7 +1844,7 @@ class NBERWTFConstructor(NBERWTF):
     # - Construct Predefined Datasets Wrappers  - #
     # ------------------------------------------- #
     
-    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True, dataset_object=False, verbose=True):
+    def construct_sitc_dataset(self, data_type, dataset, product_level, sitc_revision=2, report=True, dataset_object=False, special_years="", verbose=True):
         """
         Constructor of Predefined SITC Datasets
 
@@ -1860,6 +1860,8 @@ class NBERWTFConstructor(NBERWTF):
                             Specify SITC Revision
         dataset_object  :   bool, optional(default=False)
                             Specify if the method should return an nberwtf object
+        special_years   :   str, optional(default="")
+                            Specify Special Year Case for Intertemporal Productcodes Option
 
         Future Work
         -----------
@@ -1895,6 +1897,16 @@ class NBERWTFConstructor(NBERWTF):
             if not check_operations(self, "load_china_hongkongdata"):
                 self.load_china_hongkongdata(verbose=verbose) #-Load Data with Default Attributes-#
             OPTIONS['adjust_hk'] = (True, self.supp_data(item='chn_hk_adjust'))
+         #-Intertemporal Product Codes-#
+        if OPTIONS['intertemp_productcode']:
+            from .meta import IntertemporalProducts
+            if special_years == "":
+                ICP = IntertemporalProducts().IC6200[self.level]
+            elif special_years == "7400":
+                ICP = IntertemporalProducts().IC7400[self.level]
+            elif special_years == "8400":
+                ICP = IntertemporalProducts().IC8400[self.level]
+            DATA_OPTIONS[dataset]['intertemp_productcode'] = (True, ICP)
         #-Compute Dataset-#
         self._dataset = construct_dataset(self.dataset, data_type=data_type, level=product_level, verbose=verbose, **OPTIONS)
         self.dataset_name = "SITCR2-%s" % dataset

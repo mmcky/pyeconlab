@@ -213,8 +213,9 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
             if verbose:
                 print "Collapsing the following productcodes ..."
                 print collapse_codes
+            collapse_codes = {x[0:level-1] for x in collapse_codes}     #-Simply Computations-#
             for code in collapse_codes:
-                df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: x[0:level-1] if x == code else x)
+                df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: code if x[0:level-1] == code else x)
             df = df.groupby(list(df.columns.drop("value"))).sum()
             df = df.reset_index()
 

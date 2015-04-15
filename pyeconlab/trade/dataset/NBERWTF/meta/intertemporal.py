@@ -212,7 +212,7 @@ class IntertemporalProducts(object):
 
 
 
-
+	IC8400 = {}
 
 
 
