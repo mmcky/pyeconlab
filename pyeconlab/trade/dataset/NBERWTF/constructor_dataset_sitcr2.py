@@ -129,7 +129,7 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
 
         #-Raw Trade Data Option with Added IISO3C and EISO3C-#
         if harmonised_raw and data_type == "trade":
-            df = df.groupby(df.columns.drop('value'))   #Sum Over Quantity Disaggregations
+            df = df.groupby(idx).sum().reset_index()                              #Sum Over Quantity Disaggregations
             #-Add EISO3C and IISO3C-#
             df['eiso3c'] = df['exporter'].apply(lambda x: countryname_to_iso3c[x])
             df['iiso3c'] = df['importer'].apply(lambda x: countryname_to_iso3c[x])
