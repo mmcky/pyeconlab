@@ -32,7 +32,7 @@ from .meta import countryname_to_iso3c, iso3c_recodes_for_1962_2000, incomplete_
 #-Generalised SC Constructor Functions-#
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_productcode=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', verbose=True):
+def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_productcode=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', harmonised_raw=False, verbose=True):
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 3
         
@@ -70,6 +70,8 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
                                 Adjust units by a factor of 1000 to specify in $'s
         source_institution  :   str, optional(default='un')
                                 which institutions SITC classification to use
+        harmonised_raw      :   bool, optional(default=False)
+                                Return simple RAW dataset with Quantity disaggregation collapsed and eiso3c and iiso3c columns (Note: You may use hk_adjust with this option)
 
         Notes
         -----
@@ -124,6 +126,17 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
         #-Filter Data-#
         idx = [u'year', u'exporter', u'importer', u'sitc4']         #Note: This collapses duplicate entries with unit differences (collapse_valuesonly())
         df = df.loc[:,idx + ['value']]
+
+        #-Raw Trade Data Option with Added IISO3C and EISO3C-#
+        if harmonised_raw and data_type == "trade":
+            df = df.groupby(df.columns.drop('value'))   #Sum Over Quantity Disaggregations
+            #-Add EISO3C and IISO3C-#
+            df['eiso3c'] = df['exporter'].apply(lambda x: countryname_to_iso3c[x])
+            df['iiso3c'] = df['importer'].apply(lambda x: countryname_to_iso3c[x])
+            return df
+        if harmonised_raw and data_type in {"export", "import"}:
+            warnings.warn("Cannot run harmonised_raw over export and import data as raw data is trade data")
+            return None
 
         #-Collapse to SITC Level -#
         if level != 4:
@@ -200,7 +213,7 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
         if intertemp_productcode[0]:
             if verbose: print "[INFO] Computing Intertemporally Consistent ProductCodes ..."
             #-This Method relies on meta data computed by pyeconlab nberwtf constructor-#
-            IC = intertemp_productcode[1] #Dict("drop" and "collapse" code lists)
+            IC = intertemp_productcode[1]               #Dict("drop" and "collapse" code lists)
             #-Drop Codes-#
             drop_codes = IC["drop"]
             if verbose: 
