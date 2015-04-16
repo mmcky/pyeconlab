@@ -22,7 +22,7 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
     Constructor for Atlas of Complexity Data (CID)
     """
 
-    def __init__(self, source_dir, trade_classification, dtype, years=[], ftype='hdf', reduce_memory=False, standardize_datast=False, reset_cache=False, verbose=True):
+    def __init__(self, source_dir, trade_classification, dtype, years=[], ftype='hdf', reduce_memory=False, standardize_dataset=False, reset_cache=False, verbose=True):
         """
         Constructor for the CID Atlas of Economic Complexity Data
         
@@ -47,6 +47,9 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
                                     This will delete self.__raw_data after initializing self.dataset with the raw_data
                                     [Warning: This will render properties that depend on self.__raw_data inoperable]
                                     Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
+        standardize_dataset     :   bool, optional(default=False)
+                                    Standardize dataset into Trade, Export, Import Values Only from RAW Files.
+
         Notes 
         -----
         1. Not implementing a cache_dir
@@ -90,7 +93,7 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
         else:
             self.dataset = self.__raw_data.copy(deep=True)                
         #-Standardize-#
-        if standardize_datast:
+        if standardize_dataset:
             self.construct_standardized_dataset()
 
     @property
@@ -236,6 +239,15 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             self.dataset["eiso3c"] = self.dataset["eiso3c"].apply(lambda x: x.upper())
         if self.dtype == "import" or self.dtype == "trade":
             self.dataset["iiso3c"] = self.dataset["iiso3c"].apply(lambda x: x.upper())
+
+    # def construct_rca_dataset(self, verbose=True):
+    #     """ Construct RCA Datasets """
+    #     if verbose: print "[INFO] Running .construct_rca_dataset() ... "
+    #     if self.dtype == "trade":
+    #         warnings.warn("There is no RCA data in the source trade data file!")
+    #         return None
+    #     if self.dtype == "export":
+
 
 
     def countries_only(self, verbose=True):
