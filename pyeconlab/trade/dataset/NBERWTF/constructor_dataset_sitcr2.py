@@ -22,6 +22,7 @@ Future Work
 
 #-Library Imports-#
 import re
+import warnings
 #-Package Imports-#
 from pyeconlab.trade.classification import SITC
 from pyeconlab.util import concord_data, merge_columns
