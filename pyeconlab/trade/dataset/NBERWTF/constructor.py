@@ -1897,7 +1897,9 @@ class NBERWTFConstructor(NBERWTF):
             if not check_operations(self, "load_china_hongkongdata"):
                 self.load_china_hongkongdata(verbose=verbose) #-Load Data with Default Attributes-#
             OPTIONS['adjust_hk'] = (True, self.supp_data(item='chn_hk_adjust'))
-         #-Intertemporal Product Codes-#
+        else:
+            OPTIONS['adjust_hk'] = (False, None)
+        #-Intertemporal Product Codes-#
         if OPTIONS['intertemp_productcode']:
             from .meta import IntertemporalProducts
             if special_years == "":
@@ -1906,13 +1908,17 @@ class NBERWTFConstructor(NBERWTF):
                 ICP = IntertemporalProducts().IC7400[self.level]
             elif special_years == "8400":
                 ICP = IntertemporalProducts().IC8400[self.level]
-            DATA_OPTIONS[dataset]['intertemp_productcode'] = (True, ICP)
+            OPTIONS['intertemp_productcode'] = (True, ICP)
+        else:
+            OPTIONS['intertemp_productcode'] = (False, None)
         #-Compute Dataset-#
         self._dataset = construct_dataset(self.dataset, data_type=data_type, level=product_level, verbose=verbose, **OPTIONS)
         self.dataset_name = "SITCR2-%s" % dataset
         #-Restore Original Option-#
         if type(OPTIONS['adjust_hk']) == tuple:
             OPTIONS['adjust_hk'] = OPTIONS['adjust_hk'][0]
+        if type(OPTIONS['intertemp_productcode']) == tuple:
+            OPTIONS['intertemp_productcode'] = OPTIONS['intertemp_productcode'][0]
         #-Construct Report-#
         if report:
             rdf = self.raw_data                                                     #Note: This produces a copy!
