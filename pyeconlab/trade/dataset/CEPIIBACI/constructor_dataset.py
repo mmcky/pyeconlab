@@ -30,30 +30,11 @@ SITC_DATASET_DESCRIPTION = {
 #Geographic Changes between 1998 and 2012. However not a priority for now as country aggregates for my thesis
 #will be set by NBER Definitions. 
 
-#-IN WORK-#
-# intertemp_cntrycode necessary? (Check Meta Data)
-
 SITC_DATASET_OPTIONS = {
     'A' :   {   
-                'check_concordance' : True,          #Check Entire Concordance has matched internal product codes
-                # 'intertemp_cntrycode' : False,        #Recode Country Codes to be Intertemporally Consistent
-                # 'drop_incp_cntrycode' : False,        #Drop Incomplete Intertemporal Countries
+                'check_concordance' : True,           #Check Entire Concordance has matched internal product codes
                 'adjust_units' : False,               #Adjust Units from 1000's of $'s to $'s
                 'concordance_institution' : 'un',     #Specify concordance source institution
-            },
-    # 'B' :   {   
-    #             'check_concordance' : True,           #Check Entire Concordance has matched internal product codes
-    #             'intertemp_cntrycode' : True,        #Recode Country Codes to be Intertemporally Consistent
-    #             'drop_incp_cntrycode' : False,        #Drop Incomplete Intertemporal Countries
-    #             'adjust_units' : False,               #Adjust Units from 1000's of $'s to $'s
-    #             'concordance_institution' : 'un',     #Specify concordance source institution
-    #         },
-    # 'C' :   {   
-    #             'check_concordance' : True,           #Check Entire Concordance has matched internal product codes
-    #             'intertemp_cntrycode' : True,         #Recode Country Codes to be Intertemporally Consistent
-    #             'drop_incp_cntrycode' : True,         #Drop Incomplete Intertemporal Countries
-    #             'adjust_units' : False,               #Adjust Units from 1000's of $'s to $'s
-    #             'concordance_institution' : 'un',     #Specify concordance source institution
-    #         },       
+            },     
 }
 
