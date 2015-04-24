@@ -2232,7 +2232,7 @@ class NBERWTFConstructor(NBERWTF):
         self._dataset.txf_units_value_str   = self._units_value_str
         return self._dataset
 
-    def to_nberwtf(self, data_type, generic=False, verbose=True):
+    def to_nberwtf(self, data_type, values_only=True, generic=False, verbose=True):
         """
         Construct NBERWTF Object with Common Core Object Names
         Note: This is constructed from the ._dataset attribute
@@ -2264,6 +2264,13 @@ class NBERWTFConstructor(NBERWTF):
         sitcl = 'sitc%s' % self.level
         self._dataset = self.dataset.rename_axis({sitcl : 'productcode'}, axis=1)
         self.attach_attributes_to_dataset()
+
+        if values_only:
+            valid = set(['year', 'iiso3c', 'eiso3c', 'productcode', 'value'])
+            for item in self._dataset.columns:
+                if item not in valid:
+                    if verbose: print "[INFO] Dropping column: %s (due to values_only option)" % item
+                    del self._dataset[item]
 
         if data_type == 'trade':
             if generic:
