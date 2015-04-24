@@ -200,17 +200,7 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
                 df = df.loc[df.AX != 1]
                 del df['AX']
         
-        #-Official SITCR2 Codes-#
-        if sitcr2:
-            if verbose: print "[INFO] Adding SITCR2 Indicator"
-            sitc = SITC(revision=2, source_institution=source_institution)
-            codes = sitc.get_codes(level=level)
-            df['sitcr2'] = df['sitc%s'%level].apply(lambda x: 1 if x in codes else 0)
-            if drop_nonsitcr2:
-                if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
-                df = df.loc[(df.sitcr2 == 1)]
-                del df['sitcr2']                #No Longer Needed
-        
+        #-Intertemporal ProductCodes-#
         if intertemp_productcode[0]:
             if verbose: print "[INFO] Computing Intertemporally Consistent ProductCodes ..."
             #-This Method relies on meta data computed by pyeconlab nberwtf constructor-#
@@ -230,8 +220,21 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
             collapse_codes = {x[0:level-1] for x in collapse_codes}     #-Simply Computations-#
             for code in collapse_codes:
                 df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: code if x[0:level-1] == code else x)
+            #-Reset Collapsed Codes to Same Length by Adding a "0"-#
+            df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: x+'0' if len(x) == level-1 else x)
             df = df.groupby(list(df.columns.drop("value"))).sum()
             df = df.reset_index()
+
+        #-Official SITCR2 Codes-#
+        if sitcr2:
+            if verbose: print "[INFO] Adding SITCR2 Indicator"
+            sitc = SITC(revision=2, source_institution=source_institution)
+            codes = sitc.get_codes(level=level)
+            df['sitcr2'] = df['sitc%s'%level].apply(lambda x: 1 if x in codes else 0)
+            if drop_nonsitcr2:
+                if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
+                df = df.loc[(df.sitcr2 == 1)]
+                del df['sitcr2']                #No Longer Needed
 
         #-Adjust Country Codes to be Intertemporally Consistent-#
         if intertemp_cntrycode:
