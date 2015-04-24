@@ -10,6 +10,7 @@ Notes
 
 """
 
+import pandas as pd
 from collections import OrderedDict
 from pyeconlab.util import from_dict_to_csv
 
@@ -179,6 +180,22 @@ class IntertemporalProducts(object):
 
 	# IC6200 = OrderedDict(sorted(IC6200.items(), key=lambda t: t[0]))
 
+	def sitc_for_1962_2000_csv(self, level, target_dir='csv/'):
+		"""
+		Simple Utility for writing sitc_for_1962_2000 to csv file
+
+		Usage
+		-----
+		from intertemporal import IntertemporalProducts
+		IntertemporalProducts().sitc_for_1962_2000_csv(level=#)
+
+		"""
+		for item in self.IC6200[level].keys():
+			fn='intertemporal_sitc%s_for_1962_2000_%s.csv'%(level, item)
+			series = pd.Series(self.IC6200[level][item], name=item)
+			series.to_csv(target_dir + fn, header=True, index=False)
+
+
 	#--------------#
 	#-1974 to 2000-#
 	#--------------#
@@ -229,6 +246,23 @@ class IntertemporalProducts(object):
 	}
 
 	# IC8400 = OrderedDict(sorted(IC8400.items(), key=lambda t: t[0]))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
