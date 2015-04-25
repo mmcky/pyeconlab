@@ -10,6 +10,7 @@ Notes
 
 """
 
+import csv
 import pandas as pd
 from collections import OrderedDict
 from pyeconlab.util import from_dict_to_csv
@@ -191,9 +192,11 @@ class IntertemporalProducts(object):
 
 		"""
 		for item in self.IC6200[level].keys():
+			if len(self.IC6200[level][item]) == 0:
+				continue
 			fn='intertemporal_sitc%s_for_1962_2000_%s.csv'%(level, item)
-			series = pd.Series(self.IC6200[level][item], name=item)
-			series.to_csv(target_dir + fn, header=True, index=False)
+			df = pd.DataFrame(self.IC6200[level][item], columns=[item])
+			df.to_csv(target_dir+fn, index=False, quoting=csv.QUOTE_ALL)
 
 
 	#--------------#
