@@ -42,17 +42,23 @@ cd $WORKINGDIR
 
 ** Datasets 
 ** --------
-** [A] dropAX=False, 	sitcr2=False, 	drop_nonsitcr2=False, 	adjust_hk=False, 	intertemp_cntrycode=False, 	drop_incp_cntrycode=False
-** [B] dropAX=False, 	sitcr2=False, 	drop_nonsitcr2=False, 	adjust_hk=True,		intertemp_cntrycode=False, 	drop_incp_cntrycode=False
-** [C] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	adjust_hk=True,		intertemp_cntrycode=False, 	drop_incp_cntrycode=False
-** [D] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	adjust_hk=True,		intertemp_cntrycode=True, 	drop_incp_cntrycode=False	
-** [E] dropAX=True, 	sitcr2=True, 	drop_nonsitcr2=True, 	adjust_hk=True,		intertemp_cntrycode=True, 	drop_incp_cntrycode=True
+** [A] AX=True, dropAX=False, sitcr2=True, drop_nonsitcr2=False, adjust_hk=False, intertemp_productcode=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+** [B] AX=True, dropAX=False, sitcr2=True, drop_nonsitcr2=False, adjust_hk=True,  intertemp_productcode=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+** [C] AX=True, dropAX=True,  sitcr2=True, drop_nonsitcr2=False, adjust_hk=True,  intertemp_productcode=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+** [D] AX=True, dropAX=True,  sitcr2=True, drop_nonsitcr2=True,  adjust_hk=True,  intertemp_productcode=False, intertemp_cntrycode=False, drop_incp_cntrycode=False
+** [E] AX=True, dropAX=True,  sitcr2=True, drop_nonsitcr2=False, adjust_hk=True,  intertemp_productcode=True,  intertemp_cntrycode=False, drop_incp_cntrycode=False
+** [F] AX=True, dropAX=True,  sitcr2=True, drop_nonsitcr2=False, adjust_hk=True,  intertemp_productcode=True,  intertemp_cntrycode=True,  drop_incp_cntrycode=False
+** [G] AX=True, dropAX=True,  sitcr2=True, drop_nonsitcr2=True,  adjust_hk=True,  intertemp_productcode=False, intertemp_cntrycode=True,  drop_incp_cntrycode=False
+** !! -- EXPERIMENTAL -- !!
+** [H] AX=True, dropAX=True,  sitcr2=True, drop_nonsitcr2=False, adjust_hk=True,  intertemp_productcode=True,  intertemp_cntrycode=True,  drop_incp_cntrycode=True
+** [I] AX=True, dropAX=Ture,  sitcr2=True, drop_nonsitcr2=True,  adjust_hk=True,  intertemp_productcode=False, intertemp_cntrycode=False, drop_incp_cntrycode=True
 
 ** Settings **
 //global DATASET "A"
 //global LEVEL 3   			//NotImplemented
 
-global DATASETS "A B C D E"
+// global DATASETS "A B C D E F G"
+global DATASETS "A B C D E F G H I"
 
 foreach item of global DATASETS {
 	
@@ -70,6 +76,7 @@ foreach item of global DATASETS {
 		global dropAX 	= 0
 		global dropNonSITCR2 = 0 
 		global adjust_hk = 0
+		global intertemporal_prod_recode = 0
 		global intertemporal_cntry_recode = 0
 		global incomplete_cntry_recode = 0
 	}
@@ -77,30 +84,69 @@ foreach item of global DATASETS {
 		global dropAX 	= 0
 		global dropNonSITCR2 = 0
 		global adjust_hk = 1
+		global intertemporal_prod_recode = 0
 		global intertemporal_cntry_recode = 0
 		global incomplete_cntry_recode = 0
 	}
 	else if "$DATASET" == "C" {
 		global dropAX 	= 1
-		global dropNonSITCR2 = 1 
+		global dropNonSITCR2 = 0 
 		global adjust_hk = 1
+		global intertemporal_prod_recode = 0
 		global intertemporal_cntry_recode = 0
 		global incomplete_cntry_recode = 0
 	}
+	// MAJOR //
 	else if "$DATASET" == "D" {
 		global dropAX 	= 1
 		global dropNonSITCR2 = 1 
 		global adjust_hk = 1
-		global intertemporal_cntry_recode = 1
+		global intertemporal_prod_recode = 0
+		global intertemporal_cntry_recode = 0
 		global incomplete_cntry_recode = 0
 	}
+	// MAJOR //
 	else if "$DATASET" == "E" {
 		global dropAX 	= 1
-		global dropNonSITCR2 = 1 
+		global dropNonSITCR2 = 0 
 		global adjust_hk = 1
+		global intertemporal_prod_recode = 1
+		global intertemporal_cntry_recode = 0
+		global incomplete_cntry_recode = 0
+	} 
+	// MAJOR //
+	else if "$DATASET" == "F" {
+		global dropAX 	= 1
+		global dropNonSITCR2 = 0 
+		global adjust_hk = 1
+		global intertemporal_prod_recode = 1
+		global intertemporal_cntry_recode = 1
+		global incomplete_cntry_recode = 0
+	} 
+	else if "$DATASET" == "G" {
+		global dropAX 	= 1
+		global dropNonSITCR2 = 0 
+		global adjust_hk = 1
+		global intertemporal_prod_recode = 0
+		global intertemporal_cntry_recode = 1
+		global incomplete_cntry_recode = 0
+	} 
+	else if "$DATASET" == "H" {
+		global dropAX 	= 1
+		global dropNonSITCR2 = 0 
+		global adjust_hk = 1
+		global intertemporal_prod_recode = 1
 		global intertemporal_cntry_recode = 1
 		global incomplete_cntry_recode = 1
 	} 
+	else if "$DATASET" == "I" {
+		global dropAX 	= 1
+		global dropNonSITCR2 = 1 
+		global adjust_hk = 1
+		global intertemporal_prod_recode = 0
+		global intertemporal_cntry_recode = 0
+		global incomplete_cntry_recode = 1
+	} 	
 	else {
 		di "Option %DATASET not valid"
 		exit
@@ -146,6 +192,24 @@ foreach item of global DATASETS {
 	infix using "$METACLASS/SITC-R2-L3-codes.dct", using("$METACLASS/SITC-R2-L3-codes.csv") clear
 	save "SITC-R2-L3-codes.dta", replace
 
+	**Concordance for Intertemporal ProductCode Adjustments for 1962 to 2000**
+	**A concordance to AGGREGATE product groups to improve consistency over time between 1962 to 2000**
+	**meta/csv/intertemporal_sitc3_for_1962_2000.csv**
+	**Copied: 24-04-2014
+	**Note: This requires "ssc install chewfile"
+	chewfile using "$META/csv/intertemporal_sitc3_for_1962_2000_drop.csv", clear parse(",")
+	drop in 1/1 //Get rid of "drop"
+	rename var1 sitc3
+	save "sitc3_intertemporal_drop.dta", replace
+	chewfile using "$META/csv/intertemporal_sitc3_for_1962_2000_collapse.csv", clear parse(",")
+	drop in 1/1 //get rid of "collapse"
+	rename var1 sitc3
+	gen sitc2 = substr(sitc3,1,2)
+	drop sitc3
+	duplicates drop
+	save "sitc3_intertemporal_collapse.dta", replace
+
+
 	**Concordance for Intertemporal Country Adjustments for 1962 to 2000**
 	**A concordance to AGGREGATE country groups to be consistent over time between 1962 to 2000**
 	**/meta/csv/intertemporal_iso3c_for_1962_2000.csv contains this listing**
@@ -172,7 +236,7 @@ foreach item of global DATASETS {
 	 
 	 
 	******************************************
-	**Dataset #1: Bilateral TRADE Data 		**
+	**Dataset #1: Bilateral TRADE Data  	**
 	******************************************
 
 	// Compile WTF Source Files //
@@ -205,6 +269,7 @@ foreach item of global DATASETS {
 	collapse (sum) value, by(year importer exporter sitc3)
 	drop if sitc3 == "" 			//Bad Data
 
+	// Leave Country Partners Only //
 	drop if importer == "World"
 	drop if exporter == "World"
 
@@ -229,6 +294,24 @@ foreach item of global DATASETS {
 		gen marker = regexm(sitc3, "[AX]")
 		drop if marker == 1
 		drop marker
+		//Log Check
+		preserve
+		collapse (sum) value, by(year)
+		list
+		restore
+	}
+
+	if $intertemporal_prod_recode == 1{
+		// Drop Products
+		merge m:1 sitc3 using "sitc3_intertemporal_drop.dta"
+		drop if _merge == 3 //Drop Data Matches
+		drop _merge
+		// Collapse Products
+		gen sitc2 = substr(sitc3,1,2)
+		merge m:1 sitc2 using "sitc3_intertemporal_collapse.dta"
+		replace sitc3 = sitc2+"0" if _merge == 3
+		drop _merge
+		collapse (sum) value, by(year eiso3c iiso3c sitc3)
 		//Log Check
 		preserve
 		collapse (sum) value, by(year)
@@ -286,6 +369,7 @@ foreach item of global DATASETS {
 	}
 
 	order year eiso3c iiso3c sitc3 value
+	sort year eiso3c iiso3c sitc3
 	local fl = "nberwtf_stata_trade_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
 	save `fl', replace
 
@@ -414,6 +498,24 @@ foreach item of global DATASETS {
 		restore
 	}
 
+	if $intertemporal_prod_recode == 1{
+		// Drop Products
+		merge m:1 sitc3 using "sitc3_intertemporal_drop.dta"
+		drop if _merge == 3 //Drop Data Matches
+		drop _merge
+		// Collapse Products
+		gen sitc2 = substr(sitc3,1,2)
+		merge m:1 sitc2 using "sitc3_intertemporal_collapse.dta"
+		replace sitc3 = sitc2+"0" if _merge == 3
+		drop _merge
+		collapse (sum) value, by(year eiso3c sitc3)
+		//Log Check
+		preserve
+		collapse (sum) value, by(year)
+		list
+		restore
+	}
+
 	if $dropNonSITCR2 == 1{
 		merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
 		drop _merge
@@ -454,6 +556,7 @@ foreach item of global DATASETS {
 	}
 
 	order year eiso3c sitc3 value
+	sort year eiso3c sitc3
 	local fl = "nberwtf_stata_export_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
 	save `fl', replace
 
@@ -586,6 +689,24 @@ foreach item of global DATASETS {
 		restore
 	}
 
+	if $intertemporal_prod_recode == 1{
+		// Drop Products
+		merge m:1 sitc3 using "sitc3_intertemporal_drop.dta"
+		drop if _merge == 3 //Drop Data Matches
+		drop _merge
+		// Collapse Products
+		gen sitc2 = substr(sitc3,1,2)
+		merge m:1 sitc2 using "sitc3_intertemporal_collapse.dta"
+		replace sitc3 = sitc2+"0" if _merge == 3
+		drop _merge
+		collapse (sum) value, by(year iiso3c sitc3)
+		//Log Check
+		preserve
+		collapse (sum) value, by(year)
+		list
+		restore
+	}
+
 	if $dropNonSITCR2 == 1{
 		merge m:1 sitc3 using "SITC-R2-L3-codes.dta", keepusing(marker)
 		drop _merge
@@ -625,6 +746,7 @@ foreach item of global DATASETS {
 	}
 
 	order year iiso3c sitc3 value
+	sort year iiso3c sitc3
 	local fl = "nberwtf_stata_import_sitcr2l3_1962to2000_"+"$DATASET"+".dta"
 	save `fl', replace
 
