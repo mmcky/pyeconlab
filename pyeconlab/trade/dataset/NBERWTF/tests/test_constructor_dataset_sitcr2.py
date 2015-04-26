@@ -502,7 +502,7 @@ class TestAgainstStataData():
 
     #-Dataset G-#
 
-    def test_bilateral_data_E(self):
+    def test_bilateral_data_G(self):
         #-pyeconlab-#
         self.obj.construct_sitc_dataset(data_type='trade', dataset="G", product_level=3, sitc_revision=2, report=False, verbose=False)  
         #-stata-#

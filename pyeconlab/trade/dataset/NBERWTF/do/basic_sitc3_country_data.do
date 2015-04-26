@@ -64,7 +64,7 @@ foreach item of global DATASETS {
 	
 	global DATASET="`item'"
 	
-	//global DATASET="B"
+	global DATASET="E"
 	
 	capture log close
 	local fl = "nberwtf_stata_sitcl3_data_"+"$DATASET"+".log"
@@ -304,13 +304,15 @@ foreach item of global DATASETS {
 	if $intertemporal_prod_recode == 1{
 		// Drop Products
 		merge m:1 sitc3 using "sitc3_intertemporal_drop.dta"
+		list if _merge == 2
+		drop if _merge == 2
 		drop if _merge == 3 //Drop Data Matches
 		drop _merge
 		// Collapse Products
 		gen sitc2 = substr(sitc3,1,2)
 		merge m:1 sitc2 using "sitc3_intertemporal_collapse.dta"
 		replace sitc3 = sitc2+"0" if _merge == 3
-		drop _merge
+		drop _merge sitc2
 		collapse (sum) value, by(year eiso3c iiso3c sitc3)
 		//Log Check
 		preserve
@@ -501,6 +503,7 @@ foreach item of global DATASETS {
 	if $intertemporal_prod_recode == 1{
 		// Drop Products
 		merge m:1 sitc3 using "sitc3_intertemporal_drop.dta"
+		drop if _merge == 2
 		drop if _merge == 3 //Drop Data Matches
 		drop _merge
 		// Collapse Products
@@ -692,6 +695,7 @@ foreach item of global DATASETS {
 	if $intertemporal_prod_recode == 1{
 		// Drop Products
 		merge m:1 sitc3 using "sitc3_intertemporal_drop.dta"
+		drop if _merge == 2
 		drop if _merge == 3 //Drop Data Matches
 		drop _merge
 		// Collapse Products

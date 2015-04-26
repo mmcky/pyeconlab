@@ -1903,11 +1903,11 @@ class NBERWTFConstructor(NBERWTF):
         if OPTIONS['intertemp_productcode']:
             from .meta import IntertemporalProducts
             if special_years == "":
-                ICP = IntertemporalProducts().IC6200[self.level]
+                ICP = IntertemporalProducts().IC6200[product_level]
             elif special_years == "7400":
-                ICP = IntertemporalProducts().IC7400[self.level]
+                ICP = IntertemporalProducts().IC7400[product_level]
             elif special_years == "8400":
-                ICP = IntertemporalProducts().IC8400[self.level]
+                ICP = IntertemporalProducts().IC8400[product_level]
             OPTIONS['intertemp_productcode'] = (True, ICP)
         else:
             OPTIONS['intertemp_productcode'] = (False, None)
