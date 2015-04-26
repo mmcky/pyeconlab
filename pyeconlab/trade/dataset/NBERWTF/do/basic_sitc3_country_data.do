@@ -57,14 +57,13 @@ cd $WORKINGDIR
 //global DATASET "A"
 //global LEVEL 3   			//NotImplemented
 
-// global DATASETS "A B C D E F G"
 global DATASETS "A B C D E F G H I"
 
 foreach item of global DATASETS {
 	
 	global DATASET="`item'"
 	
-	global DATASET="E"
+	//global DATASET="E"
 	
 	capture log close
 	local fl = "nberwtf_stata_sitcl3_data_"+"$DATASET"+".log"
@@ -503,6 +502,7 @@ foreach item of global DATASETS {
 	if $intertemporal_prod_recode == 1{
 		// Drop Products
 		merge m:1 sitc3 using "sitc3_intertemporal_drop.dta"
+		list if _merge == 2
 		drop if _merge == 2
 		drop if _merge == 3 //Drop Data Matches
 		drop _merge
@@ -695,6 +695,7 @@ foreach item of global DATASETS {
 	if $intertemporal_prod_recode == 1{
 		// Drop Products
 		merge m:1 sitc3 using "sitc3_intertemporal_drop.dta"
+		list if _merge == 2
 		drop if _merge == 2
 		drop if _merge == 3 //Drop Data Matches
 		drop _merge
