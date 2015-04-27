@@ -124,7 +124,7 @@ foreach item of global DATASETS {
 	} 
 	else if "$DATASET" == "G" {
 		global dropAX 	= 1
-		global dropNonSITCR2 = 0 
+		global dropNonSITCR2 = 1 
 		global adjust_hk = 1
 		global intertemporal_prod_recode = 0
 		global intertemporal_cntry_recode = 1
