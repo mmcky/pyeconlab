@@ -33,7 +33,7 @@ from .meta import countryname_to_iso3c, iso3c_recodes_for_1962_2000, incomplete_
 #-Generalised SC Constructor Functions-#
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_productcode=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', harmonised_raw=False, verbose=True):
+def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, drop_nonsitcr2=True, adjust_hk=(False, None), intertemp_productcode=(False, None), intertemp_cntrycode=False, drop_incp_cntrycode=False, adjust_units=False, source_institution='un', harmonised_raw=False, values_only=False, verbose=True):
         """
         Construct a Self Contained (SC) Direct Action Dataset for Countries at the SITC Revision 2 Level 3
         
@@ -73,6 +73,8 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
                                 which institutions SITC classification to use
         harmonised_raw      :   bool, optional(default=False)
                                 Return simple RAW dataset with Quantity disaggregation collapsed and eiso3c and iiso3c columns (Note: You may use hk_adjust with this option)
+        values_only         :   bool, optional(default=False)
+                                Return Values and Relevant Index Data Only (i.e. drop 'AX', 'sitcr2')
 
         Notes
         -----
@@ -199,6 +201,8 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
                 if verbose: print "[INFO] Dropping SITC Codes with 'A' or 'X'"
                 df = df.loc[df.AX != 1]
                 del df['AX']
+            if not dropAX and values_only:
+                del df['AX']
         
         #-Intertemporal ProductCodes-#
         if intertemp_productcode[0]:
@@ -211,7 +215,7 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
                 print "Dropping the following productcodes ..."
                 print drop_codes
             keep_codes = set(df['sitc%s'%level].unique()).difference(set(drop_codes))
-            df = df.loc[df["sitc%s"%level].isin(keep_codes)]
+            df = df.loc[df["sitc%s"%level].isin(keep_codes)].copy(deep=True)
             #-Collapse Codes-#
             collapse_codes = IC["collapse"]
             if verbose:
@@ -235,6 +239,8 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
                 if verbose: print "[INFO] Dropping Non Standard SITCR2 Codes"
                 df = df.loc[(df.sitcr2 == 1)]
                 del df['sitcr2']                #No Longer Needed
+            if not drop_nonsitcr2 and values_only:
+                del df['sitcr2']
 
         #-Adjust Country Codes to be Intertemporally Consistent-#
         if intertemp_cntrycode:

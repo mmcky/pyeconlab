@@ -176,7 +176,12 @@ class IntertemporalProducts(object):
 		2 : 	{
 			"drop" 		: ["","60","70","80","90","91","93","94","96","97"],
 			"collapse" 	: [],
-				}
+				},
+		#-SITCL1-#
+		1	: 	{
+			"drop" 		: 	[], 	#Nothing to do
+			"collapse"	: 	[], 	#Nothing to do
+		},
 	}
 
 	# IC6200 = OrderedDict(sorted(IC6200.items(), key=lambda t: t[0]))
