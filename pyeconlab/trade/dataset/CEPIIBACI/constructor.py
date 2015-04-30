@@ -74,11 +74,11 @@ class BACIConstructor(BACI):
                                 Specify source directory containing raw csv files
     source_classification   :   str
                                 Type of Source Files to Load ['HS92', 'HS96', 'HS02']
-    ftype                   :   str, optional(default='csv')
-                                Specify File Type ['rar', 'csv', hdf']
+    ftype                   :   str, optional(default='hdf')
+                                Specify File Type ['rar', 'csv', 'hdf']
     years                   :   list, optional(default=[])
                                 Apply a Year Filter [Default: All Years Available in the Data]
-    skip_setup              :   bool, optional(default=True)
+    skip_setup              :   bool, optional(default=False)
                                 [Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
                                 This is mainly used for loading test data to check attributes and methods etc. 
     reduce_memory           :   bool, optional(default=False)
@@ -143,7 +143,7 @@ class BACIConstructor(BACI):
                                     Specify source directory containing raw csv files
         source_classification   :   str
                                     Type of Source Files to Load ['HS92', 'HS96', 'HS02']
-        ftype                   :   str, optional(default='csv')
+        ftype                   :   str, optional(default='hdf')
                                     Specify File Type ['rar', 'csv', hdf']
         years                   :   list, optional(default=[])
                                     Apply a Year Filter [Default: All Years Available in the Data]
