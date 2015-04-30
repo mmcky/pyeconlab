@@ -117,7 +117,7 @@ countryname_to_iso3c = {
 				'Fm USSR' 		: 'RUS',
 				'Fm Yemen AR' 	: 'YEM', 	
 				'Fm Yemen Ar' 	: 'YEM',	
-				'Fm Yemen Dm' 	: 'YDYE',
+				'Fm Yemen Dm' 	: 'YMD', 	#Changed from YMYD to YMD
 				'Fm Yugoslav' 	: 'YUG',
 				'Fr Ind O' 		: '.', 		#Check
 				'Fr.Guiana' 	: 'GUF',
