@@ -255,6 +255,7 @@ foreach DATASET of global DATASETS {
 
 
 	order year eiso3c iiso3c sitc3 value
+	sort year eiso3c iiso3c sitc3
 	local fl = "bacihs96_stata_trade_sitcr2l3_1998to2012_"+"`DATASET'"+".dta"
 	save `fl', replace
 
@@ -355,6 +356,7 @@ foreach DATASET of global DATASETS {
 	}
 
 	order year eiso3c sitc3 value
+	sort year eiso3c sitc3
 	local fl = "bacihs96_stata_export_sitcr2l3_1998to2012_"+"`DATASET'"+".dta"
 	save `fl', replace
 
@@ -454,6 +456,7 @@ foreach DATASET of global DATASETS {
 	}
 
 	order year iiso3c sitc3 value
+	sort year iiso3c sitc3
 	local fl = "bacihs96_stata_import_sitcr2l3_1998to2012_"+"`DATASET'"+".dta"
 	save `fl', replace
 
