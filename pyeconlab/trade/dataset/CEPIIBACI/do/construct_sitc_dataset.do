@@ -44,29 +44,28 @@ cd $WORKINGDIR
 
 ** Settings **
 global DATASETS "A"
+global SETUP_CACHE 0
 
-foreach item of global DATASETS {
-	
-	global DATASET="`item'"
-	global DATASET = "A"
+if $SETUP_CACHE == 1 {
+	di "WARNING ... Setup Cache Flag is set to 1"
+}
+
+foreach DATASET of global DATASETS {
 	
 	capture log close
-	local fl = "cepiibaci_stata_sitcl3_data_"+"$DATASET"+".log"
-	log using `fl', replace
+	local logfl = "cepiibaci_stata_sitcl3_data_"+"`DATASET'"+".log"
+	log using `logfl', replace
 
-	global SETUP_CACHE 0
-
-	di "Processing Option: $DATASET"
+	di "Processing Option: `DATASET'"
 	
-	if "$DATASET" == "A" {
+	if "`DATASET'" == "A" {
 		global check_concordance = 1
 		global adjust_units = 0
 		global intertemporal_cntry_recode = 0 		//Future Use
 		global incomplete_cntry_recode = 0 		//Future Use
-		
 	}
 	else {
-		di "Option %DATASET not valid"
+		di "Option `DATASET' not valid"
 		exit
 	}
 
@@ -112,7 +111,9 @@ foreach item of global DATASETS {
 	** Convert RAW Files **
 	** ----------------- **
 	if $SETUP_CACHE == 1 {
+		di "Setting Up Cache Files ..."
 		foreach year of num 1998(1)2012 {
+			di "Processing: `year' ..."
 			insheet using "$SOURCE/baci96_`year'.csv", clear names
 			tostring(hs6), replace
 			gen fixleadingzero = 6 - length(hs6)
@@ -254,7 +255,7 @@ foreach item of global DATASETS {
 
 
 	order year eiso3c iiso3c sitc3 value
-	local fl = "bacihs96_stata_trade_sitcr2l3_1998to2012_"+"$DATASET"+".dta"
+	local fl = "bacihs96_stata_trade_sitcr2l3_1998to2012_"+"`DATASET'"+".dta"
 	save `fl', replace
 
 
@@ -354,7 +355,7 @@ foreach item of global DATASETS {
 	}
 
 	order year eiso3c sitc3 value
-	local fl = "bacihs96_stata_export_sitcr2l3_1998to2012_"+"$DATASET"+".dta"
+	local fl = "bacihs96_stata_export_sitcr2l3_1998to2012_"+"`DATASET'"+".dta"
 	save `fl', replace
 
 	*** -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- **
@@ -453,10 +454,10 @@ foreach item of global DATASETS {
 	}
 
 	order year iiso3c sitc3 value
-	local fl = "bacihs96_stata_import_sitcr2l3_1998to2012_"+"$DATASET"+".dta"
+	local fl = "bacihs96_stata_import_sitcr2l3_1998to2012_"+"`DATASET'"+".dta"
 	save `fl', replace
 
-log close
+	log close
 	
 }
 
