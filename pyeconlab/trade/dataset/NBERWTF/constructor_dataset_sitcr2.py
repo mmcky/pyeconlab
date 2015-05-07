@@ -224,8 +224,16 @@ def construct_sitcr2(df, data_type, level, AX=True, dropAX=True, sitcr2=True, dr
             collapse_codes = {x[0:level-1] for x in collapse_codes}     #-Simplify Computations-#
             for code in collapse_codes:
                 df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: code if x[0:level-1] == code else x)
-            #-Reset Collapsed Codes to Same Length by Adding a "0"-#
-            df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: x+'0' if len(x) == level-1 else x)
+            #-Recodes-#
+            recodes = IC["recode"]
+            recode_codes = recodes.keys()
+            if verbose: 
+                print "Recoding the following productcodes ..."
+                print recode_codes
+            for code in recode_codes:
+                df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: recodes[x] if x in recode_codes else x)
+                # #-Reset Collapsed Codes to Same Length by Adding a "0"-#
+                # df["sitc%s"%level] = df["sitc%s"%level].apply(lambda x: x+'0' if len(x) == level-1 else x)
             df = df.groupby(list(df.columns.drop("value"))).sum()
             df = df.reset_index()
 

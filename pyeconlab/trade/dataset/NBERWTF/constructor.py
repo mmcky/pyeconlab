@@ -2971,7 +2971,7 @@ class NBERWTFConstructor(NBERWTF):
         return df
 
 
-    def intertemporal_productcode_simple_adjustments_table(self, tabletype="indicator", cleanup=True, low_value_settings=(1,4), verbose=True):
+    def intertemporal_productcode_simple_adjustments_table(self, tabletype="indicator", cleanup=True, low_value_settings=(1,4), official_coverage=True, verbose=True):
         """
         Generate a Simple Product Code Adjustment Table
 
@@ -3031,6 +3031,13 @@ class NBERWTFConstructor(NBERWTF):
         table = table.join(low_value, on="sitc%s"%(self.level-1), how="left")
         idx.append("LowValue")
         idx.append("LowValue-ING")
+        #-Check Official Codes Coverage-#
+        table["OfficialNotIC"] = table[["SITCR2", "%Coverage"]].apply(lambda row: True if (row["%Coverage"]<1)&(row["SITCR2"]==True) else False , axis=1)
+        officialnotic = table[["OfficialNotIC", "sitc%s"%(self.level-1)]].groupby("sitc%s"%(self.level-1))["OfficialNotIC"].any()
+        officialnotic.name = "OfficialNotIC-ING"
+        table = table.join(officialnotic, on="sitc%s"%(self.level-1), how="left")
+        idx.append("OfficialNotIC")
+        idx.append("OfficialNotIC-ING")
         #-Set Index-#
         table = table.set_index(idx)
         if cleanup:
@@ -3039,7 +3046,7 @@ class NBERWTFConstructor(NBERWTF):
             del table["NotIntertempConsistent"]
         return table
 
-    def intertemporal_productcode_lists(self, tabletype="value", return_table=False, include_special=True, value_check=(True, 1, 4), verbose=True):
+    def intertemporal_productcode_lists(self, tabletype="value", return_table=False, include_special=True, value_check=(True, 1, 4), official_coverage=True, verbose=True):
         """
         Return a list of items to Drop and Collapse to Produce an Intertemporally Consistent Set of Codes for NBER
 
@@ -3121,39 +3128,42 @@ class NBERWTFConstructor(NBERWTF):
             #-Adjust-#
             drop_items = drop_items.union(value_drop_items) - value_keep_items
             collapse_items = collapse_items.union(value_collapse_items) - value_keep_items - value_drop_items
+        if official_coverage:
+            #-Check Official Codes that don't have complete intertemporal coverage-#
+            table["OC"] = table["OfficialNotIC-ING"].apply(lambda x: "OC" if x else ".")
+            table["JVCOC"] = table[["VC", "OC"]].apply(lambda row: "OC" if (row["VC"]!=".")&(row["OC"]=="OC") else ".", axis=1)
+            official_coverage_collapse = set(table.loc[table.JVCOC == "OC"]["sitc%s"%self.level].unique())
+            #-Adjust-#
+            drop_items = drop_items - official_coverage_collapse
+            collapse_items = collapse_items.union(official_coverage_collapse)
         if include_special:
             #-Update with Special Codes Set Manually-#
             from .meta import IntertemporalProducts 
             special_drop = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["drop"])
             special_collapse = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["collapse"])
             special_keep = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["keep"])
+            recode = IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["recode"]                     #Dictionary
+            special_recode = set(recode.keys())
             table["SP"] = table["sitc%s"%self.level].apply(lambda x: "SK" if x in special_keep else ".")
             table["SP"] = table[["sitc%s"%self.level,"SP"]].apply(lambda row: "SC" if row["sitc%s"%self.level] in special_collapse else row["SP"], axis=1)
             table["SP"] = table[["sitc%s"%self.level,"SP"]].apply(lambda row: "SD" if row["sitc%s"%self.level] in special_drop else row["SP"], axis=1)
+            table["SP"] = table[["sitc%s"%self.level,"SP"]].apply(lambda row: "SR" if row["sitc%s"%self.level] in special_recode else row["SP"], axis=1)
             if verbose: 
                 print "[INFO] Integrating Special Requests ..."
                 print "special_drop = %s" % special_drop
                 print "special_collapse = %s" % special_collapse
                 print "special_keep = %s" % special_keep
             #-Adjust-#
-            drop_items = drop_items.union(special_drop) - special_keep
-            collapse_items = collapse_items.union(special_collapse) - special_keep - special_drop
+            drop_items = drop_items.union(special_drop) - special_keep - special_recode
+            collapse_items = collapse_items.union(special_collapse) - special_keep - special_drop - special_recode
         #-Final Rule-#
         table["RULE"] = "K"     #Default Rule
         table["RULE"] = table[["sitc%s"%self.level,"RULE"]].apply(lambda row: "C" if row["sitc%s"%self.level] in collapse_items else row["RULE"], axis=1)
+        if include_special:
+            table["RULE"] = table[["sitc%s"%self.level,"RULE"]].apply(lambda row: "R(%s)"%recode[row["sitc%s"%self.level]] if row["sitc%s"%self.level] in special_recode else row["RULE"], axis=1)    
         table["RULE"] = table[["sitc%s"%self.level,"RULE"]].apply(lambda row: "D" if row["sitc%s"%self.level] in drop_items else row["RULE"], axis=1)
-        # table["CHECK"] = table[["VC", "RULE"]].apply(lambda row: "<-- CHECK" if (row["VC"]=="VK")&(row["RULE"]=="C") else "", axis=1)
         warnings.warn("This requires a manual check in the event some K's should in fact be C due to the presence of nested within group SITCR2")
         table["CHECK"] = table[["C", "VC", "RULE"]].apply(lambda row: "<-- CHECK" if (row["VC"]=="VK")&(row["C"]=="C") else "", axis=1)
-        # --> DELETION <-- #
-        # - !! - MANUAL CHECK - !! - #
-        # warnings.warn("This requires a manual check in the event some K's should in fact be C due to the presence of nested within group SITCR2")
-        # table["RULE"] = table[["VC", "RULE"]].apply(lambda row: "K" if row["VC"] == "VK" else row["RULE"], axis=1)
-        # - !! - END MANUAL CHECK - !! - #
-        #-Adjust Rule for VC-#
-        # allsitcr2ing = all_sitcr2_in_group(table, level=self.level, column="VC")
-        # table["RULE"] = table[["sitc%s"%self.level, "VC", "RULE"]].apply(lambda row: "K" if check_vc_rule(allsitcr2ing, row) == True else row["RULE"], axis=1)
-        # --> END DELETION <-- #
         #-Sortedness-#
         drop_items = sorted(drop_items)
         collapse_items = sorted(collapse_items)
@@ -3161,6 +3171,7 @@ class NBERWTFConstructor(NBERWTF):
             print "Overall (Intertemporal Adjustments)"
             print "[INFO] Dropping Rows with SITC Codes: %s" % drop_items
             print "[INFO] Collapsing Rows with SITC Codes: %s" % collapse_items
+            print "[INFO] "
         if return_table:
             return drop_items, collapse_items, table.set_index(idx)
         else:
