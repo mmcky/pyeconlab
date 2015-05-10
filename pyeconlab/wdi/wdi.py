@@ -28,7 +28,7 @@ codes = WDISeriesCodes()
 
 ### --- WDI Data Class --- ###
 
-# source_dir="D:/work-data/datasets/d1352f394ef8e7519797214f52ccd7cc/" (current local address)
+# source_dir="D:/work-data/datasets/70146f20cf40f818e6733d552c6cabb5/" (current local address)
 
 class WDI(object):
     """
@@ -65,7 +65,7 @@ class WDI(object):
 
     >>> import pyeconlab
     >>> wdi = pyeconlab.wdi.WDI(source_dir="<path_to_file>")
-    >>> wdi.lookup_series(regex="GDP")
+    >>> wdi.lookup_series(regexp="GDP")
     [('NE.CON.GOVT.ZS',
       'General government final consumption expenditure (% of GDP)'),
      ('NY.GDP.PCAP.KD.ZG', 'GDP per capita growth (annual %)'),
@@ -395,7 +395,7 @@ class WDI(object):
 if __name__ == '__main__':
     print "WDI Library Test Script"
     print
-    W = WDI('WDI_Data.csv',source_ds='d1352f394ef8e7519797214f52ccd7cc', hash_file_sep=r' ', verbose=True)
+    W = WDI('WDI_Data.csv',source_ds='70146f20cf40f818e6733d552c6cabb5', hash_file_sep=r' ', verbose=True)
     # - Test Info Method - #
     W.info()
     

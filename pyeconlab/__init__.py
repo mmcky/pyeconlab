@@ -1,6 +1,6 @@
-'''
-	Package: PyEconLab
-'''
+"""
+Package: PyEconLab
+"""
 
 from __future__ import division
 
@@ -8,7 +8,10 @@ from __future__ import division
 #-Datasets-#
 #----------#
 
-#-Specific-#
+#-World Development Indicators-#
+from .wdi import WDI
+
+#-Trade Datasets-#
 #-NBERWTF-#
 from pyeconlab.trade import NBERWTFConstructor, NBERWTFTradeData, NBERWTFExportData, NBERWTFImportData
 #-BACI-#
