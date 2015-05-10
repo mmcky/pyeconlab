@@ -4,9 +4,9 @@ Meta Subpackage for WDI
 
 
 class WDISeriesCodes():
-	'''
-		Container for WDI Series Codes (World Bank)
-	'''
+	"""
+	Container for Easy to Remember WDI Series Codes (World Bank)
+	"""
 	GDP = r'NY.GDP.MKTP.CD'
 	GDPPC = r'NY.GDP.PCAP.CD'
 	GDPGrowth = r'NY.GDP.MKTP.KD.ZG'

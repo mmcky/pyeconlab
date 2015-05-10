@@ -22,6 +22,7 @@ import re
 import pandas as pd
 import itertools as it
 import pprint
+import warnings
 
 from .meta import WDISeriesCodes, CodeToName
 codes = WDISeriesCodes()
@@ -137,6 +138,7 @@ class WDI(object):
             name, iso3c, series_description, series_code, years(t), ... ,years(T)
 
         """
+        warnings.warn("This assumes the incoming file has the following structure ...\nname, iso3c, series_description, series_code, years(t), ... ,years(T)")
         # Rename Vars #
         cols = list(df.columns)
         cols[0] = 'name'                                                    #WARNING: Currently assume this order from the file for the first 4 columns
@@ -161,6 +163,27 @@ class WDI(object):
         df.set_index(keys=['iso3c', 'series_code'], inplace=True)
         df.columns.names = ['year']
         return df                                                       #Q: Should this set self.data?
+
+    def to_stata(self, fl="", table_type="wide"):
+        """
+        Make Stata DTA File of the Data
+        """
+        stata_data = self.data.copy(deep=True)
+        if table_type == "long":   
+            if fl=="":
+                fl = "wdi_data_long.dta"            
+            stata_data = stata_data.stack().reset_index()                   #Series
+            stata_data.rename_axis({0:'value'}, inplace=True, axis=1)
+            stata_data.to_stata(fl, write_index=False)
+        elif table_type == "wide":
+            if fl=="":
+                fl = "wdi_data_wide.dta"
+            stata_data.columns = ['Y'+col for col in stata_data.columns]    #Stata Friendly Column Names
+            stata_data = stata_data.reset_index()
+            stata_data.to_stata(fl, write_index=False)
+        else:
+            raise ValueError("table_type must be `long` or `wide`")
+        del stata_data
 
     ## -- Getter Methods -- ##
 
