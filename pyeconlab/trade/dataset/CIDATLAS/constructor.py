@@ -35,7 +35,7 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
         source_dir              :   str
                                     Specify source directory containing raw tsv files
         trade_classification    :   str
-                                    Type of Source Files to Load ["SITC", "HS"]
+                                    Type of Source Files to Load ["SITCR2", "HS92"]
         dtype                   :   str
                                     Specify Data Type to work with ["trade", "export", "import"]
         years                   :   list, optional(default=[])
