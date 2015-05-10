@@ -18,6 +18,10 @@ Future Work
 1. Write Tests comparing this with constructor_dataset_sitcr2l3 and constructor_dataset_sitcr2l4 (to see if I can remove others)
 2. Write Independant Tests
 
+Note
+----
+Current Country RECODES adjust for all timeperiods using 1962 to 2000 meta data!
+
 """
 
 #-Library Imports-#
