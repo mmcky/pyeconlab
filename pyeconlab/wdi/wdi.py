@@ -184,6 +184,28 @@ class WDI(object):
         else:
             raise ValueError("table_type must be `long` or `wide`")
         del stata_data
+        return fl
+
+    def to_hdf(self, fl=""):
+        """
+        Make HDF File with Long and Wide WDI Data
+        """
+        if fl == "":
+            fl = "wdi_data.h5"
+        store = pd.HDFStore(fl, complevel=9, complib='zlib')
+        #-Long Data-#
+        hdf_long = self.data.copy(deep=True).stack().reset_index()
+        hdf_long.rename_axis({0:'value'}, inplace=True, axis=1)
+        store.put('long', hdf_long, format='table')
+        del hdf_long
+        #Wide Data-#
+        hdf_wide = self.data.copy(deep=True)
+        hdf_wide.columns = ['Y'+col for col in hdf_wide.columns]    #Stata Friendly Column Names
+        hdf_wide = hdf_wide.reset_index()
+        store.put('wide', hdf_wide, format='table')
+        del hdf_wide
+        store.close()
+        return fl
 
     ## -- Getter Methods -- ##
 
