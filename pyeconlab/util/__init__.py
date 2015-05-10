@@ -10,3 +10,4 @@ from .dataframe 	import  recode_index, random_sample, merge_columns, update_oper
                         	compute_number_of_spells, compute_spell_lengths, assert_merged_series_items_equal, check_merged_series_items_equal,         \
                         	mark_duplicates, compare_idx_items, compare_dataframe_rows
 from .concordance 	import 	countryname_concordance, concord_data
+from .hdf 			import 	convert_hdf_to_stata
