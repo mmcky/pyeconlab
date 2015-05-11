@@ -19,4 +19,5 @@ def convert_hdf_to_stata(source_hdf, target_dir="", verbose=True):
 			fln = target_dir + fln
 		fls.append(fln)
 		data.to_stata(fln, write_index=False)
+		del data
 	return fls
