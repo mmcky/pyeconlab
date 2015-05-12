@@ -439,6 +439,10 @@ class IntertemporalProducts(object):
 	#-Static Version of the intertemporal_productcode_lists() method NormAvg=1, RowMax=4-#
 	#------------------------------------------------------------------------------------#
 
+	# Manual Component:
+	# The recode section is done manually based on observing the mix of rules produced by intertemporal_productcode_lists() to get an intertemporal productcoding across all countries
+	# !! - If "drop" and "collapse" need to be updated then the recode codes need to be removed MANUALLY
+
 	IC6200 = {
 		#-SITCL4-#
 		4 : 	{
