@@ -62,6 +62,9 @@ codebook CHECK
 di "These need to be investigated as . values"
 drop CHECK
 
+/// Current Issues with RESHAPE and Uniqueness ///
+duplicates tag year eiso3c iiso3c sitc4, generate(dup)
+
 count
 rename export_val val_export
 rename import_val val_import
