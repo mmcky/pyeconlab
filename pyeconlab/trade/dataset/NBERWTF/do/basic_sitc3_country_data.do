@@ -207,7 +207,11 @@ foreach item of global DATASETS {
 	drop sitc3
 	duplicates drop
 	save "sitc3_intertemporal_collapse.dta", replace
-
+	chewfile using "$META/csv/intertemporal_sitc3_for_1962_2000_recode.csv", clear parse(",")
+	drop in 1/1
+	rename var1 sitc3
+	rename var2 target
+	save "sitc3_intertemporal_recode.dta", replace
 
 	**Concordance for Intertemporal Country Adjustments for 1962 to 2000**
 	**A concordance to AGGREGATE country groups to be consistent over time between 1962 to 2000**
@@ -312,6 +316,11 @@ foreach item of global DATASETS {
 		merge m:1 sitc2 using "sitc3_intertemporal_collapse.dta"
 		replace sitc3 = sitc2+"0" if _merge == 3
 		drop _merge sitc2
+		collapse (sum) value, by(year eiso3c iiso3c sitc3)
+		// Recode Products 
+		merge m:1 sitc3 using "sitc3_intertemporal_recode.dta", keepusing(target)
+		replace sitc3 = target if _merge == 3
+		drop target _merge
 		collapse (sum) value, by(year eiso3c iiso3c sitc3)
 		//Log Check
 		preserve
@@ -512,6 +521,11 @@ foreach item of global DATASETS {
 		replace sitc3 = sitc2+"0" if _merge == 3
 		drop _merge
 		collapse (sum) value, by(year eiso3c sitc3)
+		// Recode Products 
+		merge m:1 sitc3 using "sitc3_intertemporal_recode.dta", keepusing(target)
+		replace sitc3 = target if _merge == 3
+		drop target _merge
+		collapse (sum) value, by(year eiso3c sitc3)
 		//Log Check
 		preserve
 		collapse (sum) value, by(year)
@@ -704,6 +718,11 @@ foreach item of global DATASETS {
 		merge m:1 sitc2 using "sitc3_intertemporal_collapse.dta"
 		replace sitc3 = sitc2+"0" if _merge == 3
 		drop _merge
+		collapse (sum) value, by(year iiso3c sitc3)
+		// Recode Products 
+		merge m:1 sitc3 using "sitc3_intertemporal_recode.dta", keepusing(target)
+		replace sitc3 = target if _merge == 3
+		drop target _merge
 		collapse (sum) value, by(year iiso3c sitc3)
 		//Log Check
 		preserve
