@@ -252,7 +252,7 @@ if $SITCDATA == 1 {
 		collapse (sum) value, by(year eiso3c sitc`level')
 		save "raw/cidatlas_sitcr2l`level'_export_1962to2012.dta", replace
 		// Import //
-		use "cidatlas_sitcr2l4_import_1962to2012.dta", clear
+		use "raw/cidatlas_sitcr2l4_import_1962to2012.dta", clear
 		gen sitc`level' = substr(sitc4,1,`level')
 		collapse (sum) value, by(year iiso3c sitc`level')
 		save "raw/cidatlas_sitcr2l`level'_import_1962to2012.dta", replace
@@ -273,10 +273,10 @@ if $SITCCOUNTRYDATA == 1 {
 	***----------------***
 	
 	use "raw/cidatlas_sitcr2l4_trade_1962to2012.dta", clear
-	merge m:1 eiso3c using "cidatlas_countryonly_meta.dta", keepusing(master)
+	merge m:1 eiso3c using "cidatlas_countryonly_meta.dta", keepusing(marker)
 	keep if marker == 1
 	drop marker _merge
-	merge m:1 iiso3c using "cidatlas_countryonly_meta.dta", keepusing(master)
+	merge m:1 iiso3c using "cidatlas_countryonly_meta.dta", keepusing(marker)
 	keep if marker == 1
 	drop marker _merge
 	save "cidatlas_sitcr2l4_trade_1962to2012.dta", replace
@@ -522,7 +522,7 @@ if $HSCOUNTRYDATA == 1 {
 	merge m:1 eiso3c using "cidatlas_countryonly_meta.dta", keepusing(marker)
 	keep if marker == 1
 	drop marker _merge
-	save "cidatlas_hs92l4_export_1995to2012.dta", clear
+	save "cidatlas_hs92l4_export_1995to2012.dta", replace
 	
 	//Exports RCA Dataset//
 	use "raw/cidatlas_hs92l4_export_rca_1995to2012.dta", clear
