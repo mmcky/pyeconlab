@@ -164,7 +164,7 @@ class WDI(object):
         df.columns.names = ['year']
         return df                                                       #Q: Should this set self.data?
 
-    def to_stata(self, fl="", table_type="wide"):
+    def to_stata(self, fl="", table_type="wide", target_dir="./"):
         """
         Make Stata DTA File of the Data
         """
@@ -174,25 +174,25 @@ class WDI(object):
                 fl = "wdi_data_long.dta"            
             stata_data = stata_data.stack().reset_index()                   #Series
             stata_data.rename_axis({0:'value'}, inplace=True, axis=1)
-            stata_data.to_stata(fl, write_index=False)
+            stata_data.to_stata(os.path.expanduser(target_dir) + fl, write_index=False)
         elif table_type == "wide":
             if fl=="":
                 fl = "wdi_data_wide.dta"
             stata_data.columns = ['Y'+col for col in stata_data.columns]    #Stata Friendly Column Names
             stata_data = stata_data.reset_index()
-            stata_data.to_stata(fl, write_index=False)
+            stata_data.to_stata(os.path.expanduser(target_dir) + fl, write_index=False)
         else:
             raise ValueError("table_type must be `long` or `wide`")
         del stata_data
         return fl
 
-    def to_hdf(self, fl=""):
+    def to_hdf(self, fl="", target_dir ="./"):
         """
         Make HDF File with Long and Wide WDI Data
         """
         if fl == "":
             fl = "wdi_data.h5"
-        store = pd.HDFStore(fl, complevel=9, complib='zlib')
+        store = pd.HDFStore(os.path.expanduser(target_dir) + fl, complevel=9, complib='zlib')
         #-Long Data-#
         hdf_long = self.data.copy(deep=True).stack().reset_index()
         hdf_long.rename_axis({0:'value'}, inplace=True, axis=1)
