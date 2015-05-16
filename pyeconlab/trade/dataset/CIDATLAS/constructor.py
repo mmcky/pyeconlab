@@ -267,6 +267,19 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             if verbose: print "[INFO] ... dropping iiso3c codes %s" % drop_list
             self.dataset = self.dataset.loc[self.dataset["iiso3c"].isin(keep_list)]
 
+    # def to_level(self, level, verbose=True):
+    #     """ Drop Dataset to a Specified Level"""
+    #     if level >= self.level:
+    #         raise ValueError("Level (%s) is the same or higher for data already in the dataset! Must be less than %s" (level, self.level))
+    #     if self.classification == "SITCR2":
+    #         self.dataset["sitc%s"%level] = self.dataset["sitc%s"%self.level].apply(lambda x: x[0:level])
+    #         self.dataset = self.dataset.groupby()
+    #     elif self.classification == "HS92":
+
+    #     else:
+    #         raise ValueError("Classification is SITCR2 or HS92")
+
+
     #-To Methods-#
 
     def attach_attributes_to_dataset(self, df):
