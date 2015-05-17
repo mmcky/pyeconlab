@@ -243,8 +243,10 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
         #-Fix ISO3C Codes-#
         if self.dtype == "export" or self.dtype == "trade":
             self.dataset["eiso3c"] = self.dataset["eiso3c"].apply(lambda x: x.upper())
+            gc.collect()
         if self.dtype == "import" or self.dtype == "trade":
             self.dataset["iiso3c"] = self.dataset["iiso3c"].apply(lambda x: x.upper())
+            gc.collect()
 
     # def construct_rca_dataset(self, verbose=True):
     #     """ Construct RCA Datasets """
@@ -266,12 +268,14 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             keep_list = country_list.difference(set(iso3c_notcountries))
             if verbose: print "[INFO] ... dropping eiso3c codes %s" % drop_list
             self.dataset = self.dataset.loc[self.dataset["eiso3c"].isin(keep_list)]
+            gc.collect()
         if self.dtype == "import" or self.dtype == "trade":
             country_list = set(self.dataset.iiso3c.unique())
             drop_list = country_list.intersection(set(iso3c_notcountries))
             keep_list = country_list.difference(set(iso3c_notcountries))
             if verbose: print "[INFO] ... dropping iiso3c codes %s" % drop_list
             self.dataset = self.dataset.loc[self.dataset["iiso3c"].isin(keep_list)]
+            gc.collect()
 
     # def to_level(self, level, verbose=True):
     #     """ Drop Dataset to a Specified Level"""
