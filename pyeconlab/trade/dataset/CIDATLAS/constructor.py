@@ -147,6 +147,8 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
         """ Load Raw Data from HDF Cache """
         #-Data Type-#
         hdf_fn = self.__source_dir + self.__cache_dir + "cidatlas_%s_%s_year.h5" % (self.classification, self.dtype) 
+        if not os.path.exists(hdf_fn):
+            self.load_raw_from_tsv(verbose=verbose)
         #-Data-#
         self.__raw_data = pd.DataFrame()  
         for year in self.years:
