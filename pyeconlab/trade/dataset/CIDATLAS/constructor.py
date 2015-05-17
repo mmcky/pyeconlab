@@ -50,9 +50,6 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
         standardize_dataset     :   bool, optional(default=False)
                                     Standardize dataset into Trade, Export, Import Values Only from RAW Files.
 
-        Notes 
-        -----
-        1. Not implementing a cache_dir
         """
         #-Setup Attributes-#
         self.name = "Atlas Of Complexity (CID) Dataset"
@@ -92,6 +89,7 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             self.__raw_data = None
         else:
             self.dataset = self.__raw_data.copy(deep=True)                
+        
         #-Standardize-#
         if standardize_dataset:
             self.construct_standardized_dataset()
@@ -171,6 +169,7 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
     def construct_standardized_dataset(self, verbose=True):
         """ Construct a Standardized Dataset """
         if verbose: print "[INFO] Running .construct_standardized_dataset()"
+        gc.collect()
         #-Reshape Data Contents and Fix Names-#
         if self.dtype == "trade":
             #-Export Data-#
@@ -193,6 +192,7 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             imports = self.dataset[import_cols].copy()
             imports.rename(columns=import_recodes, inplace=True)
             del self.dataset
+            gc.collect()
             #-Combine-#
             if self.classification == "HS92":
                 productcode = u'hs4'
@@ -200,8 +200,12 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
                 productcode = u'sitc4'
             order = [u'year', u'eiso3c', u'iiso3c', productcode, u'value']
             self.dataset = exports.append(imports)[order]
+            del exports
+            del imports
+            gc.collect()
             self.dataset = self.dataset.reset_index()
             del self.dataset["index"]
+            gc.collect()
             #-Checks-#
             assert 2*olength == self.dataset.shape[0]
             self.dataset.dropna(inplace=True)                   #More Memory Efficient
