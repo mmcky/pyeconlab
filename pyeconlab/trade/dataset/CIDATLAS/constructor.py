@@ -199,6 +199,8 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             elif self.classification == "SITCR2":
                 productcode = u'sitc4'
             order = [u'year', u'eiso3c', u'iiso3c', productcode, u'value']
+            del self.dataset
+            gc.collect()
             self.dataset = exports.append(imports)[order]
             del exports
             del imports
