@@ -169,9 +169,6 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
     def construct_standardized_dataset(self, verbose=True):
         """ Construct a Standardized Dataset """
         if verbose: print "[INFO] Running .construct_standardized_dataset()"
-        #-DropNA-#
-        self.dataset.dropna(inplace=True)                   #More Memory Efficient
-        gc.collect()
         #-Reshape Data Contents and Fix Names-#
         if self.dtype == "trade":
             olength = self.dataset.shape[0]
