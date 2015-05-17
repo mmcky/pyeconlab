@@ -169,18 +169,20 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
     def construct_standardized_dataset(self, verbose=True):
         """ Construct a Standardized Dataset """
         if verbose: print "[INFO] Running .construct_standardized_dataset()"
+        #-DropNA-#
+        self.dataset.dropna(inplace=True)                   #More Memory Efficient
         gc.collect()
         #-Reshape Data Contents and Fix Names-#
         if self.dtype == "trade":
-            #-Export Data-#
             olength = self.dataset.shape[0]
+            #-Export Data-#
             export_cols = self.dataset.columns.drop("import_val")
             export_recodes = {
                 "origin" : "eiso3c",
                 "destination" : "iiso3c",
                 "export_val"  : "value",
             }
-            exports = self.dataset[export_cols].copy()
+            exports = self.dataset[export_cols]
             exports.rename(columns=export_recodes, inplace=True)
             #-Import Data-#
             import_cols = self.dataset.columns.drop("export_val")
@@ -189,7 +191,7 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
                 "destination" : "eiso3c",
                 "import_val" : "value",
             }
-            imports = self.dataset[import_cols].copy()
+            imports = self.dataset[import_cols]
             imports.rename(columns=import_recodes, inplace=True)
             del self.dataset
             gc.collect()
@@ -199,18 +201,14 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             elif self.classification == "SITCR2":
                 productcode = u'sitc4'
             order = [u'year', u'eiso3c', u'iiso3c', productcode, u'value']
-            del self.dataset
-            gc.collect()
             self.dataset = exports.append(imports)[order]
             del exports
             del imports
             gc.collect()
             self.dataset = self.dataset.reset_index()
             del self.dataset["index"]
-            gc.collect()
             #-Checks-#
             assert 2*olength == self.dataset.shape[0]
-            self.dataset.dropna(inplace=True)                   #More Memory Efficient
             gc.collect()
         elif self.dtype == "export":
             olength = self.dataset.shape[0]
@@ -225,8 +223,6 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             self.dataset = exports
             #-Checks-#
             assert olength == self.dataset.shape[0]          
-            self.dataset.dropna()
-            gc.collect()
         elif self.dtype == "import":
             olength = self.dataset.shape[0]
             import_cols = self.dataset.columns.drop(["export_val", "export_rca"])
@@ -240,8 +236,6 @@ class CIDAtlasDataConstructor(AtlasOfComplexity):
             self.dataset = imports
             #-Checks-#
             assert olength == self.dataset.shape[0]
-            self.dataset.dropna()
-            gc.collect()
         #-Fix ISO3C Codes-#
         if self.dtype == "export" or self.dtype == "trade":
             self.dataset["eiso3c"] = self.dataset["eiso3c"].apply(lambda x: x.upper())
