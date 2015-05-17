@@ -10,6 +10,7 @@ from __future__ import division
 
 #-World Development Indicators-#
 from .wdi import WDI
+from .penn import PENN
 
 #-Trade Datasets-#
 #-NBERWTF-#

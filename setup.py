@@ -28,6 +28,8 @@ setup(
                'pyeconlab.trade.research',
   			       'pyeconlab.wdi',
                'pyeconlab.wdi.meta',
+               'pyeconlab.penn',
+               'pyeconlab.penn.meta',
   			  ], 
   package_data =  { 'pyeconlab.country' : ['data/*.xls', 'data/*.xml'],
                     'pyeconlab.trade.dataset.CEPIIBACI.meta' : ['meta/*.py', 'meta/curated/*.csv'],
