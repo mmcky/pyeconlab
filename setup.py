@@ -16,11 +16,12 @@ setup(
   			       'pyeconlab.trade',
   			       'pyeconlab.trade.dataset',
                'pyeconlab.trade.dataset.CEPIIBACI',
-               'pyeconlab.trade.dataset.CEPIIBACI.meta',  #Really?
+               'pyeconlab.trade.dataset.CEPIIBACI.meta',
                'pyeconlab.trade.dataset.NBERWTF',
-               'pyeconlab.trade.dataset.NBERWTF.meta',    #Really?
+               'pyeconlab.trade.dataset.NBERWTF.meta', 
                'pyeconlab.trade.dataset.CIDATLAS',
                'pyeconlab.trade.dataset.CIDATLAS.meta',
+               'pyeconlab.trade.dataset.meta',
                'pyeconlab.trade.classification',
                'pyeconlab.trade.concordance',
                'pyeconlab.trade.systems',
