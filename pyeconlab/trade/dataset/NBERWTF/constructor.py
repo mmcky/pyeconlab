@@ -3046,7 +3046,7 @@ class NBERWTFConstructor(NBERWTF):
             del table["NotIntertempConsistent"]
         return table
 
-    def intertemporal_productcode_lists(self, tabletype="value", return_table=False, include_special=True, value_check=(True, 1, 4), official_coverage=True, verbose=True):
+    def intertemporal_productcode_lists(self, tabletype="value", return_table=False, include_special=(True, "6200"), value_check=(True, 1, 4), official_coverage=True, verbose=True):
         """
         Return a list of items to Drop and Collapse to Produce an Intertemporally Consistent Set of Codes for NBER
 
@@ -3080,6 +3080,9 @@ class NBERWTFConstructor(NBERWTF):
  
         #-Core-#
         value_check, rowavgnorm, rowmax = value_check
+        if include_special == True:                 #Allow include Special to be specified as True
+            include_special = (True, "6200")        #Default: 1962 to 2000
+        include_special, SpecialCase = include_special
         table = self.intertemporal_productcode_simple_adjustments_table(tabletype=tabletype, low_value_settings=(rowavgnorm, rowmax), verbose=verbose)
         idx = list(table.index.names)
         table = table.reset_index()
@@ -3138,11 +3141,25 @@ class NBERWTFConstructor(NBERWTF):
             collapse_items = collapse_items.union(official_coverage_collapse)
         if include_special:
             #-Update with Special Codes Set Manually-#
-            from .meta import IntertemporalProducts 
-            special_drop = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["drop"])
-            special_collapse = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["collapse"])
-            special_keep = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["keep"])
-            recode = IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["recode"]                     #Dictionary
+            from .meta import IntertemporalProducts
+            if SpecialCase == "6200":  
+                print "[INFO] Using special cases for IC6200"
+                special_drop = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["drop"])
+                special_collapse = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["collapse"])
+                special_keep = set(IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["keep"])
+                recode = IntertemporalProducts().IC6200SpecialCases["L%s"%self.level]["recode"]                     #Dictionary
+            elif SpecialCase == "7400":
+                print "[INFO] Using special cases for IC7400"
+                special_drop = set(IntertemporalProducts().IC7400SpecialCases["L%s"%self.level]["drop"])
+                special_collapse = set(IntertemporalProducts().IC7400SpecialCases["L%s"%self.level]["collapse"])
+                special_keep = set(IntertemporalProducts().IC7400SpecialCases["L%s"%self.level]["keep"])
+                recode = IntertemporalProducts().IC7400SpecialCases["L%s"%self.level]["recode"]                     #Dictionary
+            elif SpecialCase == "8400":
+                print "[INFO] Using special cases for IC8400"
+                special_drop = set(IntertemporalProducts().IC8400SpecialCases["L%s"%self.level]["drop"])
+                special_collapse = set(IntertemporalProducts().IC8400SpecialCases["L%s"%self.level]["collapse"])
+                special_keep = set(IntertemporalProducts().IC8400SpecialCases["L%s"%self.level]["keep"])
+                recode = IntertemporalProducts().IC8400SpecialCases["L%s"%self.level]["recode"]                     #Dictionary            
             special_recode = set(recode.keys())
             table["SP"] = table["sitc%s"%self.level].apply(lambda x: "SK" if x in special_keep else ".")
             table["SP"] = table[["sitc%s"%self.level,"SP"]].apply(lambda row: "SC" if row["sitc%s"%self.level] in special_collapse else row["SP"], axis=1)
@@ -3153,6 +3170,7 @@ class NBERWTFConstructor(NBERWTF):
                 print "special_drop = %s" % special_drop
                 print "special_collapse = %s" % special_collapse
                 print "special_keep = %s" % special_keep
+                print "special_recode = %s" % special_recode
             #-Adjust-#
             drop_items = drop_items.union(special_drop) - special_keep - special_recode
             collapse_items = collapse_items.union(special_collapse) - special_keep - special_drop - special_recode
@@ -3171,7 +3189,6 @@ class NBERWTFConstructor(NBERWTF):
             print "Overall (Intertemporal Adjustments)"
             print "[INFO] Dropping Rows with SITC Codes: %s" % drop_items
             print "[INFO] Collapsing Rows with SITC Codes: %s" % collapse_items
-            print "[INFO] "
         if return_table:
             return drop_items, collapse_items, table.set_index(idx)
         else:
