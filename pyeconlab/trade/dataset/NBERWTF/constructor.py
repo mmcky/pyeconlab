@@ -3080,8 +3080,6 @@ class NBERWTFConstructor(NBERWTF):
  
         #-Core-#
         value_check, rowavgnorm, rowmax = value_check
-        if include_special == True:                 #Allow include Special to be specified as True
-            include_special = (True, "6200")        #Default: 1962 to 2000
         include_special, SpecialCase = include_special
         table = self.intertemporal_productcode_simple_adjustments_table(tabletype=tabletype, low_value_settings=(rowavgnorm, rowmax), verbose=verbose)
         idx = list(table.index.names)
