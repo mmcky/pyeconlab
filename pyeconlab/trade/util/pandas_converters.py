@@ -157,3 +157,11 @@ def reindex_dynamic_dataframe(df, year_pairs='years', verbose=False):
     new_df = df.copy()
     new_df.index = new_index
     return new_df
+
+def reindex_multi_to_single(df):
+    df.index = pd.Index(df.index)
+    return df
+
+def reindex_single_to_multi(df):
+    df.index = pd.MultiIndex.from_tuples(df.index)
+    return df
