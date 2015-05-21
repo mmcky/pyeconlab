@@ -60,35 +60,35 @@ from ProductLevelExportSystem import *
 NUM_CORES = 4
 
 class DynamicProductLevelExportSystem(object):
-	'''
-		Dynamic System of Product Level Export Data [X(year,country,product,value), M(year,country,product,value)]
-		Conventions:
-		------------ 
-			[1] Incoming Edge = Import & Outgoing Edge = Export
-		
-		Types: 
-			Dict{ 'Year' : BiPartiteGraph('country' -> 'product', edge = values)}
-			Dict{ 'Year' : MultiDiGraph('country' -> 'world', edge = product object)}
+	"""
+	Dynamic System of Product Level Export Data [X(year,country,product,value), M(year,country,product,value)]
+	Conventions:
+	------------ 
+		[1] Incoming Edge = Import & Outgoing Edge = Export
+	
+	Types: 
+		Dict{ 'Year' : BiPartiteGraph('country' -> 'product', edge = values)}
+		Dict{ 'Year' : MultiDiGraph('country' -> 'world', edge = product object)}
 
-		Input: <year>, <exporter>, <importer>, <product>, <value>
+	Input: <year>, <exporter>, <importer>, <product>, <value>
 
 
-		Notes:
-		-----
-			[1] Class Needs to Extend object for Properties to work correctly
+	Notes:
+	-----
+		[1] Class Needs to Extend object for Properties to work correctly
 
-		Questions:
-		----------
-			[1] Should Class Properties return Dictionaries or DataFrames? [Currently Dictionaries]
-				Could set a return_type in the class. self.return_df = False / True
-				Dictionaries are useful for simple year filters etc. (Can use return_dataframe() to get a dataframe)
+	Questions:
+	----------
+		[1] Should Class Properties return Dictionaries or DataFrames? [Currently Dictionaries]
+			Could set a return_type in the class. self.return_df = False / True
+			Dictionaries are useful for simple year filters etc. (Can use return_dataframe() to get a dataframe)
 
-		Future Work:
-		-----------
-			[1] Improve Complete_trade_network attribute to reflect true for ALL cross-sections (i.e. [True, True, True .... True])
-				A.complete_trade_network = True would set complete_trade_network = True for All PLES (SETTER METHOD)
-			[2] Remove #self.ples[year].complete_trade_network = self.complete_trade_network from matrices_constructor() methods
-	'''
+	Future Work:
+	-----------
+		[1] Improve Complete_trade_network attribute to reflect true for ALL cross-sections (i.e. [True, True, True .... True])
+			A.complete_trade_network = True would set complete_trade_network = True for All PLES (SETTER METHOD)
+		[2] Remove #self.ples[year].complete_trade_network = self.complete_trade_network from matrices_constructor() methods
+	"""
 	
 	## -- Base Class Functions -- ##
 
@@ -120,7 +120,6 @@ class DynamicProductLevelExportSystem(object):
 		if re.search("\.csv", fn):
 			print "[NOTICE] Populating Object from csv file with default kwargs: %s (May use .from_csv() method for more options)" % fn
 			self.from_csv(fn, replace=replace, verbose=verbose)
-
 
 
  	## -- Python Class Methods -- ##
@@ -165,20 +164,27 @@ class DynamicProductLevelExportSystem(object):
 		return data
 
 	def get_data(self, year=None, rtype=dict, order=['year', 'country', 'productcode'], sort_index=True, verbose=False):
-		'''
-			More complete get method for ProductLevelExportSystem.data
-			
-			Options:
-			-------
-				[1] year 			=> 	Obtain Year Specific Data
-			if year == None:
-				[2] rtype 	 	=>  'dict' : {year : DataFrame} 	[Default]
-									'long' : pd.DataFrame() - 'Long Format'
-									'wide' : pd.DataFrame() - 'Wide Format'
-									'panel': pd.Panel()
-				[3] order 			=>  Specify an Index Order for 'Long Format'
-				[4] sort 			=> 	Return Sorted Objects [Default = True]
-		'''
+		"""
+		More complete get method for ProductLevelExportSystem.data
+		
+		Parameters:
+		-----------
+			year 	: 	int, optional(default==None)
+						Obtain Year Specific Data
+		
+		if year == None
+		~~~~~~~~~~~~~~~
+		 	rtype 	: 	type, optional(default=dict)
+		 				'dict' : {year : DataFrame}
+						'long' : pd.DataFrame() - 'Long Format'
+						'wide' : pd.DataFrame() - 'Wide Format'
+						'panel': pd.Panel()
+			order 	: 		list, optional(default=['year', 'country', 'productcode'])
+							Specify an Index Order for 'Long Format'
+			sort_index 	: 	optional(default=True)
+							Return Sorted Objects [Default = True]
+
+		"""
 		if year == None:
 			# - Return ALL years within the Panel - #
 			if rtype == dict: 											#Default Behaviour
@@ -274,20 +280,27 @@ class DynamicProductLevelExportSystem(object):
 		return data	
 
 	def get_proximity(self, year=None, rtype=dict, order=['year', 'productcode1', 'productcode2'], sort_index=True, verbose=False):
-		'''
-			More complete get method for ProductLevelExportSystem.proximity
-			
-			Options:
-			-------
-				[1] year 			=> 	Obtain Year Specific Data
-			IF year == None:
-				[2] rtype 	=>  'dict' : {year : DataFrame}
-										'long' : pd.DataFrame() - 'Long Format'
-										'wide' : pd.DataFrame() - 'Wide Format'
-										'panel': pd.Panel()
-				[3] order 			=>  Specify an Index Order for 'Long Format'
-				[4] sort 			=> 	Return Sorted Objects [Default = True]
-		'''
+		"""
+		More complete get method for ProductLevelExportSystem.proximity
+		
+		Parameters:
+		-----------
+			year 	: 	int, optional(default==None)
+						Obtain Year Specific Data
+		
+		if year == None
+		~~~~~~~~~~~~~~~
+		 	rtype 	: 	type, optional(default=dict)
+		 				'dict' : {year : DataFrame}
+						'long' : pd.DataFrame() - 'Long Format'
+						'wide' : pd.DataFrame() - 'Wide Format'
+						'panel': pd.Panel()
+			order 	: 		list, optional(default=['year', 'productcode1', 'productcode2'])
+							Specify an Index Order for 'Long Format'
+			sort_index 	: 	optional(default=True)
+							Return Sorted Objects [Default = True]
+
+		"""
 		if year == None:
 			# - Return ALL years within the Panel - #
 			if rtype == dict: 													#Default Behaviour
@@ -384,9 +397,7 @@ class DynamicProductLevelExportSystem(object):
 	## -- General Data Retrieval -- ##
 
 	def get_series_fmatrix(self, data, row, column, series_name='', years=None, verbose=False):
-		'''
-			Obtain a Series from Dict(DataFrames)
-		'''	
+		""" Obtain a Series from Dict(DataFrames) """	
 		if type(years) != list:
 			years = sorted(data.keys())
 		series_data = []
@@ -401,9 +412,7 @@ class DynamicProductLevelExportSystem(object):
 		return s
 
 	def get_series_flist(self, data, index, series_name='', years=None, verbose=False):
-		'''
-			Obtain a Series from Dict(Series)
-		'''
+		""" Obtain a Series from Dict(Series) """
 		if type(years) != list:
 			years = sorted(data.keys())
 		series_data = []
@@ -418,22 +427,26 @@ class DynamicProductLevelExportSystem(object):
 		return s 
 
 	def reshape_data(self, data, rshape, datashape='cp', rtype='df', year_filter=None, sort_index=True, drop_na=False, verbose=False):
-		'''
-			General Function that Obtains Data and returns the desired shape
-			
-			Input:
-			------
-				[1] data 		=> 	Passed Property (i.e. DynPLES.rca) [Needs to be cxp data]
-				[2] rtype 		=> 	'long' : pd.DataFrame() - 'Long Format'
-									'wide' : pd.DataFrame() - 'Wide Format'
-									'panel': pd.Panel()     - 'Wide Format Useful for Finding Time Series'
+		"""
+		General Function that Obtains Data and returns the desired shape
+		
+		Parameters:
+		-----------
+		data 	: 	property
+					Passed Property (i.e. DynPLES.rca) [Needs to be cxp data]
+		rtype 	: 	str
+					Specify a Return Shape ["long", "wide", "panel"]
+		 			'long' : pd.DataFrame() - 'Long Format'
+					'wide' : pd.DataFrame() - 'Wide Format'
+					'panel': pd.Panel()     - 'Wide Format Useful for Finding Time Series'
+		year_filter : 	list, optional(default=None *All Years*)
+						Year Filter
+		sort_index 	: 	bool, optional(default='True')
+						Return Sorted Index Object
+		drop_na 	: 	bool, optional(default=False)
+						Drop NaN values
 
-			Options:
-			-------
-				[1] year_filter => 	Year Filter [None = ALL Years in DynPLES]
-				[3] order 		=>  Specify an Index Order
-				[4] sort_index 	=> 	Return Sorted Index Object [Default = True]
-		'''
+		"""
 		# - Parse dshape - #
 		if datashape == 'cp': idx_names = ['year', 'country', 'productcode']
 		if datashape == 'pp': idx_names = ['year', 'productcode1', 'productcode2']
@@ -485,9 +498,7 @@ class DynamicProductLevelExportSystem(object):
 			raise ValueError("rtype must be: long, panel or wide")
 
 	def long_data_to(self, long_data, rshape='cp', rtype='df', verbose=False):
-		'''
-			Change Long DataFrame to Matrix
-		'''
+		""" Change Long DataFrame to Matrix """
 		# - Parse rshape - #
 		if rshape == 'cp':
 			dname = long_data.columns[0]
@@ -522,12 +533,14 @@ class DynamicProductLevelExportSystem(object):
 	#########################
 
 	def compute(self, items=['rca', 'mcp', 'proximity', 'diversity', 'ubiquity'], verbose=False):
-		'''
-			Methods to Populate the underlying ProductLevelExportSystem Objects
-			Notes:
-			-----
-				[1] Not sure this is worth it as each method has settings and default settings may not be desired. 
-		'''
+		"""
+		Methods to Populate the underlying ProductLevelExportSystem Objects
+		
+		Notes:
+		-----
+			1. Not sure this is worth it as each method has settings and default settings may not be desired. 
+
+		"""
 		for item in items:
 			if verbose: print "Computing %s Data" % item
 			raise NotImplementedError
@@ -536,24 +549,20 @@ class DynamicProductLevelExportSystem(object):
 	## -- Network Methods -- ##
 	###########################
 
+	##--!!--Should this be moved to object with network backend?--!!-##
+
 	def construct_network(self, ntype='bipartitegraph', c=None, p=None, verbose=False):
-		'''
-			Construct Network of ntype from self.ples
-		'''
+		""" Construct Network of ntype from self.ples """
 		for year in self.years:
 			self.ples[year].construct_network(ntype, c, p, verbose)
 
 	def construct_bipartite(self, verbose=False):
-	 	'''
-	 		Construct BiPartite Networks from self.ples
-	 	'''
+	 	""" Construct BiPartite Networks from self.ples """
 	 	for year in self.years:
 	 		self.ples[year].network = self.ples[year].construct_bipartite(verbose)
 
 	def construct_multidi(self, verbose=False):
-		'''
-			Construct a MutliDiGraph Network from self.ples
-		'''
+		""" Construct a MutliDiGraph Network from self.ples """
 		for year in self.years:
 			self.ples[year].network = self.ples[year].construct_multidi(verbose)
 
@@ -569,11 +578,15 @@ class DynamicProductLevelExportSystem(object):
 
 		STATUS: DEPRICATED (ADDED as option to from_csv() and from_df())
 
-		replace 	: 	dict("exports" : "export")
+		Parameters
+		----------
+		replace 	: 	dict, optional(default={'exports' : 'export'})
+						dict("exports" : "export")
 
 		Typical Usage is when loading "exports" and want to change to "export" for internal consistency
+		
 		"""
-		warnings.warn("DEPRICATED use replace={} in from_csv() or from_df()", UserWarning)
+		warnings.warn("[DEPRICATED] use replace={} in from_csv() or from_df()", UserWarning)
 		# - Info - #
 		for item in sorted(replace.keys()):
 			print "[Info] Changing Series named: %s to :%s" % (item, replace[item])
@@ -593,23 +606,36 @@ class DynamicProductLevelExportSystem(object):
 		"""
 		Import Data from Standard CSV File
 
-		Input Data:	
-		-----------
-			<year>, <country>, <productcode>, <export-value>
+		File Interface = <year>, <country>, <productcode>, <export-value>
 
-		Options:
-		--------
-			[1] years 		: 		[yearlist] 	Add Year Filter to Importing Subset of Years
+		Parameters
+		----------
+		fn 						:  	str
+									Specify File Name
+		country_classification 	: 	str, optional(default="ISO3C")
+									Specify Country Classification (if appropriate)
+		cntry_obj 				: 	collection, optional(default=None)
+									Use country objects rather than names
+		product_classification 	: 	str, optional(default="SITCR2L4")
+									Specify Product Classification
+		prod_obj 				: 	collection, optional(default=None)
+									Use product objects rather than names
+		dtypes 					: 	list(str), optional(default=['DataFrame'])
+									Specify which dtypes to compile
+		years 					: 	list(int), optional(default=None **All Years**)
+									Specify Year Filter
+		replace  				: 	dict, optional(default={})
+									Replace Column Names from File
 
 		Notes:
 		------
-			[1] Import into DataFrame and then call from_df() method
-			[2] ProductCode dtype == 'str' to handle leading zero's easily
-			[3] Pass Country and Product Objects around as they are instances of separate class
+			1. Import into DataFrame and then call from_df() method
+			2. ProductCode dtype == 'str' to handle leading zero's easily
+			3. Pass Country and Product Objects around as they are instances of separate class
 
 		Future Work:
 		------------
-			[1] Move Network Construction to a construct_network() method in ProductLevelExportSystem Class
+			1. 	Move Network Construction to a construct_network() method in ProductLevelExportSystem Class
 				Then No long need to carry around Country and Product Objects
 		"""
 		# - Import CSV - #
@@ -631,23 +657,36 @@ class DynamicProductLevelExportSystem(object):
 		"""
 		Construct ProductLevelExportSystem from LONG Pandas DataFrame Object
 
-		Incoming DataFrame Structure:
-		-----------------------------
+		DataFrame Interface
 
 				'country' 	'productcode' 	'export'
 		<year> 	
 
-		Notes:
-		-----
-		[1] This Class DynamicProductLevelExportSystem is dealing with the Dynamic elements of trade data. 
-			Therefore, 'country', 'productcode' etc are not indices at this stage
+		Parameters
+		----------
+		df 			: 	pd.DataFrame 
+						Dataframe Containing Export Data
+		cntry_obj 	: 	collection, optional(default=None)
+						Supply Country Objects
+		prod_obj  	: 	collection, optional(default=None)
+						Supply Product Objects 
+		dtypes 		:	list(str), optional(default=['DataFrame'])
+						List of Objects to Compile
+		replace 	: 	dict, optional(default={})
+						Replace a column name in the incoming dataframe
 
-		Future Work:
+		Notes
+		-----
+			1. 	This Class DynamicProductLevelExportSystem is dealing with the Dynamic elements of trade data. 
+				Therefore, 'country', 'productcode' etc are not indices at this stage
+
+		Future Work
 		------------
-		[1] Move Network Construction to a construct_network() method in ProductLevelExportSystem Class
-			Then No long need to carry around Country and Product Objects
-		[2] Add df.notes = ''
-		[3] Should Column and IDX interfaces be moved to a utility function?
+			1. 	Move Network Construction to a construct_network() method in ProductLevelExportSystem Class
+				Then No long need to carry around Country and Product Objects
+			2.  Add df.notes = ''
+			3.  Should Column and IDX interfaces be moved to a utility function?
+
 		"""
  		# - Init Years from DF - #
 		self.years = sorted(set(df.index))
@@ -682,22 +721,28 @@ class DynamicProductLevelExportSystem(object):
 
 
 	def from_rca_df(self, rca, rca_notes='', verbose=False):
-		'''
-			Construct a DynamicProductLevelExportSystem from an RCA Matrix
-			Useful when sources is already RCA Data
+		"""
+		Construct a DynamicProductLevelExportSystem from an RCA Matrix
+		Note: Useful when sources is already RCA Data
 
-			Incoming DataFrame Structure:
-			----------------------------
+		DataFrame Interface
 
-				 	'country' 'productcode' 'rca'
-			<year>	
+			 	'country' 'productcode' 'rca'
+		<year>	
 
-			Notes:
-			-----
-				[1] Migrate away from carrying C objects and P Objects and outsource network_construction to construct_network(etc.)
-				[2] No dtypes implimented as doesn't make sense
+		Parameters
+		----------
+		rca 	: 	pd.DataFrame
+					DataFrame containing RCA Data
+		rca_notes : str, optional(default='')
+					Attach any notes to the object
 
-		'''
+		Notes
+		-----
+			1. Migrate away from carrying C objects and P Objects and outsource network_construction to construct_network(etc.)
+			2. No dtypes implimented as doesn't make sense
+
+		"""
 		# - Init Years from DF - #
 		self.years = sorted(set(df.index))
 		for year in self.years:
@@ -713,14 +758,20 @@ class DynamicProductLevelExportSystem(object):
 	##########################
 
 	def to_pickle(self, fn='', verbose=False):
-		'''
-			Preserve Entire Object in a Pickle File
+		"""
+		Preserve Entire Object in a Pickle File
 
-			Current Preserves the Current Interface:
-			---------------------------------------
-			(self.ples, self.ples_struct, self.compile_dtypes, self.years, self.country_classification, 	\
-					self.product_classification, self.global_panel, self._complete_trade_network, self.data_file)
-		'''
+		Pickle Interface 
+		~~~~~~~~~~~~~~~~
+		(self.ples, self.ples_struct, self.compile_dtypes, self.years, self.country_classification, 	\
+				self.product_classification, self.global_panel, self._complete_trade_network, self.data_file)
+		
+		Parameters
+		----------
+		fn 	: str, optional(fn='')
+			  Specify a custom file name
+
+		"""
 		if not re.search(".pickle", fn):
 			print "Auto-Generating a name for the object"
 			# - For Now use the main data_file amended to pickle file - #
@@ -735,14 +786,20 @@ class DynamicProductLevelExportSystem(object):
 
 
 	def from_pickle(self, fn, verbose=False):
-		'''
-			Restore Entire Object From a Pickle File
+		"""
+		Restore Entire Object From a Pickle File
 
-			Current Restores the Current Interface:
-			---------------------------------------
-			(self.ples, self.ples_struct, self.compile_dtypes, self.years, self.country_classification, 	\
-					self.product_classification, self.global_panel, self._complete_trade_network, self.data_file)
-		'''
+		Pickle Interface
+		~~~~~~~~~~~~~~~~
+		(self.ples, self.ples_struct, self.compile_dtypes, self.years, self.country_classification, 	\
+				self.product_classification, self.global_panel, self._complete_trade_network, self.data_file)
+		
+		Parameters
+		----------
+		fn 	: 	str
+				Specify filename
+
+		"""
 		with open(fn) as f:
 			(self.ples, self.ples_struct, self.compile_dtypes, self.years, self.country_classification, self.product_classification, \
 				self.global_panel, self._complete_trade_network, self.data_file) = pickle.load(f)
@@ -750,20 +807,32 @@ class DynamicProductLevelExportSystem(object):
 		if verbose: print "Pickle read from: %s" % fn
 		return True
 
+	## ----------------------------- ##
 	## -- Specific Matrix Methods -- ##
-	###################################
+	## ----------------------------- ##
 
 	def pickle_matrices(self, matrices, fn=None, directory='./pickles/'):
-		'''
-			Pickle a Dictionary of Matrices
-			Useful when doing analysis that takes time and just want to preserve a single Matrix (i.e PCI)
-			
-			A.pickle_matrices(A.rca, 'rca') # - DynPLES
+		"""
+		Pickle a Dictionary of Matrices
+		
+		Useful when doing analysis that takes time and just want to preserve a single Matrix (i.e PCI)
+		
+		Parameters
+		----------
+		matrices 	: 	Pass Property or Matrices to Preserve
+		fn 			: 	str, optional(default=matrix.name)
+						Specify custom filename
+		directory 	: 	str, optional(default="./pickles/")
+						Specify custom directory
 
-			Future Work:
-			-----------
-				[1] Check Directory Exists
-		'''
+		Usage
+		-----
+		A.pickle_matrices(A.rca, 'rca') # - DynPLES
+
+		Future Work
+		-----------
+			1. Check Directory Exists
+		"""
 		if type(fn) != str:
 			fn = matrices[0].name
 		rfn = directory + fn + '.pickle'
@@ -772,15 +841,26 @@ class DynamicProductLevelExportSystem(object):
 		return True
 
 	def restore_pickled_matrices(self, matr, matr_name, fn, directory='./pickles/'):
-		'''
-			Restore Pickled Matrices to self.rca etc.
-			
-			A.restore_pickled_matrix(A.rca, 'RCA', 'rca.pickle')
+		"""
+		Restore Pickled Matrices to self.rca etc.
+		
+		Parameters
+		----------
+		matr  		: 	Pass in Property or Matrix
+		matr_name	: 	Specify Matrix Name
+		fn 			: 	str, optional(default=matrix.name)
+						Specify custom filename
+		directory 	: 	str, optional(default="./pickles/")
+						Specify custom directory
 
-			Note:
-			----
-				[1] If change A.rca etc to use setter() then this will need to be updated!
-		'''
+		Usage
+		-----
+		A.restore_pickled_matrix(A.rca, 'RCA', 'rca.pickle')
+
+		Note
+		----
+			[1] If change A.rca etc to use setter() then this will need to be updated!
+		"""
 		fn = directory + fn
 		matr = pd.read_pickle(fn)
 		matr.name = matr_name
@@ -788,17 +868,24 @@ class DynamicProductLevelExportSystem(object):
 		#self.matrix = matr
 		return self.matrix
 
-	################################
+	## -------------------------- ##
 	## -- Data Reshape Methods -- ##
-	################################
+	## -------------------------- ##
 
 	def as_cp_matrices(self, years=None, matrix_type='pandas', value='export', verbose=False):
-		'''
-			Compute CP Matrix in each ProductLevelExportSystem
-			Options:
-			-------
-				[1] years 		= list of years (Default: ALL)
-		'''
+		"""
+		Compute CP Matrix in each ProductLevelExportSystem
+		
+		Parameters
+		----------
+		years 	:	list(int), optional(years=None **All**)
+					Year Filter
+		matrix_type : 	str, optional(default='pandas')
+						Specify type of matrix 
+		value 		: 	str, optional(default='export')
+						Specify Data Name
+
+		"""
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing cp matrix for year: %s" % year
@@ -809,12 +896,19 @@ class DynamicProductLevelExportSystem(object):
 	# - Should these be Static Methods @staticmethod - #
 
 	def return_panel(self, matrix, minor_axis, verbose=False):
-		'''
-			Return pd.Panel Representation of a dict(matrix) or Property of Class
-			Future Work:
-			-----------
-				[1] Impliment a years filter?
-		'''
+		"""
+		Return pd.Panel Representation of a dict(matrix) or Property of Class
+
+		Parameters
+		----------
+		matrix  	: 	Specify Matrix or Property
+		minor_axis  : 	Specify name of minor axis
+		
+		Future Work:
+		-----------
+			1. Impliment a years filter?
+
+		"""
 		years = sorted(matrix.keys())
 		panel = pd.Panel(matrix)
 		panel.name = matrix[years[0]].name 		# - Homogenous Data - #
@@ -823,9 +917,7 @@ class DynamicProductLevelExportSystem(object):
 		return panel
 
 	def from_dict_c_to_df(self, data):
-		'''
-			Convert Dict(c_matrix) to DataFrame
-		'''
+		""" Convert Dict(c_matrix) to DataFrame """
 		df = pd.DataFrame(data)
 		data_name = data[data.keys()[0]].name 				# - Homogenous Data Types - #
 		df.index.names = ['country']
@@ -834,9 +926,7 @@ class DynamicProductLevelExportSystem(object):
 		return df
 
 	def from_dict_p_to_df(self, data):
-		'''
-			Convert Dict(p_matrix) to DataFrame
-		'''
+		""" Convert Dict(p_matrix) to DataFrame """
 		df = pd.DataFrame(data)
 		data_name = data[data.keys()[0]].name 				# - Homogenous Data Types - #
 		df.index.names = ['productcode']
@@ -845,9 +935,7 @@ class DynamicProductLevelExportSystem(object):
 		return df
 
 	def from_dict_cp_to_df(self, data):
-		'''
-			Convert Dict(cp_matrix) to DataFrame
-		'''
+		""" Convert Dict(cp_matrix) to DataFrame """
 		panel = self.return_panel(data, minor_axis='productcode')
 		data_name = panel.name
 		df = panel.to_frame(filter_observations=False)
@@ -858,9 +946,7 @@ class DynamicProductLevelExportSystem(object):
 		return df
 
 	def from_dict_pp_to_df(self, data):
-		'''
-			Convert Dict(pp_matrix) to DataFrame
-		'''
+		""" Convert Dict(pp_matrix) to DataFrame """
 		panel = self.return_panel(data, minor_axis='productcode')
 		data_name = panel.name
 		df = panel.to_frame(filter_observations=False)
@@ -871,22 +957,29 @@ class DynamicProductLevelExportSystem(object):
 		return df
 
 	def return_dataframe(self, matrix, matrix_shape='cp', years=None, out_shape='wide', verbose=True):
-		'''
-			Return DataFrame Representation of a Property
+		"""
+		Return DataFrame Representation of a Property
 
-			Options:
-			--------
-			matrix_shape 	:   'cp' -> Rows: Country x Columns: ProductCode
-							: 	'pp' -> Rows: ProductCode x Columns: ProductCode
-							: 	'c'  -> Rows: Country (with 1 Series); Currently enforces out_shape to be long
-							: 	'p'  -> Rows: Products (with 1 Series); Currently enforces out_shape to be long
+		Parameters
+		----------
+		matrix 			: 	Property or Matrix
+		matrix_shape 	:   Specify Matrix Shape
+							'cp' -> Rows: Country x Columns: ProductCode
+						 	'pp' -> Rows: ProductCode x Columns: ProductCode
+						 	'c'  -> Rows: Country (with 1 Series); Currently enforces out_shape to be long
+						 	'p'  -> Rows: Products (with 1 Series); Currently enforces out_shape to be long
+		years 			: 	list(int), optional(default=None **All**)
+							Specify a year filter
+		out_shape 		: 	str, optional(default='wide')
+							Specify out_shape of dataframe
 
-			Notes:
-			-----
-				[1] Should this be the default return structure?
-				[2] Integrate matrix_shape into a self.matrix_shape property
-				[3] Original Code has the option to output data indexed by a specific order for Long Formatted Data. 
-		'''
+		Notes:
+		-----
+			1. Should this be the default return structure?
+			2. Integrate matrix_shape into a self.matrix_shape property
+			3. Original Code has the option to output data indexed by a specific order for Long Formatted Data. 
+			
+		"""
 		# - Apply Year Filer -# 
 		if type(years) == list:
 			data = dict()
@@ -927,25 +1020,25 @@ class DynamicProductLevelExportSystem(object):
 	#######################################
 
 	def product_shares(self, series_name='export'):
-		'''
+		"""
 			Return Product Shares Across DynPLES
-		'''
+		"""
 		result = dict()
 		for year in self.years:
 			result[year] = self.ples[year].product_shares(series_name)
 		return result
 
 	def country_shares(self, series_name='export'):
-		'''
+		"""
 			Return Country Shares Across DynPLES
-		'''
+		"""
 		result = dict()
 		for year in self.years:
 			result[year] = self.ples[year].country_shares(series_name)
 		return result
 
 	def rca_matrices(self, years=None, series_name='export', fillna=False, clear_temp=True, complete_data=False, decomposition=False, verbose=False):
-		'''
+		"""
 			Compute Revealed Comparative Advantage (RCA) Matrices for ProductLevelExportSystem
 			RCA - Belassa Definition (REF - ?)
 
@@ -956,25 +1049,25 @@ class DynamicProductLevelExportSystem(object):
 			Notes:
 			-----
 				[1] Need a load_supp_data method() in the event the trade system is incomplete
-		'''
+		"""
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing RCA matrix for year: %s" % year
 			self.ples[year].rca_matrix(series_name, fillna, clear_temp, complete_data, decomposition, verbose) 		
 
 	def rca_decomposition_tables(self):
-		'''
+		"""
 			Return a Dict(pd.DataFrame) of RCA Decomposition Tables
-		'''
+		"""
 		rca_decomposition_tables = dict()
 		for year in self.years:
 			rca_decomposition_tables[year] = self.ples[year].rca_decomposition_table()
 		return rca_decomposition_tables
 
 	def srca_matrices(self, years=None, series_name='export', fillna=False, clear_temp=True, verbose=False):
-		'''
+		"""
 			Compute Symmetric RCA Matrices by applying transformation: (RCA-1)/(RCA+1) {Log Estimate}
-		'''
+		"""
 		if years == None: years = self.years
 		result = dict()
 		for year in years:
@@ -992,12 +1085,12 @@ class DynamicProductLevelExportSystem(object):
 	## These are Constructors and therefore returning a property of the object may lead users to access these matrices by building them everytime!
 
 	def mcp_matrices(self, years=None, cutoff=1.0, fillna=True, verbose=False):
-		'''
+		"""
 			Compute Mcp Matrices for ProductLevelExportSystem
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''
+		"""
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing Mcp matrix for year: %s" % year
@@ -1008,24 +1101,24 @@ class DynamicProductLevelExportSystem(object):
 	## -- Proximity Matrices -- ##
 
 	def proximity_matrices(self, years=None, matrix_type='symmetric', clear_temp=True, fillna=False, verbose=False):
-		'''
+		"""
 			Compute Mcp Matrices for ProductLevelExportSystem
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''	
+		"""	
 		# - Disabled MultiCore => No Significant Performance Boost (Overheads ~= Performance Gain) for this type of Matrix - #
 			# if self.multicore == True:
 			# 	return self.multicore_proximity_matrices(years=years, verbose=verbose)
 		return self.serial_proximity_matrices(years, matrix_type, clear_temp, fillna, verbose)
 		
 	def serial_proximity_matrices(self, years=None, matrix_type='symmetric', clear_temp=True, fillna=False, verbose=False):
-		'''
+		"""
 			Compute Mcp Matrices for ProductLevelExportSystem
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''	
+		"""	
 
 		if years == None: years = self.years
 		for year in years:
@@ -1035,7 +1128,7 @@ class DynamicProductLevelExportSystem(object):
 		#return self.proximity
 
 	def multicore_proximity_matrices(self, years=None, verbose=True):
-		'''
+		"""
 			Multicore Implimentation of Proximity Matrices
 
 			**Note:** This will only compute the proximity_matrix with default kwargs due to requirement to pickle objects!
@@ -1048,7 +1141,7 @@ class DynamicProductLevelExportSystem(object):
 			-----
 				[1] Requires ipcluster start -n 4 (ipython notebook)
 				[2] No significant performance boost. Overheads ~= Performance Gain
-		'''
+		"""
 		## -- User Warnings & Reminders -- ##
 		print "[REMINDER] This will only compute the proximity_matrix with default kwargs due to requirement to pickle objects!"
 
@@ -1076,12 +1169,12 @@ class DynamicProductLevelExportSystem(object):
 	## -- Ubiquity and Diversity -- ##
 
 	def compute_ubiquity(self, years=None, verbose=False):
-		'''
+		"""
 			Compute Product Ubiquity for all ProductLevelExportSystem's
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''
+		"""
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing Product Ubiquity for year: %s" % year
@@ -1090,12 +1183,12 @@ class DynamicProductLevelExportSystem(object):
 		#return self.ubiquity
 
 	def compute_diversity(self, years=None, verbose=False):
-		'''
+		"""
 			Compute Country Diversity for all ProductLevelExportSystem's
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''
+		"""
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing Country Diversity for year: %s" % year
@@ -1106,12 +1199,12 @@ class DynamicProductLevelExportSystem(object):
 	## -- ECI / PCI -- ##
 
 	def compute_eci(self, years=None, verbose=False):
-		'''
+		"""
 			Compute Country Complexity Indicator
 			Notes:
 			-----
 				[1] Multicore with 4 Cores ~55 percent performance gain
-		'''
+		"""
 		if self.multicore == True:
 			if verbose: print "Running MultiCore Method"
 			return self.multicore_compute_eci(years, verbose)
@@ -1119,24 +1212,24 @@ class DynamicProductLevelExportSystem(object):
 		return self.serial_compute_eci(years, verbose)
 
 	def serial_compute_eci(self, years=None, verbose=False):
-		'''
+		"""
 			Compute Country Complexity Indicator for all PLES (Serial)
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''
+		"""
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing Country Complexity Indicator for year: %s" % year
 			self.ples[year].compute_eci(verbose)
 
 	def multicore_compute_eci(self, years=None, verbose=False):
-		'''
+		"""
 			Compute Country Complexity Indicator for all PLES (Parallel Computing)
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''
+		"""
 		## -- Setup MultiCore Client -- ##
 		from IPython.parallel import Client
 		c = Client()
@@ -1159,12 +1252,12 @@ class DynamicProductLevelExportSystem(object):
 		#return self.eci
 
 	def compute_pci(self, years=None, verbose=False):
-		'''
+		"""
 			Compute Product Complexity Indicator
 			Notes:
 			-----
 				[1] Multicore with 4 Cores ~55 percent performance gain
-		'''
+		"""
 		if self.multicore == True:
 			if verbose: print "Running MultiCore Method"
 			return self.multicore_compute_pci(years, verbose)
@@ -1172,24 +1265,24 @@ class DynamicProductLevelExportSystem(object):
 		return self.serial_compute_pci(years, verbose)
 
 	def serial_compute_pci(self, years=None, verbose=False):
-		'''
+		"""
 			Compute Product Complexity Indicator for all PLES (Serial)
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''
+		"""
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing Product Complexity Indicator for year: %s" % year
 			self.ples[year].compute_pci(verbose)
 
 	def multicore_compute_pci(self, years=None, verbose=False):
-		'''
+		"""
 			Compute Product Complexity Indicator for all PLES (Parallel Computing)
 			Options:
 			-------
 				[1] years 		= list of years (Default: ALL)
-		'''
+		"""
 		## -- Setup MultiCore Client -- ##
 		from IPython.parallel import Client
 		c = Client()
@@ -1214,7 +1307,7 @@ class DynamicProductLevelExportSystem(object):
 	## -- Adjustment Function for ECI/PCI -- ##
 
 	def auto_adjust_eci_sign(self, cntry_datum=('DEU', '+ve'), verbose=False):
-		'''
+		"""
 			Auto Adjust ECI computations based on a Country Datum
 			Convention: +ve is higher complexity
 
@@ -1225,7 +1318,7 @@ class DynamicProductLevelExportSystem(object):
 			Future Work:
 			-----------
 				1. Check if Country is in the dataset. 
-		'''
+		"""
 		if verbose: print "Applying .auto_adjust to ECI sign"
 		cntry, sign = cntry_datum
 		for year in self.years:
@@ -1249,20 +1342,20 @@ class DynamicProductLevelExportSystem(object):
 				raise ValueError("sign must be either '+ve' or '-ve'")
 
 	def adjust_eci_sign(self, years, verbose=False):
-		'''
+		"""
 			Adjust ECI for sign (due to current inconsistencies returned from compute_eci())
 
 			Future Work:
 			-----------
 				[1] Figure out why compute_eci() produces inconsistencies in year ranks (by sign)
 				[2] Adjust Automatically - Check Highest and Lowest Ranked Country in first PLES and ensure +ve and -ve throughout the years [Assuming no LARGE deviations in RANK]
-		'''
+		"""
 		for year in years:
 			self.ples[year].eci = self.ples[year].eci * -1
 
 	
 	def auto_adjust_pci_sign(self, product_datum=('3330', '-ve'), verbose=False):
-		'''
+		"""
 			Auto Adjust PCI computations based on a Product Datum
 			Convention: +ve is higher complexity
 
@@ -1273,7 +1366,7 @@ class DynamicProductLevelExportSystem(object):
 			Notes:
 			-----
 				1. current default product_datum is using SITCR2L4!
-		'''
+		"""
 		if verbose: print "Applying .auto_adjust to PCI signs"
 		productcode, sign = product_datum
 		for year in self.years:
@@ -1298,13 +1391,13 @@ class DynamicProductLevelExportSystem(object):
 
 
 	def adjust_pci_sign(self, years, verbose=False):
-		'''
+		"""
 			Adjust ECI for sign (due to current inconsistencies returned from compute_eci())
 
 			Future Work:
 			-----------
 				[1] Figure out why compute_eci() produces inconsistencies in year ranks (by sign) [Assuming no LARGE deviations in RANK]
-		''' 
+		""" 
 		for year in years:
 			self.ples[year].pci = self.ples[year].pci * -1
 
@@ -1312,12 +1405,12 @@ class DynamicProductLevelExportSystem(object):
 	################################################
 
 	def set_single_proximity_matrix(self, prox_matrix, verbose=False):
-		'''
+		"""
 			Set a Single Proximity Matrix in ALL Cross-Sections
 			Future Work:
 			-----------
 				[1] Develop some Futher Checks on incoming prox_matrix like checking index names etc?
-		'''
+		"""
 		if type(prox_matrix) == pd.DataFrame: 				# Data has been passed through: Assumed Well Formed!
 			use_prox = prox_matrix
 		elif re.match('[0-9]{4}', prox_matrix): 			# Year Has Been Specified
@@ -1339,7 +1432,7 @@ class DynamicProductLevelExportSystem(object):
 	#########################
 
 	def dynamic_global_panel(self, fillna=False, series_name='export', verbose=False):
-		'''
+		"""
 			Ensure Global Panel For Dynamic Analysis
 			
 			Options:
@@ -1348,7 +1441,7 @@ class DynamicProductLevelExportSystem(object):
 
 			Future Work 
 			[1] Add inplace option
-		'''
+		"""
 		warnings.warn("[WARNING] This returns a new dynamic system ... not inplace", UserWarning) 
 		data = self.get_data(rtype='wide')
 		data = data.stack().unstack(level='productcode').stack(dropna=False).unstack(level='year').stack(dropna=False) 		#Long Data Series
@@ -1367,10 +1460,10 @@ class DynamicProductLevelExportSystem(object):
 
 
 	def assign_data_to_matrixattr(self, data_name, years=None, verbose=True):
-		'''
+		"""
 			Assign Object (ProductLevelExportSystem) Data to Object.matrix
 			Useful for Smoothing Function which acts on matrix
-		'''
+		"""
 		if years == None: years = self.years
 		for year in years:
 			if data_name == 'rca': 										#If store data in ProductLevelExportSystem self.matrix['rca'] then could build out ability to just pass in dataname!
@@ -1386,7 +1479,7 @@ class DynamicProductLevelExportSystem(object):
 	###############################
 
 	def compute_smoothed_data(self, data_dict, dshape, smoother=(1,1,1), rtype='dict', dropna=False, verbose=False):
-		'''	
+		"""	
 			Smoothing Function that takes in a Property and returns smoothed version of the data
 
 			Input:
@@ -1400,7 +1493,7 @@ class DynamicProductLevelExportSystem(object):
 			Future Work:
 			-----------
 				[1] Write a Super Conversion method that detects incoming data arrangement and converts to any combination requested. 
-		'''
+		"""
 		# - Setup Defaults - #
 		if dshape == 'cp': 
 			selection=['country', 'productcode']
@@ -1441,7 +1534,7 @@ class DynamicProductLevelExportSystem(object):
 			raise NotImplementedError
 
 	def compute_smoothed_trade_data(self, smoother=(1,1,1), method='pandas', data_name='self.data', years=None, verbose=False):
-		'''
+		"""
 			Compute Smoothed Trade Data (i.e. 3YRMA) and Return a New DynamicProductLevelExportSystem
 			Note: This function only acts on self.data
 			Assumptions: Centering of Smoother = True
@@ -1464,7 +1557,7 @@ class DynamicProductLevelExportSystem(object):
 				How will Country and Product Objects be treated?  => split the from_df() function into a simple from_df() to self.data and construct_network()
 				Then Networks can be constructed from self.data and Node and Edge Objects
 				[2] This function was written when originally thinking about that data structure of the object to be self.data, self.matrix
-		'''
+		"""
 
 		## -- Parse Options -- ##
 		if years == None: years = self.years
@@ -1509,7 +1602,7 @@ class DynamicProductLevelExportSystem(object):
 			raise ValueError("Only method implimented leverages pandas. Specify method='pandas'")
 
 	def compute_intertemporal_fill(self, interpolate=True, ffill=True, ffill_limit=1, bfill=True, bfill_limit=1, verbose=False):
-		'''
+		"""
 			Compute Data with Intertemporal Fill and Return a New DynamicProductLevelExportSystem with new data
 			
 			** Status: NEEDS TESTING **
@@ -1526,7 +1619,7 @@ class DynamicProductLevelExportSystem(object):
         	-----
         		[1] This is useful when using the current compute_smoothed_data() function as it requires all cells to include data to compute which creates intertemporal gaps
         		[2] Return basic DynamicProductLevelExportSystem based only on the Default 'DataFrame' data structure. If network representations desired in the new DynPLES then will need to construct them using appropriate constructor methods
-		'''
+		"""
 		# - Obtain Long Form Data to Leverage Pandas - #
 		data = self.get_data(rtype='long', sort=True)
 		if interpolate:
@@ -1544,7 +1637,7 @@ class DynamicProductLevelExportSystem(object):
 	############################
 
 	def compute_average(self, data, start_year=None, end_year=None, step=1, verbose=False):
-		'''
+		"""
 			Compute and Return Some Averaged Data as a pd.DataFrame
 			[Important: This method is sensative to np.nan (i.e. 1 + np.nan = np.nan)]
 
@@ -1557,7 +1650,7 @@ class DynamicProductLevelExportSystem(object):
 			Notes:
 			-----
 				[1] df_data (i.e. A.data or A.proximity etc) will come in as a Dict(year : Data to Average)
-		'''
+		"""
 		years = sorted(data.keys())
 		# - Set Defaults - #
 		if type(start_year) != int: start_year = years[0]
@@ -1583,12 +1676,12 @@ class DynamicProductLevelExportSystem(object):
 	####################
 
 	def compute_product_changes(self, dtype='mcp', verbose=False):
-		'''
+		"""
 			Compute Changes in Products Year to Year
 			Options:
 			-------
 				[1] dtype 		: 	'mcp' = {0,1} 	[Currently Not Used]
-		'''
+		"""
 		# - Check Required Data is Computed - #
 		if type(self.mcp) != dict:
 			print "[NOTICE] Mcp matrix at (self.mcp) is currently not available. Computing Mcp with default kwargs"
@@ -1616,7 +1709,7 @@ class DynamicProductLevelExportSystem(object):
 	#########################################
 
 	def compute_probable_improbable_emergence(self, prox_cutoff='median', style='average', output='summary', verbose=False):
-		'''
+		"""
 			Compute the Probable and Improbable Emergence of Products
 
 			Options:
@@ -1640,7 +1733,7 @@ class DynamicProductLevelExportSystem(object):
 			------------
 				[1] Refactor Code into Smaller Functions
 				[2] Compare Results using NBER ONLY DataFile with Previously Computed Results
-		'''
+		"""
 		# - Check Required Data - #
 		if self.global_panel != True:
 			raise ValueError("DynamicProductLevelExportSystem needs to be a Global Dynamic Panel (with the same c x p matrix sizes)")
@@ -1757,7 +1850,7 @@ class DynamicProductLevelExportSystem(object):
 ### --- WORKING HERE --- ####
 
  # def compute_probable_improbable_emergence_nx(mcp, proximity, prox_cutoff='median', style='average', output='summary', verbose=False):
-#     ''' Generate Probable and Improbable Emergence using the Networkx library
+#     """ Generate Probable and Improbable Emergence using the Networkx library
 #         Status: Validated  [But Slow compared to Pandas Implimentation]
 #         Options:    style       ->      Considers how to treat proximity ('average': average of both years, 'base': use Base Year, 'next': use Next Year)
 #                     output      ->      'reduced':  returns only Prob_cp and ImProb_cp
@@ -1768,7 +1861,7 @@ class DynamicProductLevelExportSystem(object):
 #         Input: Dict(mcp), and Dict(proximity) + Options
 #         Notes:      This routine could be greatly improved by returning if ANY close proximity item is found
 #                     07/07/2013 -> This function and compute_probable_improbable_emergence() now agree! Pearson's of 1 for both Vectors
-#     '''
+#     """
 #     #Parse Option Flags
 #     if type(prox_cutoff) == str:
 #         prox_cutoff_option = prox_cutoff        #Save Incoming result of prox_cutoff
@@ -1889,7 +1982,7 @@ class DynamicProductLevelExportSystem(object):
 ### --- WORKING HERE --- ####
 
 	def construct_cp_emergence_graph(self, verbose=False):
-		'''
+		"""
 			Construct a Country x Product Emergence Graphs
 
 			Algorithm Details:
@@ -1901,21 +1994,21 @@ class DynamicProductLevelExportSystem(object):
 				[1] Allow Construction for a Single Country and then build off that function for other countries!
 
 
-		'''
+		"""
 		raise NotImplementedError
 
 
  # def generate_country_product_emergence_graph(df, tradesystem='', country_filter=[], base_year=-1, end_year=-1, verbose=False, allow_repeats=True):
- #    ''' Function: Generate Dynamic Edge Graph's
+ #    """ Function: Generate Dynamic Edge Graph's
  #        Return: tradesystem
  #        Notes:      08/07/2013  -> Moved SubFunctions to be within the function so that future graph generators may also use the name first_year() for subfunctions 
- #    '''
+ #    """
 
- #    ''' Sub-Function Space '''
+ #    """ Sub-Function Space """
  #    def first_year(df_country_year, tradesystem, country):
- #        ''' Function:   Create BaseYear Node in Network
+ #        """ Function:   Create BaseYear Node in Network
  #            Return:     Tradesystem with node 'S'->Export Basket, and list_of_products added
- #        ''' 
+ #        """ 
  #        list_of_products = []    
  #        for row in df_country_year.iterrows():
  #            productcode, data = row
@@ -1936,9 +2029,9 @@ class DynamicProductLevelExportSystem(object):
 
 
  #    def add_year(df_country_year, tradesystem, base_year, current_year, list_of_products, country, allow_repeats=True):
- #        ''' Function: Add additional year to Network
+ #        """ Function: Add additional year to Network
  #            Returns: updated tradesystem, and list of new_products added
- #        '''
+ #        """
  #        new_list_of_products = []    
  #        new_set_of_products = set()
  #        time_delta = int(current_year) - int(base_year)
@@ -1971,16 +2064,16 @@ class DynamicProductLevelExportSystem(object):
 
       
  #    def final_year(tradesystem, base_year, end_year, list_of_products, country):
- #        ''' Function: Close Network from Final Year Cross-Section
+ #        """ Function: Close Network from Final Year Cross-Section
  #            Return: tradesystem with final cross section linked to Node: 'F'
- #        '''   
+ #        """   
  #        time_delta = int(end_year) - int(base_year) + 1       
  #        for source_product in list_of_products:
  #            tradesystem[country].add_node('F', key=time_delta+1)
  #            tradesystem[country].add_edge(source_product, 'F', key=time_delta)
  #        return tradesystem
 
- #    ''' Main Function Space '''
+ #    """ Main Function Space """
  #    #Check Data Inputs
  #    if type(df) != pd.DataFrame:                                                            
  #        print "ERROR: Pass DataFrame with MultiIndex (country, year, productcode)!"
@@ -2000,7 +2093,7 @@ class DynamicProductLevelExportSystem(object):
  #        tradesystem, country_list, year_list, product_list = setup_country_product_emergence_graph(df, country_filter)
  #    if country_filter != []:
  #        country_list = country_filter
- #    ''' Generate Graph '''
+ #    """ Generate Graph """
  #    for country in country_list:                                                           
  #        if verbose: print "Adding Country: %s" % country        
  #        #Initialise tradesystem with Base Year Data 'S' -> 'ProductCodes'
@@ -2023,21 +2116,21 @@ class DynamicProductLevelExportSystem(object):
 	###########################################
 
 	def draw_network(self, year):
-		'''
+		"""
 			Plot Network for a Certain Year
 			To Do: Impliment other graph types
-		'''
+		"""
 		return self.network[year].draw_network()
 
 
 	def plot_ts_simple(self, series, sort_data=True, verbose=True):
-		'''
+		"""
 			Plot Time Series
 
 			Future Work:
 			-----------
 				[1] Need to work on using Pandas datetime objects to get more contextually relevant graphs and charts
-		'''
+		"""
 		if sort_data:				
 			series = series.order(ascending=True, na_last=True)
 		fig = plt.figure()
