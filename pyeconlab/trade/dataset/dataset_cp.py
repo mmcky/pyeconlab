@@ -101,10 +101,10 @@ class CPTradeDataset(object):
     __attr_export   = set(['trade', 'export', 'exports', 'ex'])
     __attr_import   = set(['trade', 'import', 'imports', 'im'])
      
-    def __init__(self, data, data_type, prep_dynamic=False):    
+    def __init__(self, data, data_type, prep_dynamic=False, skip_attributes=False, allow_mixed_productcode=False):    
         #-Fill Object with Data-#
         if type(data) == pd.DataFrame:
-            self.from_dataframe(data, data_type)
+            self.from_dataframe(data, data_type, skip_attributes, allow_mixed_productcode)
         elif type(data) == str:
             fn, ftype = data.split('.')
             if ftype == 'pickle':
@@ -283,7 +283,7 @@ class CPTradeDataset(object):
 
     #-IO-#
 
-    def from_dataframe(self, df, data_type):
+    def from_dataframe(self, df, data_type, skip_attributes=False, allow_mixed_productcode=False):
         """
         Populate Object from Pandas DataFrame
         
@@ -305,23 +305,32 @@ class CPTradeDataset(object):
             for item in self.interface[data_type.lower()]:
                 if item not in columns: 
                     raise TypeError("Need %s to be specified in the incoming data" % item)
-            #-Set Attributes-#
-            self.__name = df.txf_name
-            self.__data_type = data_type
-            self.__classification = df.txf_classification 
-            self.__revision = df.txf_revision
-                # self.__value_units = df.txf_value_units                       #Add in Later
-            self.__complete_dataset = df.txf_complete_dataset
-            self.__notes = df.txf_notes
-            self.source_revision = df.txf_source_revision
-            self.__units_value_str = df.txf_units_value_str
+            if not skip_attributes:
+                #-Set Attributes-#
+                self.__name = df.txf_name
+                self.__data_type = data_type
+                self.__classification = df.txf_classification 
+                self.__revision = df.txf_revision
+                    # self.__value_units = df.txf_value_units                       #Add in Later
+                self.__complete_dataset = df.txf_complete_dataset
+                self.__notes = df.txf_notes
+                self.__units_value_str = df.txf_units_value_str
+                try:
+                    self.source_revision = df.txf_source_revision
+                except:
+                    pass
             #-Infer Years-#
-            self.__years = list(df['year'].unique())
+            self.__years = [int(x) for x in list(df['year'].unique())]
             #-Infer Level-#
             levels = df['productcode'].apply(lambda x: len(x)).unique()
             if len(levels) > 1:
-                raise ValueError("Product Levels are not consistent lengths: %s" % levels)
-            self.__level = levels[0]
+                self.__level = levels
+                if allow_mixed_productcode:
+                    warnings.warn("Product Levels are not consistent lengths: %s" % levels)
+                else:
+                    raise ValueError("Product Levels are not consistent lengths: %s" % levels)
+            else:
+                self.__level = levels[0]
             #-Set Index-#
             self.set_data(df.set_index(self.interface[data_type.lower()][:-1]), force=True)     #Index by all values except 'value'
         else:
@@ -568,7 +577,9 @@ class CPTradeData(CPTradeDataset):
     __data_type = 'Trade'
 
     def __init__(self, data):
-        """ Use Superclass init() with specified data_type """
+        """ 
+        Use Superclass init() with specified data_type 
+        """
         CPTradeDataset.__init__(self, data, self.__data_type)
 
     #-Properties-#
@@ -668,9 +679,9 @@ class CPExportData(CPTradeDataset):
     __data = pd.DataFrame()
     __data_type = 'Export'
 
-    def __init__(self, data):
+    def __init__(self, data, **kwargs):
         """ Use Superclass init() with specified data_type """
-        CPTradeDataset.__init__(self, data, self.__data_type)
+        CPTradeDataset.__init__(self, data, self.__data_type, **kwargs)
 
     #-Properties-#
 
