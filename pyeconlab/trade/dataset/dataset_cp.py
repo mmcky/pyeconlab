@@ -116,8 +116,7 @@ class CPTradeDataset(object):
 
         #-Parse Prepare Dynamic Data Options-#
         if prep_dynamic:
-            self.__dyn_data = self.data.unstack(level='year')
-            self.__dyn_data.columns = self.dynamic_data.columns.droplevel()     #remove 'value' label
+            self.prepare_dynamic_data()
 
     def __repr__(self):
         # 
@@ -273,9 +272,7 @@ class CPTradeDataset(object):
 
     @property 
     def importers(self):
-        """
-        List of Importers
-        """
+        """ List of Importers """
         if self.data_type.lower() in self.__attr_import:
             return self.data.index.get_level_values(level='iiso3c').unique()
         else:
@@ -283,20 +280,30 @@ class CPTradeDataset(object):
 
     #-IO-#
 
+    def prepare_dynamic_data(self):
+        """ Prepare Dynamic Data Format """
+        self.__dyn_data = self.data.unstack(level='year')
+        self.__dyn_data.columns = self.dynamic_data.columns.droplevel()     #remove 'value' label
+
     def from_dataframe(self, df, data_type, skip_attributes=False, allow_mixed_productcode=False):
         """
-        Populate Object from Pandas DataFrame
+        Populate Object from Pandas DataFrame (Most Features)
         
         Parameters
         ----------
-        df          :   pd.DataFrame 
-                        Provide Data in a DataFrame Format
-        data_type   :   str('trade', 'export', 'import')
-                        Provide type of data
+        df                  :   pd.DataFrame 
+                                Provide Data in a DataFrame Format
+        data_type           :   str('trade', 'export', 'import')
+                                Provide type of data
+        skip_attributes     :   bool, optional(default=False)
+                                Skip setup of Attributes and Meta Data 
+        allow_mixed_productcode :   bool, optional(Default=False)
+                                    Allow mixed levels of productcodes
 
         Notes
         -----
-        1. Bring Attributes in as df.attribute
+            1. Bring Attributes in as df.attribute(?)
+
         """
         #-Force Interface Variables-#
         if type(df) == pd.DataFrame:
@@ -797,6 +804,7 @@ class CPExportData(CPTradeDataset):
         system = DynamicProductLevelExportSystem()
         system.from_df(df=data)
         return system
+
 
 #-------------#
 #-Import Data-#
