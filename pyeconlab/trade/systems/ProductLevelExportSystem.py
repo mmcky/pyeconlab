@@ -78,8 +78,8 @@ class ProductLevelExportSystem(object):
 
 		Base Data Structures:
 		---------------------
-		  	[1] DataFrame 																	[Based on an instance of pd.DataFrame()]
-		  	[2] BiPartiteGraph('country' -> 'product', edge = export value) 				[Based on an instance of nx.Graph()]
+			[1] DataFrame 																	[Based on an instance of pd.DataFrame()]
+			[2] BiPartiteGraph('country' -> 'product', edge = export value) 				[Based on an instance of nx.Graph()]
 			[3] MultiDiGraph('country' -> 'world', key=productcode, edge = export value) 	[Based on an instance of nx.MultiDiGraph()]
 				[**Convention**: Incoming Edge = Import]
 
@@ -102,18 +102,18 @@ class ProductLevelExportSystem(object):
 				self._matrix_notes = '' 							#Last Computed Matrix_Notes
 
 				@def matrix():
-				    doc = "The matrix property."
-				    def fget(self):
-				        return self._matrix
-				    def fset(self, value):
-				        if self._matrix != None:
-				        	#Pop Previously Computed Matrix into Preserve#
-				        	self._preserved_matrix[self._matrix_name] = self._matrix
-				        	self._preserved_matrix_notes[self._matrix_name] = self._matrix_notes
-				        self._matrix = value
-				    def fdel(self):
-				        del self._matrix
-				    return locals()
+					doc = "The matrix property."
+					def fget(self):
+						return self._matrix
+					def fset(self, value):
+						if self._matrix != None:
+							#Pop Previously Computed Matrix into Preserve#
+							self._preserved_matrix[self._matrix_name] = self._matrix
+							self._preserved_matrix_notes[self._matrix_name] = self._matrix_notes
+						self._matrix = value
+					def fdel(self):
+						del self._matrix
+					return locals()
 				matrix = property(**matrix())
 
 				def get_matrix(self, matrix_name):
@@ -700,37 +700,42 @@ class ProductLevelExportSystem(object):
 	###########################################
 
 	def rca_matrix(self, series_name='export', fillna=False, clear_temp=True, complete_data=False, decomposition=False, verbose=False):
-		'''
-			Generate Revealed Comparative Advantage (RCA) Matrix (Shape: Country x Product)
-			Measure: Balassa (1965) Trade Liberalisation and Revealed Comparative Advantage
+		"""
+		Generate Revealed Comparative Advantage (RCA) Matrix (Shape: Country x Product)
+		Measure: Balassa (1965) Trade Liberalisation and Revealed Comparative Advantage
 
-			Options:
-			--------
-				[1] series_name 	=> 	Allow specification of the series_name [Default: 'export']
-				[2] fillna 		=> 	True/False [Default: False]
-				[3] clear_temp 		=> 	Delete Data generated in temp
-				[4] complete_data 	=> 	Allows for ALL RCA values to be computed using a complete trade system. (i.e. TotWorldTrade is represented by the sample)
-				[5] decomposition 	=> 	Saves Numerator (self.rca_num) and Denominator (self.rca_den) Values [Default: False]
+		Parameters
+		----------
+		series_name 	: 	str, optional(default='export')
+							Allow specification of the series_name
+		fillna 			: 	bool, optional(default=False)
+							Fill np.NaN values with 0.0
+		clear_temp 		: 	bool, optional(default=True)
+							Delete temporary data that is generated in the process of computing RCA
+		complete_data 	: 	bool, optional(default=False)
+							Allows for ALL RCA values to be computed using a complete trade system. (i.e. TotalWorldTrade is represented by the sample)
+		decomposition 	: 	bool, optional(default=False)
+							Saves Numerator (self.rca_num) and Denominator (self.rca_den) Values in respective properties
 
-			Notes:
-			-----
-				[1] Should I have a self.rca or use self.matrix and self.matrix_type for more efficient memory use?
-				[2] self.rca_notes = Is this a good idea or burden?
-				[3] Data in self.supp_data needs to be a pd.Series Object or Value. pd.read_csv() can return DataFrame. Could export this to a function returning a pd.Series
+		Notes:
+		-----
+			1. Should I have a self.rca or use self.matrix and self.matrix_type for more efficient memory use? [NO!]
+			2. self.rca_notes = Is this a good idea or burden?
+			3. Data in self.supp_data needs to be a pd.Series Object or Value. pd.read_csv() can return DataFrame. Could export this to a function returning a pd.Series
 
-			Future Work:
-			-----------
-				[1] Compute RCA using a NUMBA method to improve performance
-		'''
+		Future Work
+		-----------
+			1. Compute RCA using a NUMBA method to improve performance
+		"""
 		if complete_data == True:
 				self.complete_trade_network = True
 		if self.complete_trade_network == True:
 			## -- Endogenously Compute RCA -- ##
 			if verbose: print "Endogenously computing: TotalWorldExport, TotalProductExport, and TotalCountryExport"
 			self.supp_data['TotalWorldExport'] = self.data[series_name].sum()
-			self.supp_data['TotalProductExport'] = self.data.groupby(level=['productcode'])[series_name].transform(np.sum)
-			self.supp_data['TotalCountryExport'] = self.data.groupby(level=['country'])[series_name].transform(np.sum)
-			self.rca_notes = 'Simple RCA computed from self.data {Assumption: Complete Trade Network}'
+			self.supp_data['TotalProductExport'] = self.data.fillna(0.0).groupby(level=['productcode'])[series_name].transform(np.sum) 	#fillna(0.0) required to get correct return axis length
+			self.supp_data['TotalCountryExport'] = self.data.fillna(0.0).groupby(level=['country'])[series_name].transform(np.sum) 		#fillna(0.0) required to get correct return axis length
+			self.rca_notes = 'Simple RCA computed from self.data [Assumption: Complete Trade Network]'
 			self.temp['rca_num'] = (self.data[series_name] / self.supp_data['TotalCountryExport'])
 			self.temp['rca_num'].name = 'rca_num'
 			self.temp['rca_den'] = (self.supp_data['TotalProductExport'] / self.supp_data['TotalWorldExport'])
@@ -746,7 +751,7 @@ class ProductLevelExportSystem(object):
 			tmp_used = ['rca_num', 'rca_den', 'rca']
 		else:
 			## -- Require self.supp_data -- ##
-			if verbose: print "Using TotalWorldExport, TotalProductExport, and TotalCountryExport from self.supp_data"
+			if verbose: print "[INFO] Using TotalWorldExport, TotalProductExport, and TotalCountryExport from self.supp_data"
 			dnames = self.supp_data.keys()
 			# - Check Data is Available - #
 			if 'TotalWorldExport' not in dnames: raise ValueError("Total World Export ('TotalWorldExport') required in self.supp_data to compute RCA")
@@ -779,8 +784,8 @@ class ProductLevelExportSystem(object):
 			tmp_used = ['rca_num', 'rca_den', 'rca']
 		## -- Rearrange Data -- ##
 		rca = self.temp['rca'].unstack(level=['productcode']).sort_index(axis=0).sort_index(axis=1)   #Added pd.DataFrame() so that this returns a DF rather than a Series
-   		if fillna: rca = rca.fillna(0.0)   
-		# - Flush Used Items in Temp File - #
+		if fillna: rca = rca.fillna(0.0)   
+		# - Flush Used Items in Temp Dictionary - #
 		if clear_temp: 
 			for item in tmp_used:
 				del self.temp[item]
@@ -990,9 +995,9 @@ class ProductLevelExportSystem(object):
 		# from numba.decorators import jit, autojit
 
 		from numbapro import double
-		from numbapro.decorators import jit, autojit
+		from numbapro.decorators import jit
 
-		@autojit
+		@jit
 		def coexport_probability(X):
 			C = X.shape[0]
 			P = X.shape[1]      
@@ -1115,9 +1120,9 @@ class ProductLevelExportSystem(object):
 			self.temp['data'] = self.mcp.T.as_matrix()           
 			self.temp['col_sums'] = self.mcp.sum().values        				#Row Vector#
 			for index1 in xrange(0,num_products):
-			    for index2 in xrange(0,num_products):                      
-			        cond_prob = (self.temp['data'][index1] * self.temp['data'][index2]).sum() / self.temp['col_sums'][index2]   	# ProductCode 1 by convention (PP')/P [Nb: This is index2 in Numpy]
-			        self.proximity[index1][index2] = cond_prob
+				for index2 in xrange(0,num_products):                      
+					cond_prob = (self.temp['data'][index1] * self.temp['data'][index2]).sum() / self.temp['col_sums'][index2]   	# ProductCode 1 by convention (PP')/P [Nb: This is index2 in Numpy]
+					self.proximity[index1][index2] = cond_prob
 			# Return DataFrame Representation		
 			self.proximity = pd.DataFrame(self.proximity, index=self.products, columns=self.products)
 			self.proximity.index.name = 'productcode1'
@@ -1147,15 +1152,15 @@ class ProductLevelExportSystem(object):
 			self.temp['data'] = self.mcp.T.as_matrix()           
 			self.temp['col_sums'] = self.mcp.sum().values        			#Row Vector#
 			for index1 in xrange(0,num_products):
-			    for index2 in xrange(0,num_products):
-			        joint_export_num = (self.temp['data'][index1] * self.temp['data'][index2]).sum()
-			        if index2 < index1: 													#Placing Max Values in Top Right Diagonal Quadrant
-			            max_exports_num  = max(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
-			            cond_prob = joint_export_num / max_exports_num
-			        else: 																	#Placing Min Values in Top Right Diagonal Quadrant
-			            min_exports_num = min(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
-			            cond_prob = joint_export_num / min_exports_num
-			        self.proximity[index1][index2] = cond_prob
+				for index2 in xrange(0,num_products):
+					joint_export_num = (self.temp['data'][index1] * self.temp['data'][index2]).sum()
+					if index2 < index1: 													#Placing Max Values in Top Right Diagonal Quadrant
+						max_exports_num  = max(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
+						cond_prob = joint_export_num / max_exports_num
+					else: 																	#Placing Min Values in Top Right Diagonal Quadrant
+						min_exports_num = min(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
+						cond_prob = joint_export_num / min_exports_num
+					self.proximity[index1][index2] = cond_prob
 			# Return DataFrame Representation
 			self.proximity = pd.DataFrame(self.proximity, index=self.products, columns=self.products)
 			self.proximity.index.name = 'productcode1'
@@ -1185,6 +1190,41 @@ class ProductLevelExportSystem(object):
 			return proximity_matrix_minmax(self)
 		else:
 			raise ValueError("Proximity type must be either symmetric, asymmetric, or minmax")
+
+	### --- Centrality Measures --- ###
+	### --------------------------- ###
+
+	def compute_average_centrality(self, normalized=True, sum_not_mean=False, verbose=False):
+		""" 
+		Compute Average Centrality from Mcp and Proximity matrices
+		
+		Status: IN-TESTING
+		
+		Parameters
+		----------
+		normalized 	: 	bool, optional(default=True)
+						Normalize by the Total Number of Products; if False the denominator is the number of products exported by that country
+		sum_not_mean : 	bool, optional(default=False)
+						Sum's the mean proximity multiplied by country export basket
+
+		Notes
+		----- 
+			1. sum_not_mean = Haussman uses SUM() rather than normalised mean -> Same Overall Graph Shape!
+		
+		Return
+		------
+		avg_centrality 
+
+		"""
+		if normalized: 
+			avg_centrality = self.mcp.mul(self.proximity.mean(), axis=1).mean(axis=1)
+			if sum_not_mean: 
+				avg_centrality = self.mcp.mul(self.proximity.mean(), axis=1).sum(axis=1)                                    
+		else:
+			num_prods_exported = self.mcp.sum(axis=1)                                                                        # Condensed FORM
+			avg_centrality =  self.mcp.mul(self.proximity.mean(), axis=1).sum(axis=1).div(num_prods_exported)
+		return avg_centrality
+
 
 	### --- Ubiquity and Diversity --- ###
 	######################################
@@ -1241,7 +1281,7 @@ class ProductLevelExportSystem(object):
 
 		# - Helper Functions - #
 
-		@autojit
+		@jit
 		def mcc_numba(mcp):
 			'''
 				Compute Computational Expensive Loops for Mcc Calculations
@@ -1420,7 +1460,7 @@ class ProductLevelExportSystem(object):
 
 		# - Helper Functions - #
 
-		@autojit
+		@jit
 		def mpp_numba(mpc):
 			'''
 				Compute Computational Expensive Loops for Mpp Calculations
@@ -1584,14 +1624,14 @@ class ProductLevelExportSystem(object):
 		## -- Helper Function -- ##
 
 		def check_index_ranking_series(series_one, series_two):
-		    ''' Check Ranking of Two Independent Series (Commonly indexed) to see if they are the same ordering after sorting
-		        Status: In-TESTING
-		        Return True if Index Ranking is the SAME, False if Index Ranking is Different
-		        Note: Could turn this into recieving a list of series [Future Work]
-		    '''
-		    sorted_s1 = series_one.copy().order()
-		    sorted_s2 = series_two.copy().order()
-		    return sorted_s1.index.equals(sorted_s2.index)
+			''' Check Ranking of Two Independent Series (Commonly indexed) to see if they are the same ordering after sorting
+				Status: In-TESTING
+				Return True if Index Ranking is the SAME, False if Index Ranking is Different
+				Note: Could turn this into recieving a list of series [Future Work]
+			'''
+			sorted_s1 = series_one.copy().order()
+			sorted_s2 = series_two.copy().order()
+			return sorted_s1.index.equals(sorted_s2.index)
 
 		## -- Function Code -- ##
 
@@ -1761,7 +1801,7 @@ class ProductLevelExportSystem(object):
 			
 			Future Work:
 			-----------
-			 	[1] This could be made more robust by using REGEXR to see if index1 and index2 contain the same basic info "country" vs "countrycode" - Currently issue's advice due to limited REGEXR exploration
+				[1] This could be made more robust by using REGEXR to see if index1 and index2 contain the same basic info "country" vs "countrycode" - Currently issue's advice due to limited REGEXR exploration
 				[2] This Function could be re-written with new knowledge of index object creation (but not time urgent)
 				[3] Incorporate strict_index: where name of index is the same as the name of the incoming sortby series
 				[4] Reduce Code Complexity by removing column test for row_sortby vector. Could copy df_matrix to sorted_df_matrix and then operate on that item. 
@@ -1979,21 +2019,21 @@ class ProductLevelExportSystem(object):
 		''' 
 			Concord Data and Aggregate to new Concordance Level
 		
-		    Options:
-		    -------    
-		    	match_on    : 	Defines the Column or Index Level to match on
-		    	nw_code     :	Specifies which column is to be the new aggregated index
-		    	agg_series  :	Specifies which series or list of series to aggregate
-		    	aggregate 	: 	Aggregate Data or Return MultiIndex
-		    	merge_report:	Specifies if return a merge report
+			Options:
+			-------    
+				match_on    : 	Defines the Column or Index Level to match on
+				nw_code     :	Specifies which column is to be the new aggregated index
+				agg_series  :	Specifies which series or list of series to aggregate
+				aggregate 	: 	Aggregate Data or Return MultiIndex
+				merge_report:	Specifies if return a merge report
 
-		    Returns: 
-		    --------
-		    	DataFrame of Aggregated Series (agg_series) under new code definition (nw_code)
+			Returns: 
+			--------
+				DataFrame of Aggregated Series (agg_series) under new code definition (nw_code)
 
-		    Notes:
-		    ------
-		    	[1] MultiIndex DataFrames? Previous Code Had concord_multiindex_data()
+			Notes:
+			------
+				[1] MultiIndex DataFrames? Previous Code Had concord_multiindex_data()
 		'''
 		raise NotImplementedError
 
@@ -3383,23 +3423,23 @@ if __name__ == '__main__':
 	print C.rca_matrix()
 
 
- 	### --- Test Sorting Methods --- ###
- 	print
- 	print "Test Sorting Methods"
- 	r = pd.Series([3,2,1], index=['AUS', 'USA', 'AFG']) 			#Produce a Random Ordering According to 3,2,1
- 	c = pd.Series([3,2,1], index=['0001', '0002', '0003'])
- 	print "Original Matrix"
- 	print A.mcp
- 	print "Sorted Rows"
- 	print r
- 	print A.sorted_matrix(A.mcp, row_sortby=r)
- 	print A.sorted_matrix(A.mcp, row_sortby=r, row_ascending=False)
- 	print "Sorted Columns"
- 	print c
- 	print A.sorted_matrix(A.mcp, column_sortby=c)
- 	print A.sorted_matrix(A.mcp, column_sortby=c, column_ascending=False)
- 	print "Sorted Rows and Columns"
- 	print A.sorted_matrix(A.mcp, row_sortby=r, column_sortby=c)
+	### --- Test Sorting Methods --- ###
+	print
+	print "Test Sorting Methods"
+	r = pd.Series([3,2,1], index=['AUS', 'USA', 'AFG']) 			#Produce a Random Ordering According to 3,2,1
+	c = pd.Series([3,2,1], index=['0001', '0002', '0003'])
+	print "Original Matrix"
+	print A.mcp
+	print "Sorted Rows"
+	print r
+	print A.sorted_matrix(A.mcp, row_sortby=r)
+	print A.sorted_matrix(A.mcp, row_sortby=r, row_ascending=False)
+	print "Sorted Columns"
+	print c
+	print A.sorted_matrix(A.mcp, column_sortby=c)
+	print A.sorted_matrix(A.mcp, column_sortby=c, column_ascending=False)
+	print "Sorted Rows and Columns"
+	print A.sorted_matrix(A.mcp, row_sortby=r, column_sortby=c)
 
 	print "--------"
 	print "TESTING COMPLETED SUCCESFULLY!"

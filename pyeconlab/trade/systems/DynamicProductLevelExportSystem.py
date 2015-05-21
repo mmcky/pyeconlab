@@ -122,7 +122,7 @@ class DynamicProductLevelExportSystem(object):
 			self.from_csv(fn, replace=replace, verbose=verbose)
 
 
- 	## -- Python Class Methods -- ##
+	## -- Python Class Methods -- ##
 
 	def __repr__(self):
 		def ordered_string(data):
@@ -134,22 +134,22 @@ class DynamicProductLevelExportSystem(object):
 		return ordered_string(self.ples)
 
 	def __getitem__(self, index):
-	 	if isinstance(index, int) or isinstance(index, np.integer):
-	 		return self.ples[index]
-	 	elif isinstance(index, slice):
-	 		if index.step == None: step = 1
-	 		else: step = index.step
-	 		ryrs = range(index.start,index.stop,step)			#Could use (index.stop+1) .. but probably best to stick with convention
-	 		try:
-	 			r = dict()
-	 			for year in ryrs:
-	 				r[year] = self.ples[year]
-	 			return r
-	 		except:
-	 			print "[WARNING] Years in Object: %s" % self.years
-	 			raise IndexError("Index is out of range for the underyling data")
-	 	else:
-	 		raise TypeError("Index must be a year or slice of years")
+		if isinstance(index, int) or isinstance(index, np.integer):
+			return self.ples[index]
+		elif isinstance(index, slice):
+			if index.step == None: step = 1
+			else: step = index.step
+			ryrs = range(index.start,index.stop,step)			#Could use (index.stop+1) .. but probably best to stick with convention
+			try:
+				r = dict()
+				for year in ryrs:
+					r[year] = self.ples[year]
+				return r
+			except:
+				print "[WARNING] Years in Object: %s" % self.years
+				raise IndexError("Index is out of range for the underyling data")
+		else:
+			raise TypeError("Index must be a year or slice of years")
 
 	####################################
 	## -- Property and Get Methods -- ##
@@ -174,8 +174,8 @@ class DynamicProductLevelExportSystem(object):
 		
 		if year == None
 		~~~~~~~~~~~~~~~
-		 	rtype 	: 	type, optional(default=dict)
-		 				'dict' : {year : DataFrame}
+			rtype 	: 	type, optional(default=dict)
+						'dict' : {year : DataFrame}
 						'long' : pd.DataFrame() - 'Long Format'
 						'wide' : pd.DataFrame() - 'Wide Format'
 						'panel': pd.Panel()
@@ -290,8 +290,8 @@ class DynamicProductLevelExportSystem(object):
 		
 		if year == None
 		~~~~~~~~~~~~~~~
-		 	rtype 	: 	type, optional(default=dict)
-		 				'dict' : {year : DataFrame}
+			rtype 	: 	type, optional(default=dict)
+						'dict' : {year : DataFrame}
 						'long' : pd.DataFrame() - 'Long Format'
 						'wide' : pd.DataFrame() - 'Wide Format'
 						'panel': pd.Panel()
@@ -436,7 +436,7 @@ class DynamicProductLevelExportSystem(object):
 					Passed Property (i.e. DynPLES.rca) [Needs to be cxp data]
 		rtype 	: 	str
 					Specify a Return Shape ["long", "wide", "panel"]
-		 			'long' : pd.DataFrame() - 'Long Format'
+					'long' : pd.DataFrame() - 'Long Format'
 					'wide' : pd.DataFrame() - 'Wide Format'
 					'panel': pd.Panel()     - 'Wide Format Useful for Finding Time Series'
 		year_filter : 	list, optional(default=None *All Years*)
@@ -557,9 +557,9 @@ class DynamicProductLevelExportSystem(object):
 			self.ples[year].construct_network(ntype, c, p, verbose)
 
 	def construct_bipartite(self, verbose=False):
-	 	""" Construct BiPartite Networks from self.ples """
-	 	for year in self.years:
-	 		self.ples[year].network = self.ples[year].construct_bipartite(verbose)
+		""" Construct BiPartite Networks from self.ples """
+		for year in self.years:
+			self.ples[year].network = self.ples[year].construct_bipartite(verbose)
 
 	def construct_multidi(self, verbose=False):
 		""" Construct a MutliDiGraph Network from self.ples """
@@ -688,8 +688,8 @@ class DynamicProductLevelExportSystem(object):
 			3.  Should Column and IDX interfaces be moved to a utility function?
 
 		"""
- 		# - Init Years from DF - #
-		self.years = sorted(set(df.index))
+		# - Init Years from DF - #
+		self.years = sorted(set([int(x) for x in df.index]))
 		#-Check Replacements-#
 		if replace != {}:
 			df.rename(columns=replace, inplace=True)
@@ -727,7 +727,7 @@ class DynamicProductLevelExportSystem(object):
 
 		DataFrame Interface
 
-			 	'country' 'productcode' 'rca'
+				'country' 'productcode' 'rca'
 		<year>	
 
 		Parameters
@@ -965,9 +965,9 @@ class DynamicProductLevelExportSystem(object):
 		matrix 			: 	Property or Matrix
 		matrix_shape 	:   Specify Matrix Shape
 							'cp' -> Rows: Country x Columns: ProductCode
-						 	'pp' -> Rows: ProductCode x Columns: ProductCode
-						 	'c'  -> Rows: Country (with 1 Series); Currently enforces out_shape to be long
-						 	'p'  -> Rows: Products (with 1 Series); Currently enforces out_shape to be long
+							'pp' -> Rows: ProductCode x Columns: ProductCode
+							'c'  -> Rows: Country (with 1 Series); Currently enforces out_shape to be long
+							'p'  -> Rows: Products (with 1 Series); Currently enforces out_shape to be long
 		years 			: 	list(int), optional(default=None **All**)
 							Specify a year filter
 		out_shape 		: 	str, optional(default='wide')
@@ -978,7 +978,7 @@ class DynamicProductLevelExportSystem(object):
 			1. Should this be the default return structure?
 			2. Integrate matrix_shape into a self.matrix_shape property
 			3. Original Code has the option to output data indexed by a specific order for Long Formatted Data. 
-			
+
 		"""
 		# - Apply Year Filer -# 
 		if type(years) == list:
@@ -996,8 +996,8 @@ class DynamicProductLevelExportSystem(object):
 			df = self.from_dict_pp_to_df(data)
 			out_index_order=['year', 'productcode1', 'productcode2']
 		elif matrix_shape == 'c':
-		 	df = self.from_dict_c_to_df(data)
-		 	out_index_order = ['year', 'country']
+			df = self.from_dict_c_to_df(data)
+			out_index_order = ['year', 'country']
 		elif matrix_shape == 'p':
 			df = self.from_dict_p_to_df(data)
 			out_index_order = ['year', 'productcode']
@@ -1039,16 +1039,17 @@ class DynamicProductLevelExportSystem(object):
 
 	def rca_matrices(self, years=None, series_name='export', fillna=False, clear_temp=True, complete_data=False, decomposition=False, verbose=False):
 		"""
-			Compute Revealed Comparative Advantage (RCA) Matrices for ProductLevelExportSystem
-			RCA - Belassa Definition (REF - ?)
+		Compute Revealed Comparative Advantage (RCA) Matrices for ProductLevelExportSystem
+		RCA - Belassa Definition (Balassa, 1965)
 
-			Options:
-			--------
-				[1] years 		= list of years (Default: ALL)
-			
-			Notes:
-			-----
-				[1] Need a load_supp_data method() in the event the trade system is incomplete
+		Parameters
+		----------
+		years : list(int), optional(default=None **All**)
+				Specify a year list
+		
+		Notes
+		-----
+			[1] Need a load_supp_data method() in the event the trade system is incomplete
 		"""
 		if years == None: years = self.years
 		for year in years:
@@ -1165,6 +1166,34 @@ class DynamicProductLevelExportSystem(object):
 			year += 1
 		# - Should this return the getter method? - #
 		#return self.proximity
+
+	## -- Centrality Measures -- ##
+	def compute_average_centrality(self, normalized=True, sum_not_mean=False, verbose=False):
+		"""
+			Compute Average Centrality from Mcp and Proximity matrices
+			
+			Status: IN-TESTING
+			
+			Parameters
+			----------
+			normalized 	: 	bool, optional(default=True)
+							Normalize by the Total Number of Products; if False the denominator is the number of products exported by that country
+			sum_not_mean : 	bool, optional(default=False)
+							Sum's the mean proximity multiplied by country export basket
+
+			Notes
+			----- 
+				1. sum_not_mean = Haussman uses SUM() rather than normalised mean -> Same Overall Graph Shape!
+			
+			Return
+			------
+			avg_centrality 
+		"""
+		avg_centrality = dict()  
+		for year in self.years:
+			avg_centrality[year] = self.ples[year].compute_average_centrality(normalized, sum_not_mean, verbose)
+		return avg_centrality
+
 
 	## -- Ubiquity and Diversity -- ##
 
@@ -1425,7 +1454,7 @@ class DynamicProductLevelExportSystem(object):
 		for year in self.years:
 			self[year].proximity = use_prox 			# Note: This might be turned into an immutable and may need to change to set_proximity()
 		return True
-		 											
+													
 
 	#########################
 	## -- Panel Methods -- ##	
@@ -1433,21 +1462,28 @@ class DynamicProductLevelExportSystem(object):
 
 	def dynamic_global_panel(self, fillna=False, series_name='export', verbose=False):
 		"""
-			Ensure Global Panel For Dynamic Analysis
-			
-			Options:
-			-------
-				[1] fillna 	: 	fill np.nan objects with 0
+		Ensure Global Panel For Dynamic Analysis
+		
+		Parameters
+		-----------
+		fillna 	: 	bool, optional(default=False)
+					fill np.nan objects with 0
+		series_name : 	str, optional(default='export')
+						Provide Series Name
 
-			Future Work 
-			[1] Add inplace option
+		Future Work
+		----------- 
+		1. Add inplace option?
+
 		"""
 		warnings.warn("[WARNING] This returns a new dynamic system ... not inplace", UserWarning) 
 		data = self.get_data(rtype='wide')
+		data = data.stack().unstack(level='country').stack(dropna=False).unstack('year')									#Wide Data Series
 		data = data.stack().unstack(level='productcode').stack(dropna=False).unstack(level='year').stack(dropna=False) 		#Long Data Series
 		data.name = series_name
 		data = data.reset_index().set_index(keys='year') 	#Prepare Balanced Panel For from_df()
-		if fillna: data = data.fillna(0.0)
+		if fillna: 
+			data = data.fillna(0.0)
 		# - Construct a New DynPLES - #
 		DynPLES = DynamicProductLevelExportSystem()
 		# - Carry Across Data Attributes - #
@@ -1615,10 +1651,10 @@ class DynamicProductLevelExportSystem(object):
 				bfill 			: 	Backward fill the begining of the time-series with the first value
 				bfill_limit 	: 	Limit the number of periods for bfill
 
-        	Note: 
-        	-----
-        		[1] This is useful when using the current compute_smoothed_data() function as it requires all cells to include data to compute which creates intertemporal gaps
-        		[2] Return basic DynamicProductLevelExportSystem based only on the Default 'DataFrame' data structure. If network representations desired in the new DynPLES then will need to construct them using appropriate constructor methods
+			Note: 
+			-----
+				[1] This is useful when using the current compute_smoothed_data() function as it requires all cells to include data to compute which creates intertemporal gaps
+				[2] Return basic DynamicProductLevelExportSystem based only on the Default 'DataFrame' data structure. If network representations desired in the new DynPLES then will need to construct them using appropriate constructor methods
 		"""
 		# - Obtain Long Form Data to Leverage Pandas - #
 		data = self.get_data(rtype='long', sort=True)
@@ -1675,13 +1711,8 @@ class DynamicProductLevelExportSystem(object):
 	## -- Products -- ##
 	####################
 
-	def compute_product_changes(self, dtype='mcp', verbose=False):
-		"""
-			Compute Changes in Products Year to Year
-			Options:
-			-------
-				[1] dtype 		: 	'mcp' = {0,1} 	[Currently Not Used]
-		"""
+	def compute_product_changes(self, verbose=False):
+		""" Compute Changes in Products Year to Year """
 		# - Check Required Data is Computed - #
 		if type(self.mcp) != dict:
 			print "[NOTICE] Mcp matrix at (self.mcp) is currently not available. Computing Mcp with default kwargs"
@@ -1710,32 +1741,37 @@ class DynamicProductLevelExportSystem(object):
 
 	def compute_probable_improbable_emergence(self, prox_cutoff='median', style='average', output='summary', verbose=False):
 		"""
-			Compute the Probable and Improbable Emergence of Products
+		Compute the Probable and Improbable Emergence of Products
 
-			Options:
-			--------
-				[1] style 		: 	Considers how to treat proximity ('average': average of both years, 'base': use Base Year, 'next': use Next Year)
-				[2] output 		: 	'reduced': returns only Prob_cp and ImProb_cp
-				[3] 'extended'	: 	returns additional measures of Mcp_BothYears, Mcp_NewProducts, and McpDieProducts
-				[4] 'summary'	: 	returns only Prob_c and ImProb_c 
-				[5] prox_cutoff : 	Can specify a value (i.e. 0.24 if desired), other options are 'mean' or 'median'
-			
-			Dependancies: 
+		Parameters
+		----------
+		prox_cutoff : 	str or numeric, optioanl(default='median')
+						Specify a proximity cutoff value (i.e. 0.24 if desired), other options are 'mean' or 'median'
+		style 		: 	str, optional(default='average')
+						Specify how to treat proximity ('average': average of both years, 'base': use Base Year, 'next': use Next Year)
+		output 		: 	str, optional(default='summary')
+						Specify what type of output is to be returned
+						'summary': Mc_ProbableProducts, Mc_ImProbableProducts
+						'reduced': Mcp_ProbableProducts, Mcp_ImProbableProducts
+						'extended': Mcp_BothYears, Mcp_NewProducts, Mcp_DieProducts, Mcp_ProbableProducts, Mcp_ImProbableProducts		
+		
+		Dependancies
+		------------
+		1. compute_product_changes()
+
+		Notes
+		-----
+			1. These should probably be kept as separate functions as research specific functions? Include in the Class for now
+			2. No Persistence is Modelled - Kept as a separate Function (compute_persistence())
+
+		.. 	Future Work        
 			------------
-				[1] compute_product_changes()
+			1. Refactor Code into Smaller Functions
+			2. Compare Results using NBER ONLY DataFile with Previously Computed Results
 
-			Notes:
-			-----
-				[1] These should probably be kept as separate functions as research specific functions? Include in the Class for now
-				[2] No Persistence is Modelled - Kept as a separate Function (compute_persistence())
-
-			Future Work:        
-			------------
-				[1] Refactor Code into Smaller Functions
-				[2] Compare Results using NBER ONLY DataFile with Previously Computed Results
 		"""
 		# - Check Required Data - #
-		if self.global_panel != True:
+		if not self.global_panel:
 			raise ValueError("DynamicProductLevelExportSystem needs to be a Global Dynamic Panel (with the same c x p matrix sizes)")
 		if type(self.proximity) != dict: 																								#Assuming filled with pd.DataFrames
 			print "[NOTICE] Proximity matrix at (self.proximity) is currently not available. Computing Proximity with default kwargs"
@@ -1800,7 +1836,7 @@ class DynamicProductLevelExportSystem(object):
 					if value == 1.0:                                                            #Succesful New Product
 						for base_code, base_value in base_country_products.iteritems():         #Find Connections with all previous_year products
 							if base_value == 1.0: 
-							    product_pairs.append(base_code)
+								product_pairs.append(base_code)
 					if product_pairs == []:                                                       #Don't Catalogue Blank Connections List
 						continue
 					connections[productcode] = product_pairs
@@ -2062,7 +2098,7 @@ class DynamicProductLevelExportSystem(object):
  #            new_list_of_products = list(new_set_of_products)
  #        return tradesystem, new_list_of_products
 
-      
+	  
  #    def final_year(tradesystem, base_year, end_year, list_of_products, country):
  #        """ Function: Close Network from Final Year Cross-Section
  #            Return: tradesystem with final cross section linked to Node: 'F'
@@ -2147,6 +2183,8 @@ if __name__ == '__main__':
 	print "Library File for DynamicProductLevelExportSystem Class"
 	print "Following is a Demonstration of Some Features of the Class"
 	print 
+
+	from pyeconlab.util import package_folder
 
 	### --- Options --- ###
 	graphics = True

@@ -86,7 +86,7 @@ def from_dict_of_series_to(dictionary, dict_key='year', series_name='Unknown', o
         df = pd.DataFrame(dictionary)
         se = df.unstack()
         index_name = se.index.names[1]
-        se.index.names = ['year', index_name]
+        se.index.set_names(['year', index_name], inplace=True)
         se.name = series_name                                                   #Could improve this to account for incoming named data
         se = se.reorder_levels([index_name, 'year']).sortlevel()    
     if out_type.lower() == 'series':
