@@ -2312,43 +2312,52 @@ class ProductLevelExportSystem(object):
 		return fig
 
 
-	### --- WORKING HERE --- ###
-
 	def plot_heatmap(self, data, row_sortby_label='', row_step=0, column_sortby_label='', column_step=0, data_cutoff=None, figsize=5, aspect=None, notes=''):
-		'''
-			Generalised Version of plot_mcp_heatmap and plot_scaled_mcp_heatmap
-		'''
+		"""
+		Generalised Version of plot_mcp_heatmap and plot_scaled_mcp_heatmap
+		"""
 		raise NotImplementedError
 
 	def plot_mcp_heatmap(self, cpdata, cpdata_name='Data', row_sortby_label='', row_step=0, column_sortby_label='', column_step=0, xrot=45, data_cutoff=None, \
 							figsize=5, aspect=(False, False), notes='', rem_zero_rel=True, fillna=True):
-		'''
-			Plot Mcp Heatmap (Mcp = Country x Product Matrix)
-			
-				data 		: 		data in (c x p format) [i.e. RCA Matrix]
+		"""
+		Plot Mcp Heatmap (Mcp = Country x Product Matrix)
 
-			Options:    
-			--------
-				cpdata_name 		: 	Name of Data being Passed in as cpdata
-				row_sortby_label 	:	Description of Row Sortby for Y-Axis 		(Requires Pre-Sorted cpdata!)
-				row_step   			: 	Graduations for the step size on the Y-Axis
-				column_sortby   	: 	Description of Column Sortby for X-Axis 	(Requires Pre-Sorted cpdata!)
-				column_step     	: 	Graduations for the step size on the X-Axis
-				data_cutoff		 	: 	Specifies a cutoff for the Data Gradient. [NB: Some RCA VAlues are very large and that degree isn't very important]
-				figsize     		: 	Specifies in inches the figure size [Default: -1 let's the aspect ratio be chosen by the data dimensions]
-				aspect  			:  	Specify an Aspect Ratio (X, Y)
-				notes 				: 	Add Notes to Figure
-				rem_zero_rel 		: 	Remove Zero Relationships from both X and Y Axis [Default = True]
-				fillna 				: 	Fill np.NaN values with 0 [Default = True]
-			
-			Notes:
-			------ 
-				[1] Allow cmap to be custom made for white 0 to 1 and gradient red from 1 to max()
+		Parameters    
+		----------
+		cpdata 				: 	Property that is C x P (i.e. RCA Matrix)
+								Specify Data as Either a Property or a CP Matrix
+		cpdata_name 		: 	str, optional(default="Data")
+								Name of Data being Passed in as cpdata
+		row_sortby_label 	:	str, optional(default='')
+								Description of Row Sortby for Y-Axis [Warning: Requires Pre-Sorted cpdata]
+		row_step   			: 	int, optional(default=0)
+								Graduations for the step size on the Y-Axis
+		column_sortby_label : 	str, optioanl(default='') 
+								Description of Column Sortby for X-Axis [Warning: Requires Pre-Sorted cpdata]
+		column_step     	: 	int, optional(default=0)
+								Graduations for the step size on the X-Axis
+		data_cutoff		 	: 	int, optional(default=None)
+								Specifies a cutoff for the Data Gradient. [NB: Some RCA VAlues are very large and that degree isn't very important]
+		figsize     		: 	int, optional(default=5)
+								Specifies in inches the figure size [-1 let's the aspect ratio be chosen by the data dimensions]
+		aspect  			:  	Tuple(int,int), optional(default=(False, False))
+								Specify an Aspect Ratio (X, Y)
+		notes 				: 	str, optional(default='')
+								Add Notes to Figure
+		rem_zero_rel 		: 	bool, optional(default=True)
+								Remove Zero Relationships from both X and Y Axis
+		fillna 				: 	bool, optional(default=True)
+								Fill np.NaN values with 0
+		
+		Notes:
+		------ 
+			1. Allow cmap to be custom made for white 0 to 1 and gradient red from 1 to max()
 
-			Future Work:
-			-----------
-				[1] Generalised Filter for ColorMap to Allow +/- Bounds (Currently Bounded by 0)
-		'''
+		Future Work:
+		-----------
+			1. Generalised Filter for ColorMap to Allow +/- Bounds (Currently Bounded by 0)
+		"""
 		from matplotlib import cm 			# Check if this is imported in the Header of file
 		# - Pandas Work - #
 		if fillna:
@@ -2400,51 +2409,68 @@ class ProductLevelExportSystem(object):
 		return fig
 
 
-### --- WORKING HERE --- ###
-
 	default_cntrys = ['JPN', 'USA', 'DEU', 'KOR', 'ITA', 'AUS', 'BRA', 'THA', 'GHA', 'GBR', 'TWN', 'FRA', 'MEX']
 	default_prods = ['8421', '3330', '7922', '8748', '7810', '7442', '7781'] 
 	default_row_labels = ('ECI', 'Export Value Share')
 	default_column_labels = ('PCI', 'Product Value Share') 
 	def plot_scaled_mcp_heatmap(self, sorted_cpdata, cpdata_name='Data', row_scaleby=None, column_scaleby=None, row_label=default_row_labels, label_cntrys=default_cntrys, \
 									column_label=default_column_labels, label_prods=default_prods, low_value_cutoff=None, high_value_cutoff=None, \
-										 gradient_cutoff=4, size=8, axs_only=False, cmap=cm.Reds, rem_zero_rel=True, fillna=True, verbose=False):
-		'''
-			Plot Sorted and Scaled Heatmaps of Any CxP Matrix (Mcp)
-			[PreSort sorted_cpdata]
+									size=8, axs_only=False, cmap=cm.Reds, rem_zero_rel=True, fillna=True, verbose=False):
+		"""
+		Plot Sorted and Scaled Heatmaps of Any CxP Matrix (Mcp)
+		[Warning: PreSort sorted_cpdata]
 
-			Options:
-			-------
-				cpdata_name 	: 	Specify a Name for the Data (i.e. RCA) 	[Defualt: Data]
-				row_scaleby     : 	Specify a row_scaleby series (i.e. GDP or Country Exports etc.)
-				column_scaleby  : 	Specify a column_scaleby series
-				row_label       : 	Text for Row (or Y Axis) Type('row_sortby', 'row_scaleby')
-				label_cntrys    : 	Specify which countries to label
-				column_label    : 	Text for Column (or X Axis) Type('col_sortby', 'col_scaleby')
-				label_prods     : 	Specify which products to label
-				low_value_cutoff: 	Specify a Low Value Cutoff for ColorBar
-				high_value_cutoff: 	Specify a High Value Cutoff for ColorBar
-				gradient_cutoff : 	Specify cutoff value for heatmap color variation (RCA => 4/5 seems to work well in this context) 
-				size            : 	Size of Heatmap Figure
-				axs_only        : 	Allows axs to be an input and return graph axs only. (Useful when compiling evolution of graph via Kpn and Kcn)
-				cmap 			:  	Specify a colormap [Default: cm.Reds]
-				rem_zero_rel 	: 	Remove Zero Data Relationships from the Data [Default: True]
-				fillna 			: 	Fill Missing Values with 0 [Default = True]
+		Parameters
+		----------
+		sorted_cpdata 	: 	Property (C x P), pd.DataFrame
+							Provide a C x P Property or CP Data
+		cpdata_name 	: 	str, optional(default='Data')
+							Specify a Name for the Data (i.e. RCA)
+		row_scaleby     : 	pd.Series, optional(default=None) 
+							Specify a row_scaleby series (i.e. GDP or Country Exports etc.)
+							Note: To use this method you need to supply either a row or column scaleby vector
+		column_scaleby  : 	pd.Series, optional(default=None)
+							Specify a column_scaleby series
+							Note: To use this method you need to supply either a row or column scaleby vector
+		row_label       : 	Tuple(str, str), optional(default=default_row_labels)
+							Text for Row (or Y Axis) Type('row_sortby', 'row_scaleby')
+		label_cntrys    : 	list(str), optional(default=default_cntrys)
+							Specify which countries to label
+		column_label    : 	Tuple(str, str), optional(default=default_column_labels)
+							Text for Column (or X Axis) Type('col_sortby', 'col_scaleby')
+		label_prods     : 	list(str), optional(default=default_prods)
+							Specify which products to label
+		low_value_cutoff: 	numeric, optional(default=None)
+							Specify a Low Value Cutoff for ColorBar
+		high_value_cutoff: 	numeric, optional(default=None)
+							Specify a High Value Cutoff for ColorBar
+		size            : 	int, optional(default=8)
+							Size of Heatmap Figure
+		axs_only        : 	bool, optional(default=False)
+							Allows axs to be an input and return graph axs only. 
+							Note: Useful when compiling evolution of graph via Kpn and Kcn
+		cmap 			:  	ColorMap, optional(default=cm.Reds)
+							Specify a colormap from Matplotlib
+		rem_zero_rel 	: 	bool, optional(default=True)
+							Remove complete Zero Data Relationships (Full Rows and Columns) from the Data
+		fillna 			: 	bool, optional(default=True)
+							Fill Missing Values with 0
 
-			Notes:
-			-----
-				[1] Integrate the below three functions into one single ploting method. 
-				[2] Make General for any matrix AND not just Mcp
+		Notes
+		-----
+			1. Integrate the below three functions into one single ploting method. 
+			2. Make General for any matrix AND not just Mcp
 
-			Future Work:
-			-----------
-				[1] Is there a more sensible way to Handle the default value vectors
+		Future Work:
+		-----------
+			1. Is there a more sensible way to Handle the default value vectors
 
-			Current Known Issues:
-			--------------------
-				[1] ColorBar Logic Not quite Working
-				[1] Setting lower_limit on data isn't constructing the correct colorbar
-		'''
+		Current Known Issues:
+		--------------------
+			1. ColorBar Logic Not quite Working
+			2. Setting lower_limit on data isn't constructing the correct colorbar
+
+		"""
 		# - Import Standard Library - #
 		from matplotlib import cm
 
@@ -2491,8 +2517,8 @@ class ProductLevelExportSystem(object):
 			return cpdata, row_scaleby, column_scaleby
 
 		# - User Reminders - #
-		if type(row_scaleby) != pd.Series and type(col_scaleby) != pd.Series:
-			raise ValueError("One of row_scaleby, col_scaleby or both need to be specified")
+		if type(row_scaleby) != pd.Series and type(column_scaleby) != pd.Series:
+			raise ValueError("One of row_scaleby, column_scaleby or both need to be specified")
 		print "[NOTICE]: Data contains data named: %s; Make Sure you have set appropriate low (%s) and high (%s) value cutoffs for optimal views" % (cpdata_name, low_value_cutoff, high_value_cutoff)
 		print "[WARNING]: This function will name rows, Sortby: %s, Scaleby: %s" % row_label
 		print "[WARNING]: This function will name columns, Sortby: %s, Scaleby: %s" % column_label
@@ -2613,7 +2639,7 @@ class ProductLevelExportSystem(object):
 		plt.tight_layout()
 		return fig
 
-
+### --- WORKING HERE --- ###
 
 # default_cntrys = ['JPN', 'USA', 'DEU', 'KOR', 'ITA', 'AUS', 'BRA', 'THA', 'GHA', 'GBR', 'TWN', 'FRA', 'MEX']
 # default_prods = ['8421', '3330', '7922', '8748', '7810', '7442', '7781']                                       #May Need to Update for Dataset #3 if it becomes default dataset
