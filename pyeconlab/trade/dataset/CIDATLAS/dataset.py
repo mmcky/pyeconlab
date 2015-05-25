@@ -1,5 +1,8 @@
 """
 Dataset Class for Atlas of Complexity Data
+
+NOTE: ON HOLD (Focus on Generic CPEXPORTDATA)
+
 """
 
 import pandas as pd
@@ -20,7 +23,7 @@ class CIDAtlasTradeData(AtlasOfComplexity, CPTradeData):
     "SITC"  : ["year", "origin", "destination", "sitc4", "export_val", "import_val"]
     "HS"    : ["year", "origin", "destination", "hs4", "export_val", "import_val"]
     """
-
+    pass
 
 
 
@@ -57,3 +60,4 @@ class CIDAtlasImportData(AtlasOfComplexity, CPImportData):
     """
     Atlas of Complexity Import Data
     """
+    pass
