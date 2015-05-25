@@ -5,28 +5,30 @@ Class: 		ProductLevelExportSystem - Cross Section [Pandas Core Data Structure]
 Author: 	Matthew McKay <mamckay@gmail.com> 	
 
 **Status**: 	IN-WORK
+				<FUTURE WORK -> Migrate NetworkX Objects to ProductLevelExportNetwork.py>
+
 
 Current Work
 ------------
 [1] Convert to PyEconLab
 	[A] Convert Country, Product, and Classification to Work with the Package Structure
 
-Purpose: 
---------
-	[1] Delivers a class suited for analysis of Product Level Exported Data.
-	[2] Stores Product Level Data in a Structured Manner
+Purpose 
+-------
+	1. Delivers a class suited for analysis of Product Level Exported Data.
+	2. Stores Product Level Data in a Consistent and Structured Manner
 
-Internal Data Structures:
+Internal Data Structures
 ------------------------
-	[1] **Default** => Data is stored in a pd.DataFrame with index (<country>, <productcode>), <export>
-	[2] Other Data Structures => 'BiPartiteGraph', 'MultiPartiteGraph'
+	1. **Default** => Data is stored in a pd.DataFrame with index (<country>, <productcode>), <export>
+	2. Other Data Structures => 'BiPartiteGraph', 'MultiPartiteGraph' [Migrate these to ProductLevelExportNetwork.py]
 
-Example:
---------
+Example
+-------
 	TBD
 
-Questions:
-----------
+Questions
+---------
 	[1] How should I handle conversion to other trade data classification (HS) etc? Converter Class / Internal Methods?
 	[2] How should I handle different data containers as some algorithms are much easier to generate based on a pre-computed data structure
 		[Answer: So far, write algorithms based on the easiest computable underlying data structure]
@@ -59,10 +61,10 @@ import copy
 
 ### --- Accelerators --- ###
 # from numba import double
-# from numba.decorators import jit, autojit
+# from numba.decorators import jit
 
 from numbapro import double
-from numbapro.decorators import jit, autojit
+from numbapro.decorators import jit
 
 ### -- Project Imports --- ###
 import pyeconlab.wdi as wdi 								#Should this be relative?
@@ -73,73 +75,73 @@ from Classification import WITSSITCR2L4 					#Migrate these to Trade.Classificat
 ### --- ProductLevelExport System --- ###
 
 class ProductLevelExportSystem(object):
-	'''
-		Cross-Country Network of Exporters to the World
+	"""
+	Cross-Country Network of Exporters to the World
 
-		Base Data Structures:
-		---------------------
-			[1] DataFrame 																	[Based on an instance of pd.DataFrame()]
-			[2] BiPartiteGraph('country' -> 'product', edge = export value) 				[Based on an instance of nx.Graph()]
-			[3] MultiDiGraph('country' -> 'world', key=productcode, edge = export value) 	[Based on an instance of nx.MultiDiGraph()]
-				[**Convention**: Incoming Edge = Import]
+	Base Data Structures
+	--------------------
+		[1] DataFrame 																	[Based on an instance of pd.DataFrame()]
+		[2] BiPartiteGraph('country' -> 'product', edge = export value) 				[Based on an instance of nx.Graph()]
+		[3] MultiDiGraph('country' -> 'world', key=productcode, edge = export value) 	[Based on an instance of nx.MultiDiGraph()]
+			[**Convention**: Incoming Edge = Import]
 
-		Notes & Questions:
-		------------------
-			[1] Should self.data be an immutable object that is always formated as a long indexed DataFrame?
-			[2] Class Needs to Extend object for Properties to work correctly
-			[3] Should Visualisations and Plotting be in a Separate Class File?
+	Notes & Questions
+	-----------------
+		[1] Should self.data be an immutable object that is always formated as a long indexed DataFrame?
+		[2] Class Needs to Extend object for Properties to work correctly
+		[3] Should Visualisations and Plotting be in a Separate Class File?
 
-		**Default Structure** => pd.DataFrame, but some methods may require BiPartiteGraph or MultiDiGraph as they can be easier to compute from
+	**Default Structure** => pd.DataFrame, but some methods may require BiPartiteGraph or MultiDiGraph as they can be easier to compute from
 
-		Architecture Updates: (RAM currently not binding constraing, focusing of computation for now = Cython)
-		--------------------
-			[1] Impliment the following change to the Architecture (Using Property Constructor)
-				
-				self._matrix = None 								#Last Computed Matrix
-				
-				Note using _matrix.name or _matrix.notes as Pandas Operations can remove these attributes from the underlying object!
-				self._matrix_name = ''
-				self._matrix_notes = '' 							#Last Computed Matrix_Notes
+	Architecture Updates: (RAM currently not binding constraing, focusing of computation for now = Cython)
+	--------------------
+		[1] Impliment the following change to the Architecture (Using Property Constructor)
+			
+			self._matrix = None 								#Last Computed Matrix
+			
+			Note using _matrix.name or _matrix.notes as Pandas Operations can remove these attributes from the underlying object!
+			self._matrix_name = ''
+			self._matrix_notes = '' 							#Last Computed Matrix_Notes
 
-				@def matrix():
-					doc = "The matrix property."
-					def fget(self):
-						return self._matrix
-					def fset(self, value):
-						if self._matrix != None:
-							#Pop Previously Computed Matrix into Preserve#
-							self._preserved_matrix[self._matrix_name] = self._matrix
-							self._preserved_matrix_notes[self._matrix_name] = self._matrix_notes
-						self._matrix = value
-					def fdel(self):
-						del self._matrix
-					return locals()
-				matrix = property(**matrix())
+			@def matrix():
+				doc = "The matrix property."
+				def fget(self):
+					return self._matrix
+				def fset(self, value):
+					if self._matrix != None:
+						#Pop Previously Computed Matrix into Preserve#
+						self._preserved_matrix[self._matrix_name] = self._matrix
+						self._preserved_matrix_notes[self._matrix_name] = self._matrix_notes
+					self._matrix = value
+				def fdel(self):
+					del self._matrix
+				return locals()
+			matrix = property(**matrix())
 
-				def get_matrix(self, matrix_name):
-					#Check self._matrix_name First then look in _preserved_matrix
-					# i.e. A.get_matrix('eci') will return eci matrix
+			def get_matrix(self, matrix_name):
+				#Check self._matrix_name First then look in _preserved_matrix
+				# i.e. A.get_matrix('eci') will return eci matrix
 
-				def load_matrix(self, matrix_name):
-					#Swap out self._matrix for desired matrix
+			def load_matrix(self, matrix_name):
+				#Swap out self._matrix for desired matrix
 
-				Init Option: InMemory or OnDisk [__init__(self, in_memory=True)]
-				--------------------------
-				self._preserved_matrix = dict() OR HDFStore
-				self._preserved_matrix_notes = dict() OR HDFStore
+			Init Option: InMemory or OnDisk [__init__(self, in_memory=True)]
+			--------------------------
+			self._preserved_matrix = dict() OR HDFStore
+			self._preserved_matrix_notes = dict() OR HDFStore
 
-			Provide Backward Compatability:
-			-------------------------------
-				def populate_matrix_objects(self)
-					self.eci = self.get_matrix('eci')
-					etc.
+		Provide Backward Compatability
+		------------------------------
+			def populate_matrix_objects(self)
+				self.eci = self.get_matrix('eci')
+				etc.
 
-		Code Reorganisation Updates:
-		---------------------------
-			ProductLevelExport.py {Core => Majority of this Code}
-				ProductSpace => ProductSpace Analysis 
-				Plotting => Plotting [Are these really PLES specific? or should this be on it's own level where .plot_mcp() is imported into objects?]
-	'''
+	Code Reorganisation Updates
+	---------------------------
+		ProductLevelExport.py {Core => Majority of this Code}
+			ProductSpace => ProductSpace Analysis 
+			Plotting => Plotting [Are these really PLES specific? or should this be on it's own level where .plot_mcp() is imported into objects?]
+	"""
 
 	##########################
 	## -- Setup Routines -- ##
@@ -220,20 +222,10 @@ class ProductLevelExportSystem(object):
 
 	def complete_setup(self, verbose=False):
 		'''
-			Complete Setup of DataShapes and Computables within Object
+		Complete Setup of DataShapes and Computables within Object
 		'''
 		self.setup_data(verbose=verbose)
 		self.setup_computables(verbose=verbose)
-
-	def setup_data(self, verobose=False):
-		'''
-			Completely Populate the Object with Useable DataShapes and Networks
-			Future Work:
-			------
-				[1] Refactor from_df() to import data into self.data ONLY and split out the network functions into setup_bipartitegraph(), setup_multidigraph()
-		'''
-		## -- This is Current Handled by from_df() -- ##
-		raise NotImplementedError
 
 	def setup_computables(self, verbose=False):
 		'''
@@ -267,6 +259,7 @@ class ProductLevelExportSystem(object):
 		'''	
 		if verbose: print "__getitem__ for core type = %s" % self.core_type
 		## -- Base Object Structure is network -- ##
+
 		if self.core_type == 'network':
 			if isinstance(val, Country) or isinstance(val, Product) and self.use_objects==True:  		
 				return self.network[val]
@@ -373,29 +366,41 @@ class ProductLevelExportSystem(object):
 		#return True
 
 	def from_df(self, df, country_classification, product_classification, compile_dtypes, year, use_objects=False, cntry_obj=None, prod_obj=None, df_notes='', verbose=False):
-		''' 
-			Create Base Objects (self.data and self.network) From Pandas DataFrame
-			
-			Incoming DataFrame:
-			-------------------
-										'export'
-			<country>, <productcode> 	 value
+		""" 
+		Create Base Objects (self.data and self.network) From Pandas DataFrame
+		
+		Incoming DataFrame
+		------------------
+									'export'
+		<country>, <productcode> 	 value
 
-			Input:
-			------
-				[1] compile_dtypes 	: 	['DataFrame', 'BiPartiteGraph', 'MultiPartiteGraph']
-										** The Last Specified Network is Constructed **
+		Parameters
+		----------
+		country_classification  	: 	str
+										Specify Country Classification (i.e. "ISO3C")
+		product_classification 		: 	str
+										Specify Product Classification (i.e. "SITCR2")
+		compile_dtypes 	: 	list(str)
+							['DataFrame', 'BiPartiteGraph', 'MultiPartiteGraph']
+							Warning: Only specify 1 x Network Structure ** The Last Specified Network is Constructed **
+		year 			: 	int
+		use_objects 	: 	bool, optional(default=False)
+							Use Country and Product Objects in Network
+		cntry_obj	 	: 	Country Objects
+		prod_obj	 	: 	Product Objects
+		df_notes 		: 	Notes for DataFrame
 
-			Notes:
-			------ 
-				[1] Only ONE network type is produced even if more are specified in this list. The last computed network will be assigned to self.network
-					Future Work: Detect Collisions and Move self.network to self.network_preserve to preserve computed structure
-				[2] Currently no implimented option to inject Product Objects. They are currently always created from scratch and filled from self.classification etc.
+		Notes
+		-----
+			1. Only ONE network type is produced even if more are specified in this list. The last computed network will be assigned to self.network
+			   Future Work: Detect Collisions and Move self.network to self.network_preserve to preserve computed structure
+			2. Currently no implimented option to inject Product Objects. They are currently always created from scratch and filled from self.classification etc.
 
-			Future Work:
-			-----------
-				[1] Current implimentation only allows prefilled country objects and creates instances of Products. Allow for prefilled productcodes if required!
-		'''
+		Future Work
+		-----------
+			1. Current implimentation only allows prefilled country objects and creates instances of Products. Allow for prefilled productcodes if required!
+			2. Remove NetworkX from System
+		"""
 		# - Set Year - #
 		self.year = year
 
@@ -992,7 +997,7 @@ class ProductLevelExportSystem(object):
 		# - Computational Helper Functions - #
 
 		# from numba import double
-		# from numba.decorators import jit, autojit
+		# from numba.decorators import jit
 
 		from numbapro import double
 		from numbapro.decorators import jit
@@ -2476,9 +2481,9 @@ class ProductLevelExportSystem(object):
 
 		# - Helper Functions - #
 		def index_array(labels, items):           													## ==> CODE DUPLICATED: Move to Common File for Plotting Helper Functions <== ##
-			''' 
-				Take np.array and return appropriate index positions for items
-			'''
+			""" 
+			Take np.array and return appropriate index positions for items
+			"""
 			index = []
 			for item in items:
 				try:
@@ -2490,19 +2495,19 @@ class ProductLevelExportSystem(object):
 			return np.array(index)
 
 		def prepare_scaling_vectors(cpdata, row_scaleby=None, column_scaleby=None):
-			''' 
-				Prepares scaleby vectors for plot_scaled_mcp_heatmap() function 
-				[Basically generates a jointly indexed set of values for rowsortby and rowscale by vectors]
-				
-				Notes:
-				-----
-					[1] Only data matching between the original cpdata matrix and the scaleby series will be returned
-						This allows one to use country_income vectors and any extra data is discarded in preparing the scalebys 
+			"""
+			Prepares scaleby vectors for plot_scaled_mcp_heatmap() function 
+			[Basically generates a jointly indexed set of values for rowsortby and rowscale by vectors]
+			
+			Notes
+			-----
+				1. Only data matching between the original cpdata matrix and the scaleby series will be returned
+					This allows one to use country_income vectors and any extra data is discarded in preparing the scalebys 
 
-				Work:
-				----
-					[1] Where should this method live? Could be useful for other functions
-			'''
+			Work
+			----
+				1. Where should this method live? Could be useful for other functions
+			"""
 			if type(row_scaleby) == pd.Series:
 				rownames = cpdata.index
 				row_scaleby = row_scaleby[rownames]        			#Select Appropriate Data
@@ -3031,26 +3036,35 @@ class ProductLevelExportSystem(object):
 
 	default_prods = ['8421', '3330', '7922', '8748', '7810', '7442', '7781']
 	def plot_proximity(self, sortby=None, sortby_text='', scaleby=None, scaleby_text='', label_prods=default_prods, prox_cutoff=-1, step=0, xlabel_rot=0, size=6):
-		'''
-			Plot Proximity Matrix
+		"""
+		Plot Proximity Matrix
 
-			Options:
-			-------
-				sortby  		: 	SortBy Series
-				sortby_text 	: 	Text to Add to the Labels
-				scaleby 		: 	Scaling Vector (Heterogenous Row and Column Sizes)
-				scaleby_text 	: 	Text to Add to the Labels
-				label_prods 	: 	List of Products to Label
-				prox_cutoff 	: 	Proximity Cutoff
-				step    		:	Step for Row and Column Labels (If label_prods is not specified)
-				xlabel_rot 		: 	Rotate xlabel by degrees
-				size 			: 	Figure Size 
+		Parameters
+		----------
+		sortby  		: 	pd.Series, optional(default=None)
+							Provide a SortBy Series
+		sortby_text 	: 	str, option(default='')
+							Text to Add to the Labels
+		scaleby 		: 	pd.Series, optional(default=None)
+							Provide a Scaling Vector (Heterogenous Row and Column Sizes)
+		scaleby_text 	: 	str, optional(default='')
+							Text to Add to the Labels for Scaleby
+		label_prods 	: 	list(str), optional(default=default_prods)
+							List of Products to Label
+		prox_cutoff 	: 	int, optional(default=-1)
+							Proximity Cutoff (-1 = No Cutoff)
+		step    		:	int, optional(default=0)
+							Step for Row and Column Labels
+		xlabel_rot 		: 	int, optional(default=0)
+							Rotate xlabel by degrees
+		size 			: 	int, optional(default=6)
+							Figure Size 
 
-			Notes:
-			------
-				[1] SITC4 Products step = 10 is a good number
+		Notes
+		-----
+			1. SITC L4 Products step = 10 is a good number
 
-		'''
+		"""
 		# - Standard Library Imports - #
 		from matplotlib import cm 						#Note: Check if it is in header as no need to import twice
 
@@ -3158,11 +3172,16 @@ class ProductLevelExportSystem(object):
 
 
 	def plot_proximity_simple(self, sortby_label=''):
-		'''
-			Simple Proximity Plot for Exploring Data
-			Note: 
-				[1] To use sortby_label then you should presort the data
-		'''
+		"""
+		Simple Proximity Plot for Exploring Data
+
+		Parameters
+		----------
+		sortby_label : 	str, optional(default='')
+						Specify a sortby label
+						Warning: To use sortby_label then you should presort the data
+
+		"""
 		# - Plot Generation - #    
 		fig = plt.figure()
 		ax = fig.add_subplot(1,1,1)
@@ -3290,6 +3309,7 @@ from DynamicProductLevelExportSystem import *
 
 ### -- Main For Library File: ProductLevelExportSystem --- ###
 
+#--Below Should be Added to a Testing Module--#
 
 if __name__ == '__main__':
 	print "Library File for ProductLevelExportSystem Class"
