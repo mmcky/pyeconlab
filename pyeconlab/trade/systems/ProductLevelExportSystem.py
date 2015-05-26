@@ -286,6 +286,31 @@ class ProductLevelExportSystem(object):
 		else:
 			raise ValueError('Core Type!')																			
 
+
+	@property
+	def total_export(self):
+		try:
+			return self._total_export
+		except:
+			self._total_export = self.data.sum()["export"]
+			return self._total_export
+
+	@property
+	def total_product_export(self):
+		try:
+			return self._total_product_export
+		except:
+			self._total_product_export = self.data.groupby(level=["productcode"]).sum()["export"]
+			return self._total_product_export
+	
+	@property 
+	def total_country_export(self):
+		try:
+			return self._total_country_export
+		except:
+			self._total_country_export = self.data.groupby(level=["country"]).sum()["export"]
+			return self._total_country_export
+
 	## -- Getter Methods -- ##
 
 	def get_self_data(self):
@@ -339,6 +364,8 @@ class ProductLevelExportSystem(object):
 		products = sorted(df.index.levels[df.index.names.index('productcode')])
 		if verbose: print "ProductCodes: %s" % products
 		return products
+
+
 
 	##############
 	## -- IO -- ##
@@ -827,6 +854,7 @@ class ProductLevelExportSystem(object):
 		rca_table.name = 'RCA-DecompositionTable'
 		return rca_table
 
+
 	def symmetric_rca_matrix(self, series_name='export', fillna=False, clear_temp=True, verbose=False):
 		return self.rsca_matrix(series_name=series_name, fillna=fillna, clear_temp=clear_temp, verbose=verbose)
 
@@ -842,6 +870,65 @@ class ProductLevelExportSystem(object):
 		# - Compute RSCA - #
 		rsca = self.rca.applymap(lambda x: (x-1)/(x+1))
 		return rsca
+
+	def special_rca_matrix(self, rca_type, fillna=False, verbose=False):
+		"""
+		Construct Special RCA Matrix
+		
+		Special Matrix Types
+		--------------------
+		'Yu' -> Yu et al (2009), "The normalized revealed comparative advantage index", Ann Reg Sci, 43, pg 267-282
+
+		"""
+		if rca_type == "yu":
+			return self.yu_rca_matrix(self, fillna=fillna, verbose=verbose)
+		else:
+			raise ValueError("Must specify a matrix of type ['symmetric', 'yu']")
+
+	def yu_rca_matrix(self, fillna=False, return_intermediates=False, apply_factor=True, return_mcp=False, verbose=False):
+		""" 
+		Compute Normalised Comparative Advantage
+		'Yu' -> Yu et al (2009), "The normalized revealed comparative advantage index", Ann Reg Sci, 43, pg 267-282
+		
+		STATUS: IN-TESTING
+
+		Notes
+		-----
+			1. Perform a comparison with Balassa RCA
+
+		"""
+		if verbose: print "[INFO] Computing 'Yu' (2009) Normalised RCA Matrix"
+		E = self.total_export
+		Ei = self.total_country_export
+		Ej = self.total_product_export
+		Eij = self.data["export"]
+		EjEi = {}
+		for country, data in Ei.iteritems():
+			EjEi[country] = Ej.mul(data)
+		EjEi = pd.DataFrame(EjEi).unstack()
+		EjEi.index.names = ["country", "productcode"]
+		EjEi.name = "EjEi"
+		#-Compute NRCA-#
+		NEij = Eij.div(E)
+		NEij.name = "NExport"
+		NEij = pd.DataFrame(NEij).reset_index()
+		NEjEi = EjEi.div(E*E)
+		NEjEi.name = "NEjEi"
+		NEjEi = pd.DataFrame(NEjEi).reset_index()
+		NRCA = NEij.merge(NEjEi, on=["country","productcode"]) 	#Merge as MultiIndex is not Implemented for Merge
+		NRCA["NRCA"] = NRCA["NExport"] - NRCA["NEjEi"]
+		NRCA = NRCA.set_index(["country", "productcode"])["NRCA"].unstack("productcode")
+		if apply_factor:
+			NRCA = NRCA.applymap(lambda x: x*10000)
+		if fillna:
+			NRCA = NRCA.fillna(0.0)
+		if return_intermediates:
+			return NRCA, E, Ei, Ej, Eij, NEij, NEjEi
+		if return_mcp:
+			NRCA = NRCA.fillna(0.0)
+			return NRCA.applymap(lambda x: 1 if x > 0.0 else 0)
+		return NRCA
+
 
 	def country_shares(self, series_name='export'):
 		'''

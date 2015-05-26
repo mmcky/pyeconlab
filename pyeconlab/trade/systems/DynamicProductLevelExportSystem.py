@@ -1076,6 +1076,52 @@ class DynamicProductLevelExportSystem(object):
 			result[year] = self.ples[year].srca_matrix(series_name, fillna, clear_temp, verbose)
 		return result
 
+	def yu_rca_matrices(self, years=None, fillna=False, apply_factor=True, return_mcp=False, verbose=False):
+		"""
+		Compute Yu Normalised RCA Matrices
+		"""
+		if years == None: years = self.years
+		result = dict()
+		for year in years:
+			if verbose: print "[INFO] Computing Yu Normalised RCA Matrix for year: %s"%year 
+			result[year] = self.ples[year].yu_rca_matrix(fillna=fillna, apply_factor=apply_factor, return_mcp=return_mcp)
+		return result
+
+	def rcav_matrix(self, years, fillna=False, complete_data=False, return_intermediates=False, verbose=False):
+		"""
+		Revealed Comparative Advantage Variation
+		Cai (2008) "Towards a more general measure of revealed comparative advantage variation", Applied Economics Letters, 15:9, 723-726
+
+		STATUS: NEEDS TESTING
+
+		A more general measure of revealed comparative advantage variation.
+
+		Parameters
+		----------
+		years 	: 	Tuple(start_year, future_year)
+					Provide Comparison Years
+
+		"""
+		if type(years) != tuple:
+			raise ValueError("Need to specify (base_year, future_year) in years tuple")
+		else:
+			base_year, future_year = years
+		#-Compute Beta-#
+		g = (self.ples[future_year].total_export - self.ples[base_year].total_export) / self.ples[base_year].total_export
+		gk = (self.ples[future_year].total_product_export - self.ples[base_year].total_product_export).div(self.ples[base_year].total_product_export)
+		cik = (self.ples[base_year].data["export"]).div(self.ples[base_year].total_country_export)
+		beta = (1+g) / (1+(cik.mul(gk)).sum())
+		#-RCAV-#
+		rca_base = self.ples[base_year].rca_matrix(complete_data=complete_data)
+		rca_future = self.ples[future_year].rca_matrix(complete_data=complete_data)
+		self.rcav = rca_base - beta * rca_future
+		if fillna:
+			self.rcav = self.rcav.fillna(0.0)
+		if return_intermediates:
+			return self.rcav, g, gk, cik, beta
+		return self.rcav
+
+
 	##########################################################
 	## -- ProductSpace: Analysis and Computation Methods -- ##
 	##########################################################
