@@ -871,21 +871,21 @@ class ProductLevelExportSystem(object):
 		rsca = self.rca.applymap(lambda x: (x-1)/(x+1))
 		return rsca
 
-	def special_rca_matrix(self, rca_type, fillna=False, verbose=False):
-		"""
-		Construct Special RCA Matrix
+	# def special_rca_matrix(self, rca_type, fillna=False, verbose=False):
+	# 	"""
+	# 	Construct Special RCA Matrix
 		
-		Special Matrix Types
-		--------------------
-		'Yu' -> Yu et al (2009), "The normalized revealed comparative advantage index", Ann Reg Sci, 43, pg 267-282
+	# 	Special Matrix Types
+	# 	--------------------
+	# 	'Yu' -> Yu et al (2009), "The normalized revealed comparative advantage index", Ann Reg Sci, 43, pg 267-282
 
-		"""
-		if rca_type == "yu":
-			return self.yu_rca_matrix(self, fillna=fillna, verbose=verbose)
-		else:
-			raise ValueError("Must specify a matrix of type ['symmetric', 'yu']")
+	# 	"""
+	# 	if rca_type == "yu":
+	# 		return self.yu_rca_matrix(self, fillna=fillna, verbose=verbose)
+	# 	else:
+	# 		raise ValueError("Must specify a matrix of type ['symmetric', 'yu']")
 
-	def yu_rca_matrix(self, fillna=False, return_intermediates=False, apply_factor=True, return_mcp=False, verbose=False):
+	def yu_rca_matrix(self, fillna=False, return_intermediates=False, apply_factor=True, return_mcp=False, set_property=False, verbose=False):
 		""" 
 		Compute Normalised Comparative Advantage
 		'Yu' -> Yu et al (2009), "The normalized revealed comparative advantage index", Ann Reg Sci, 43, pg 267-282
@@ -927,6 +927,9 @@ class ProductLevelExportSystem(object):
 		if return_mcp:
 			NRCA = NRCA.fillna(0.0)
 			return NRCA.applymap(lambda x: 1 if x > 0.0 else 0)
+		if set_property:
+			self.rca = NRCA
+			self.rca_notes = "Yu (2009) RCA Matrix"
 		return NRCA
 
 
