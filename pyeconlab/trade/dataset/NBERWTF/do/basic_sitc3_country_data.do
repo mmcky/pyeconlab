@@ -57,13 +57,13 @@ cd $WORKINGDIR
 //global DATASET "A"
 //global LEVEL 3   			//NotImplemented
 
-global DATASETS "A B C D E F G H I"
+global DATASETS "A B C D E F" 	//G H I 
+
+//global DATASET="E"
 
 foreach item of global DATASETS {
 	
 	global DATASET="`item'"
-	
-	//global DATASET="E"
 	
 	capture log close
 	local fl = "nberwtf_stata_sitcl3_data_"+"$DATASET"+".log"
