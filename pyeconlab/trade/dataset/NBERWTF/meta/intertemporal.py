@@ -61,6 +61,7 @@ class IntertemporalCountries(object):
 			'SVK' 	: 'SP4',
 			'SVN' 	: 'SP3',
 			'MKD' 	: 'SP3',
+			'PAK' 	: 'SP2',
 			'TJK'	: 'SP1',
 			'TKM' 	: 'SP1',
 			'UKR' 	: 'SP1',
@@ -72,7 +73,7 @@ class IntertemporalCountries(object):
 	iso3c_for_1962_2000_definitions = {
 			#-Splits-#
 			'SP1' 	: 	('SUN', ['ARM', 'AZE', 'BLR', 'EST', 'GEO', 'KAZ', 'KGZ', 'LVA', 'LTU', 'MDA', 'RUS', 'TJK', 'TKM', 'UKR', 'UZB']),
-			'SP2' 	: 	('IND', ['IND', 'BGD']),
+			'SP2' 	: 	('PAK', ['PAK', 'BGD']),
 			'SP3' 	: 	('YUG', ['BIH', 'HRV', 'MKD', 'MNE', 'SVN', 'SRB']),
 			'SP4' 	: 	('CSK', ['CZE', 'SVK']),
 			#-Joins-#
