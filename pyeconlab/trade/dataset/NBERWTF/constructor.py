@@ -247,7 +247,7 @@ class NBERWTFConstructor(NBERWTF):
     __raw_data_hdf_yearindex_fn = u'wtf62-00_yearindex.h5'
     __cache_dir = u"cache/"
 
-    def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, skip_setup=False, force=False, reduce_memory=False, verbose=True):
+    def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, skip_setup=False, force=False, reduce_memory=False, apply_fixes=True, verbose=True):
         """ 
         Load RAW Data into Object
 
@@ -272,6 +272,8 @@ class NBERWTFConstructor(NBERWTF):
                             [Warning: This will render properties that depend on self.__raw_data inoperable]
                             Usage: Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
                             [Default: False] Only Saves ~2GB of RAM
+        apply_fixes     :   bool, optional(default=True)
+                            Apply Fixes to NBER Raw data in line with NBER FAQ
         
         """
         #-Assign Source Directory-#
@@ -306,17 +308,25 @@ class NBERWTFConstructor(NBERWTF):
                 self.convert_stata_to_hdf_yearindex(verbose=verbose)    #Compute Year Index Version Also
         else:
             raise ValueError("ftype must be dta or hdf")
+        
         #-Reduce Memory-#
         if reduce_memory:
             self._dataset = self.__raw_data                                     #Saves ~2Gb of RAM (but cannot access raw_data)
             self.__raw_data = None
         else:
             self._dataset = self.__raw_data.copy(deep=True)                     #[Default] pandas.DataFrame.copy(deep=True) is much more efficient than copy.deepcopy()
+        
+        #-Apply Fixes-#
+        if apply_fixes:
+            self.fix_raw_data(verbose=verbose)
+
         #-Simple Standardization-#
         if standardise == True: 
             if verbose: print "[INFO] Running Interface Standardisation ..."
             self.standardise_data(force=force, verbose=verbose)
         gc.collect()
+        
+
 
     def __repr__(self):
         string = "Class: %s\n" % (self.__class__)                           + \
@@ -1024,6 +1034,31 @@ class NBERWTFConstructor(NBERWTF):
         #- Add Operation to df attribute -#
         update_operations(self, op_string)
 
+    def fix_raw_data(self, verbose=True):
+        """
+        Apply Fixes to NBER Data for ZWE, MWI
+        
+        ZWE - Drop Data in 1963,1964
+        MWI - Drop Data in 1963,1964
+
+        """
+        if verbose: print "[INFO] Adjustments to RAW DATA based on NBER FAQ ..."
+        for yr in xrange(1963,1964+1,1):
+            for country in ["Malawi", "Zimbabwe"]:
+                if verbose:
+                    print
+                    print "[INFO] Removing %s trade values in year %s ..."%(country, yr)
+                data = self.dataset
+                drop = data.loc[(data.year == yr)&((data.exporter == country)|(data.importer == country))]
+                if verbose:
+                    print "...... Dropping"
+                    print drop.to_string()
+                    print "[INFO] Number of Observations = %s"%data.shape[0]
+                    print "[INFO] Dropping ... %s observations"%len(drop)
+                data = data.drop(drop.index)
+                if verbose: print "[INFO] Number of Observations after drop = %s"%data.shape[0]
+                self._dataset = data    #Set Property
+                gc.collect()
 
     # ------------------------------- #
     # - Operations on Country Codes - #
