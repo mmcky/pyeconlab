@@ -42,13 +42,13 @@ SITC_DATASET_DESCRIPTION = {
     'D' :   u"A Dataset that does not contain AX or any non standard SITCR2 codes, adjusts HK-CHINA data, but does not adjust products or countries for intertemporal consistency",
     'E' :   u"A Dataset that does not contain AX and updates productcodes to be more intertemporally consisted, adjusts HK-CHINA data, but does not adjust countries for intertemporal consistency",
     'F' :   u"A dataset that does not contain AX and updates productcodes to be more intertemporally consisted, adjusts HK-CHINA data, and adjusts countries for intertemporal consistency",
-    'G' :   u"A dataset that does not contain AX or any non standard SITCR2 codes, adjusts HK-CHINA data, and adjusts country codes for intertemporal consistency",
-    'H' :   u"A dataset that does not contain AX and udpates productcodes to be more intertemporally consistent, adjusts HK-CHINA data, and adjusts country codes for intertemporaly consistency and drops non-complete countries (EXPERIMENTAL)",
-    'I' :   u"A dataset that does not contain AX or any non standard SITCR2 codes, adjusts HK-CHINA data, and drops countries that are not intertemporally complete (EXPERIMENTAL)",
+    # 'G' :   u"A dataset that does not contain AX or any non standard SITCR2 codes, adjusts HK-CHINA data, and adjusts country codes for intertemporal consistency",
+    # 'H' :   u"A dataset that does not contain AX and udpates productcodes to be more intertemporally consistent, adjusts HK-CHINA data, and adjusts country codes for intertemporaly consistency and drops non-complete countries (EXPERIMENTAL)",
+    # 'I' :   u"A dataset that does not contain AX or any non standard SITCR2 codes, adjusts HK-CHINA data, and drops countries that are not intertemporally complete (EXPERIMENTAL)",
 } 
 
 SITC_DATASET_OPTIONS = {
-'A' :   {   
+    'A' :   {   
                 #-ProductCode Adjustments-#
                 'AX'     : True,                      #Add a Marker for 'A' and 'X' Codes
                 'dropAX' : False,                     #Drops Products where Codes have 'A' or 'X'
@@ -123,41 +123,41 @@ SITC_DATASET_OPTIONS = {
                 'adjust_units' : False,
                 'source_institution' : 'un',
             },     
-    'G' :   {   
-                'AX'     : True,                     #Add a Marker for 'A' and 'X' Codes
-                'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
-                'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
-                'drop_nonsitcr2' : True,             #Removes Non-Official SITC Revision 2 Codes From the Dataset
-                'adjust_hk' : True,                  #Adjust Data to incorporate Honk Kong Adjusments provided by NBER
-                'intertemp_productcode' : False,     #Compute an Intertemporal ProductCode
-                'intertemp_cntrycode' : True,        #Recode Country Codes to be Intertemporally Consistent
-                'drop_incp_cntrycode' : False,       #Drop Incomplete Intertemporal Countries
-                'adjust_units' : False,
-                'source_institution' : 'un',
-            },
-    'H' :   {                                        #-!!-EXPERIMENTAL-!!-#
-                'AX'     : True,                     #Add a Marker for 'A' and 'X' Codes
-                'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
-                'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
-                'drop_nonsitcr2' : False,            #Removes Non-Official SITC Revision 2 Codes From the Dataset
-                'adjust_hk' : True,                  #Adjust Data to incorporate Honk Kong Adjusments provided by NBER
-                'intertemp_productcode' : True,      #Compute an Intertemporal ProductCode
-                'intertemp_cntrycode' : True,        #Recode Country Codes to be Intertemporally Consistent
-                'drop_incp_cntrycode' : True,        #Drop Incomplete Intertemporal Countries
-                'adjust_units' : False,
-                'source_institution' : 'un',
-            },
-    'I' :   {                                        #-!!-EXPERIMENTAL-!!-#
-                'AX'     : True,                     #Add a Marker for 'A' and 'X' Codes
-                'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
-                'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
-                'drop_nonsitcr2' : True,             #Removes Non-Official SITC Revision 2 Codes From the Dataset
-                'adjust_hk' : True,                  #Adjust Data to incorporate Honk Kong Adjusments provided by NBER
-                'intertemp_productcode' : False,     #Compute an Intertemporal ProductCode
-                'intertemp_cntrycode' : False,       #Recode Country Codes to be Intertemporally Consistent
-                'drop_incp_cntrycode' : True,        #Drop Incomplete Intertemporal Countries
-                'adjust_units' : False,
-                'source_institution' : 'un',
-            },
+    # 'G' :   {   
+    #             'AX'     : True,                     #Add a Marker for 'A' and 'X' Codes
+    #             'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
+    #             'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
+    #             'drop_nonsitcr2' : True,             #Removes Non-Official SITC Revision 2 Codes From the Dataset
+    #             'adjust_hk' : True,                  #Adjust Data to incorporate Honk Kong Adjusments provided by NBER
+    #             'intertemp_productcode' : False,     #Compute an Intertemporal ProductCode
+    #             'intertemp_cntrycode' : True,        #Recode Country Codes to be Intertemporally Consistent
+    #             'drop_incp_cntrycode' : False,       #Drop Incomplete Intertemporal Countries
+    #             'adjust_units' : False,
+    #             'source_institution' : 'un',
+    #         },
+    # 'H' :   {                                        #-!!-EXPERIMENTAL-!!-#
+    #             'AX'     : True,                     #Add a Marker for 'A' and 'X' Codes
+    #             'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
+    #             'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
+    #             'drop_nonsitcr2' : False,            #Removes Non-Official SITC Revision 2 Codes From the Dataset
+    #             'adjust_hk' : True,                  #Adjust Data to incorporate Honk Kong Adjusments provided by NBER
+    #             'intertemp_productcode' : True,      #Compute an Intertemporal ProductCode
+    #             'intertemp_cntrycode' : True,        #Recode Country Codes to be Intertemporally Consistent
+    #             'drop_incp_cntrycode' : True,        #Drop Incomplete Intertemporal Countries
+    #             'adjust_units' : False,
+    #             'source_institution' : 'un',
+    #         },
+    # 'I' :   {                                        #-!!-EXPERIMENTAL-!!-#
+    #             'AX'     : True,                     #Add a Marker for 'A' and 'X' Codes
+    #             'dropAX' : True,                     #Drops Products where Codes have 'A' or 'X'
+    #             'sitcr2' : True,                     #Adds an Official SITC Revision 2 Indicator
+    #             'drop_nonsitcr2' : True,             #Removes Non-Official SITC Revision 2 Codes From the Dataset
+    #             'adjust_hk' : True,                  #Adjust Data to incorporate Honk Kong Adjusments provided by NBER
+    #             'intertemp_productcode' : False,     #Compute an Intertemporal ProductCode
+    #             'intertemp_cntrycode' : False,       #Recode Country Codes to be Intertemporally Consistent
+    #             'drop_incp_cntrycode' : True,        #Drop Incomplete Intertemporal Countries
+    #             'adjust_units' : False,
+    #             'source_institution' : 'un',
+    #         },
 }
 

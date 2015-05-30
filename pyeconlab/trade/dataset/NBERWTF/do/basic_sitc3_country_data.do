@@ -121,7 +121,8 @@ foreach item of global DATASETS {
 		global intertemporal_prod_recode = 1
 		global intertemporal_cntry_recode = 1
 		global incomplete_cntry_recode = 0
-	} 
+	}
+/* 
 	else if "$DATASET" == "G" {
 		global dropAX 	= 1
 		global dropNonSITCR2 = 1 
@@ -145,7 +146,8 @@ foreach item of global DATASETS {
 		global intertemporal_prod_recode = 0
 		global intertemporal_cntry_recode = 0
 		global incomplete_cntry_recode = 1
-	} 	
+	}
+*/ 	
 	else {
 		di "Option %DATASET not valid"
 		exit
