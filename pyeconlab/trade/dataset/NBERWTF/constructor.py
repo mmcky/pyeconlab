@@ -1043,12 +1043,12 @@ class NBERWTFConstructor(NBERWTF):
 
         """
         if verbose: print "[INFO] Adjustments to RAW DATA based on NBER FAQ ..."
+        data = self._dataset
         for yr in xrange(1963,1964+1,1):
             for country in ["Malawi", "Zimbabwe"]:
                 if verbose:
                     print
                     print "[INFO] Removing %s trade values in year %s ..."%(country, yr)
-                data = self.dataset
                 drop = data.loc[(data.year == yr)&((data.exporter == country)|(data.importer == country))]
                 if verbose:
                     print "...... Dropping"
@@ -1057,8 +1057,8 @@ class NBERWTFConstructor(NBERWTF):
                     print "[INFO] Dropping ... %s observations"%len(drop)
                 data = data.drop(drop.index)
                 if verbose: print "[INFO] Number of Observations after drop = %s"%data.shape[0]
-                self._dataset = data    #Set Property
                 gc.collect()
+        self._dataset = data    #Set Property
 
     # ------------------------------- #
     # - Operations on Country Codes - #
