@@ -1067,7 +1067,7 @@ class DynamicProductLevelExportSystem(object):
 
 	def srca_matrices(self, years=None, series_name='export', fillna=False, clear_temp=True, verbose=False):
 		"""
-			Compute Symmetric RCA Matrices by applying transformation: (RCA-1)/(RCA+1) {Log Estimate}
+		Compute Symmetric RCA Matrices by applying transformation: (RCA-1)/(RCA+1) {Log Estimate}
 		"""
 		if years == None: years = self.years
 		result = dict()
@@ -1076,16 +1076,17 @@ class DynamicProductLevelExportSystem(object):
 			result[year] = self.ples[year].srca_matrix(series_name, fillna, clear_temp, verbose)
 		return result
 
-	def yu_rca_matrices(self, years=None, fillna=False, apply_factor=True, return_mcp=False, verbose=False):
+	def yu_rca_matrices(self, years=None, fillna=False, apply_factor=True, return_mcp=False, set_property=False, verbose=False):
 		"""
-		Compute Yu Normalised RCA Matrices
+		Compute Yu Normalised RCA Matrices [Yu, 2009]
 		"""
 		if years == None: years = self.years
 		result = dict()
 		for year in years:
 			if verbose: print "[INFO] Computing Yu Normalised RCA Matrix for year: %s"%year 
-			result[year] = self.ples[year].yu_rca_matrix(fillna=fillna, apply_factor=apply_factor, return_mcp=return_mcp)
-		return result
+			result[year] = self.ples[year].yu_rca_matrix(fillna=fillna, apply_factor=apply_factor, return_mcp=return_mcp, set_property=set_property)
+		if not set_property:
+			return result
 
 	def rcav_matrix(self, years, fillna=False, complete_data=False, return_intermediates=False, verbose=False):
 		"""
