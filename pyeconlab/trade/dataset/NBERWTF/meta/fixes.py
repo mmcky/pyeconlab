@@ -76,3 +76,12 @@ fix_importer_to_iso3c =     {
                                 'USA'       : 'USA',
 
                             }
+
+#-Documented in FAQ-#
+#-Use ZWE and MWI from 1965 Onwards-#
+fix_nber_africa_trade_flows = {
+    "drop" :    {
+                'ZWE' : [1962,1963,1964],
+                'MWI' : [1962,1963,1964],
+                },
+}

@@ -7,6 +7,10 @@ Source Last Checked: 2014-07-04
 
 Manual Check: 	27/08/2014
 
+Updates (June-2015)
+-------------------
+[6] 'France,Monac' : 'FRA' 	=> 'France,Monac' : 'FRA'
+
 Updates
 -------
 [1] 'China HK SAR' : 'CHN' 	=> 'China HK SAR' : 'HKG'
@@ -121,7 +125,7 @@ countryname_to_iso3c = {
 				'Fm Yugoslav' 	: 'YUG',
 				'Fr Ind O' 		: '.', 		#Check
 				'Fr.Guiana' 	: 'GUF',
-				'France,Monac' 	: 'MCO',
+				'France,Monac' 	: 'FRA', 	#Updated from MCO [BUGFIX]
 				'Gabon' 		: 'GAB',
 				'Gambia' 		: 'GMB',
 				'Georgia' 		: 'GEO',

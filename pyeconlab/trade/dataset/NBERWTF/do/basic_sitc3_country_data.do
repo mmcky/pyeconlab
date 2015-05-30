@@ -266,6 +266,12 @@ foreach item of global DATASETS {
 		drop _merge value_adj
 	}
 
+	//Special Drops from NBER FAQ //
+	foreach year of num 1962(1)1964 {
+		drop if year == `year' & (exporter == "Malawi" | importer == "Malawi")
+		drop if year == `year' & (exporter == "Zimbabwe" | importer == "Zimbabwe")
+	}
+
 	**Split Codes to THREE DIGIT**
 	gen sitc3 = substr(sitc4,1,3)
 	drop sitc4
@@ -412,6 +418,12 @@ foreach item of global DATASETS {
 		drop _merge value_adj
 	}
 
+	//Special Drops from NBER FAQ //
+	foreach year of num 1962(1)1964 {
+		drop if year == `year' & (exporter == "Malawi" | importer == "Malawi")
+		drop if year == `year' & (exporter == "Zimbabwe" | importer == "Zimbabwe")
+	}
+
 	**Split Codes to THREE DIGIT**
 	gen sitc3 = substr(sitc4,1,3)
 	drop sitc4
@@ -455,6 +467,12 @@ foreach item of global DATASETS {
 		merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
 		replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
 		drop _merge value_adj
+	}
+	
+	//Special Drops from NBER FAQ //
+	foreach year of num 1962(1)1964 {
+		drop if year == `year' & (exporter == "Malawi" | importer == "Malawi")
+		drop if year == `year' & (exporter == "Zimbabwe" | importer == "Zimbabwe")
 	}
 
 	**Split Codes to THREE DIGIT**
@@ -611,6 +629,12 @@ foreach item of global DATASETS {
 		drop _merge value_adj
 	}
 
+	//Special Drops from NBER FAQ //
+	foreach year of num 1962(1)1964 {
+		drop if year == `year' & (exporter == "Malawi" | importer == "Malawi")
+		drop if year == `year' & (exporter == "Zimbabwe" | importer == "Zimbabwe")
+	}
+
 	**Split Codes to THREE DIGIT**
 	gen sitc3 = substr(sitc4,1,3)
 	drop sitc4
@@ -654,6 +678,12 @@ foreach item of global DATASETS {
 		merge 1:1 year icode importer ecode exporter sitc4 unit dot using "china_hk.dta", keepusing(value_adj)
 		replace value = value_adj if _merge == 3 | _merge == 2 													// Replace value with adjusted values if _matched Note: Only Adjustment in Values not Quantity
 		drop _merge value_adj
+	}
+	
+	//Special Drops from NBER FAQ //
+	foreach year of num 1962(1)1964 {
+		drop if year == `year' & (exporter == "Malawi" | importer == "Malawi")
+		drop if year == `year' & (exporter == "Zimbabwe" | importer == "Zimbabwe")
 	}
 	
 	**Split Codes to THREE DIGIT**
