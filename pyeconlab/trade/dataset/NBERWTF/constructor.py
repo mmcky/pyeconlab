@@ -247,7 +247,7 @@ class NBERWTFConstructor(NBERWTF):
     __raw_data_hdf_yearindex_fn = u'wtf62-00_yearindex.h5'
     __cache_dir = u"cache/"
 
-    def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, skip_setup=False, force=False, reduce_memory=False, apply_fixes=True, verbose=True):
+    def __init__(self, source_dir, years=[], ftype='hdf', standardise=False, apply_fixes=True, skip_setup=False, force=False, reduce_memory=False, verbose=True):
         """ 
         Load RAW Data into Object
 
@@ -261,6 +261,8 @@ class NBERWTFConstructor(NBERWTF):
                             File Type ['dta', 'hdf'] [Default 'hdf' -> however it will generate one if not found from 'dta']
         standardise     :   bool, optional(default=False)
                             Include Standardised Codes (Countries: ISO3C etc.)
+        apply_fixes     :   bool, optional(default=True)
+                            Apply Fixes to NBER Raw data in line with NBER FAQ
         skip_setup      :   bool, optional(default=False)
                             [Testing] This allows you to skip __init__ setup of object to manually load the object with csv data etc. 
                             This is mainly used for loading test data to check attributes and methods etc. 
@@ -272,13 +274,12 @@ class NBERWTFConstructor(NBERWTF):
                             [Warning: This will render properties that depend on self.__raw_data inoperable]
                             Usage: Useful when building datasets to be more memory efficient as the operations don't require a record of the original raw_data
                             [Default: False] Only Saves ~2GB of RAM
-        apply_fixes     :   bool, optional(default=True)
-                            Apply Fixes to NBER Raw data in line with NBER FAQ
         
         """
         #-Assign Source Directory-#
         self._source_dir    = check_directory(source_dir)   # check_directory() performs basic tests on the specified directory
         self.data_type      = u"trade"
+        self._apply_fixes   = apply_fixes
         #-Parse Skip Setup-#
         if skip_setup == True:
             print "[INFO] Skipping Setup of NBERWTFConstructor!"
@@ -307,18 +308,18 @@ class NBERWTFConstructor(NBERWTF):
                 self.convert_raw_data_to_hdf(verbose=verbose)           #Compute hdf file for next load
                 self.convert_stata_to_hdf_yearindex(verbose=verbose)    #Compute Year Index Version Also
         else:
-            raise ValueError("ftype must be dta or hdf")
-        
+            raise ValueError("ftype must be dta or hdf")  
+
         #-Reduce Memory-#
         if reduce_memory:
             self._dataset = self.__raw_data                                     #Saves ~2Gb of RAM (but cannot access raw_data)
             self.__raw_data = None
         else:
             self._dataset = self.__raw_data.copy(deep=True)                     #[Default] pandas.DataFrame.copy(deep=True) is much more efficient than copy.deepcopy()
-        
+
         #-Apply Fixes-#
         if apply_fixes:
-            self.fix_raw_data(verbose=verbose)
+            self.fix_raw_data(verbose=verbose) 
 
         #-Simple Standardization-#
         if standardise == True: 
@@ -495,6 +496,8 @@ class NBERWTFConstructor(NBERWTF):
         if verbose: print "[INFO] Reseting Dataset to Raw Data"
         del self._dataset                                                                           #Clean-up old dataset
         self._dataset = self.__raw_data.copy(deep=True)
+        if self._apply_fixes:
+            self.fix_raw_data(verbose=verbose)
         self.operations = ''
         self.level = 4
 

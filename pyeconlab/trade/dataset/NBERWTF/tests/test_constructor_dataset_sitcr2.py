@@ -284,7 +284,7 @@ class TestAgainstStataData():
         cls.obj = NBERWTFConstructor(source_dir=SOURCE_DATA_DIR)
 
     def setUp(self):
-        self.obj.reset_dataset() #-Reset to RAW Data after each test-#
+        self.obj.reset_dataset(verbose=False) #-Reset to RAW Data after each test-#
         gc.collect()
 
     #-Dataset A-#
