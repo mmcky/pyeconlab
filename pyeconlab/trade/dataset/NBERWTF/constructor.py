@@ -1037,7 +1037,7 @@ class NBERWTFConstructor(NBERWTF):
         #- Add Operation to df attribute -#
         update_operations(self, op_string)
 
-    def fix_raw_data(self, verbose=True):
+    def fix_raw_data(self, verbose=False):
         """
         Apply Fixes to NBER Data for ZWE, MWI
         
