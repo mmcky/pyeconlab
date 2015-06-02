@@ -950,6 +950,24 @@ class ProductLevelExportSystem(object):
 		else:
 			return LI
 
+	def proudman_rca_matrix(self, set_property=False, verbose=False):
+		"""
+		Compute Weighted RCA (Proudman and Redding)
+
+		Proudman (2000), "Evolving Patterns of International Trade", Review of International Economics, 8(3), 373-396
+
+		"""
+		try:
+			rca = self.rca 
+		except:
+			raise ValueError("RCA Matrix needs to be computed first")
+		mean = rca.fillna(0.0).mean(axis=1) 					 		#Fill NA to have a common divisor = Total Products
+		proudman = rca.fillna(0.0).unstack().div(mean, level="country").unstack(level="productcode")
+		if set_property:
+			self.rca = proudman
+			self.rca_notes = "Proudman (2000) Normalised RCA"
+		return proudman
+
 	def yu_rca_matrix(self, fillna=False, return_intermediates=False, apply_factor=True, return_mcp=False, set_property=False, verbose=False):
 		""" 
 		Compute Normalised Comparative Advantage

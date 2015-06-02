@@ -1076,6 +1076,20 @@ class DynamicProductLevelExportSystem(object):
 			result[year] = self.ples[year].srca_matrix(series_name, fillna, clear_temp, verbose)
 		return result
 
+	def proudman_rca_matrices(self, years=None, complete_data=False, set_property=False, verbose=False):
+		"""
+		Compute Proudman RCA matrices
+		"""
+		if years == None: years = self.years
+		result = dict()
+		for year in years:
+			if verbose: print "[INFO] Computing Proudman Normalised RCA Matrix for year: %s"%year 
+			if self.ples[year].rca == None:
+				self.ples[year].rca_matrix(complete_data=complete_data)
+			result[year] = self.ples[year].proudman_rca_matrix(set_property=set_property)
+		if not set_property:
+			return result
+
 	def yu_rca_matrices(self, years=None, fillna=False, apply_factor=True, return_mcp=False, set_property=False, verbose=False):
 		"""
 		Compute Yu Normalised RCA Matrices [Yu, 2009]
