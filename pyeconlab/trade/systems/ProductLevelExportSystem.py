@@ -885,6 +885,49 @@ class ProductLevelExportSystem(object):
 	# 	else:
 	# 		raise ValueError("Must specify a matrix of type ['symmetric', 'yu']")
 
+	def lafay_rca_matrix(self, import_data, gdp, return_intermediates=False, set_property=False, verbose=False):
+		"""
+		Construct Lafay (1992) RCA Measure
+		
+		Parameters
+		----------
+		import 	: 	pd.DataFrame(index="country", "productcode")
+					Provide Import Data
+		gdp 	: 	pd.Series(index="country")
+					Provide GDP Data
+
+		"""
+		#-Export Data-#
+		E = self.total_export 
+		Ei = self.total_country_export
+		Eij = self.data["export"]	
+		#-Import Data-#
+		Iij = import_data["import"]
+		Ii = import_data.groupby(level="country").sum()["import"]
+		I = import_data.sum()
+		#-GDP Data-#
+		Yi = gdp
+		#-Compute Measure-#
+		Ei = Ei.fillna(0.0) 		#If np.NaN then will only consider Intra-Industry Trade 
+		Eij = Eij.fillna(0.0)
+		Ii = Ii.fillna(0.0)
+		Iij = Iij.fillna(0.0)
+		T1 = 1000 / Yi 
+		T2 = Ii.mul(Eij, level="country") 	
+		T3 = Ei.mul(Iij, level="country")
+		T4 = 2*(T2 - T3)
+		T5 = Ei + Ii
+		LI = T1.mul(T4.div(T5, level="country"), level="country")
+		LI = LI.unstack("productcode")
+		LI.name = "Lafay(1992)"
+		if set_property:
+			self.rca = LI 
+			self.rca_notes = "Lafay (1992) Index"
+		if return_intermediates:
+			return LI,T1,T2,T3,T4,T5
+		else:
+			return LI
+
 	def yu_rca_matrix(self, fillna=False, return_intermediates=False, apply_factor=True, return_mcp=False, set_property=False, verbose=False):
 		""" 
 		Compute Normalised Comparative Advantage
