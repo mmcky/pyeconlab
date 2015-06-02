@@ -854,6 +854,28 @@ class ProductLevelExportSystem(object):
 		rca_table.name = 'RCA-DecompositionTable'
 		return rca_table
 
+	def hillman_conditions(self, return_intermediates=False, verbose=False):
+		"""
+		Compute Hillman Conditions for Balassa (1965) RCA Measure
+
+		Hillman (1980), "Observations on the relation between revealed comparative advantage and comparative advantage
+		as indicated by pre-trade relative prices", Review of World Economics, Volume 116, Issue 2, Pages 315-321
+
+		"""
+		Xij = self.data["export"]
+		Xj = self.total_product_export 
+		Xi = self.total_country_export
+		X = self.total_export
+		LHS = 1 - Xij.div(Xj, level="productcode")
+		R1 = Xij.div(Xi, level="country")
+		R2 = 1 - Xi.div(X)
+		RHS = R1.mul(R2, level="country")
+		#-Set Property-#
+		self.hillman_conditions = (LHS > RHS).unstack(level="productcode")
+		if return_intermediates:
+			return self.hillman_conditions, LHS, RHS
+		else:
+			return self.hillman_conditions
 
 	def symmetric_rca_matrix(self, series_name='export', fillna=False, clear_temp=True, verbose=False):
 		return self.rsca_matrix(series_name=series_name, fillna=fillna, clear_temp=clear_temp, verbose=verbose)
@@ -999,10 +1021,21 @@ class ProductLevelExportSystem(object):
 	### --- Mcp Methods --- ##
 	##########################
 
-	def mcp_matrix(self, cutoff=1.0, fillna=True, verbose=False):
-		'''
-			ProductSpace Function for Generating Mcp Matrix {1,0} Export Indicators 'rca' >= 1
-		'''
+	def mcp_matrix(self, cutoff=1.0, fillna=True, apply_hillman=False, verbose=False):
+		"""
+		ProductSpace Function for Generating Mcp Matrix {1,0} Export Indicators 'rca' >= 1
+		
+		Parameters
+		----------
+		cutoff 	: 	numeric, optional(default=1.0)
+					Specify a cutoff value in construction of Mcp Matrix
+		fillna 	: 	bool, optional(defaul=True)
+					Fill np.nan values with 0
+		apply_hillman 	: 	bool, optional(default=False)
+							Apply Hillman (1980) Filter for Mcp Matrix
+							If Hillman == False then Mcp = 0 if Mcp == 1
+
+		"""
 		# - Map of Values - #
 		def mapping(x, cutoff):
 			if np.isnan(x):
@@ -1019,6 +1052,13 @@ class ProductLevelExportSystem(object):
 		self.mcp = self.rca.applymap(lambda x: mapping(x, cutoff)) 	 		
 		if fillna:
 			self.mcp = self.mcp.fillna(0) 											
+		if apply_hillman:
+			try: 												#This should probably be a property
+				hillman = self.hillman_conditions
+			except:
+				hillman = self.hillman_conditions()
+			self.mcp = self.mcp[hillman.fillna(True)].fillna(0.0)
+			self.mcp_notes = "Hillman (1980) Filter Applied"
 		self.mcp.name = 'Mcp'
 		return self.mcp
 
