@@ -931,9 +931,11 @@ class ProductLevelExportSystem(object):
 		Yi = gdp
 		#-Compute Measure-#
 		Ei = Ei.fillna(0.0) 		#If np.NaN then will only consider Intra-Industry Trade 
-		Eij = Eij.fillna(0.0)
+		Eij = Eij.unstack().fillna(0.0).stack()
+		Eij = Eij
 		Ii = Ii.fillna(0.0)
-		Iij = Iij.fillna(0.0)
+		Iij = Iij.unstack().fillna(0.0).stack()
+		Iij = Iij
 		T1 = 1000 / Yi 
 		T2 = Ii.mul(Eij, level="country") 	
 		T3 = Ei.mul(Iij, level="country")
@@ -978,6 +980,7 @@ class ProductLevelExportSystem(object):
 		Notes
 		-----
 			1. Perform a comparison with Balassa RCA
+			2. Assumes Complete Data
 
 		"""
 		if verbose: print "[INFO] Computing 'Yu' (2009) Normalised RCA Matrix"
