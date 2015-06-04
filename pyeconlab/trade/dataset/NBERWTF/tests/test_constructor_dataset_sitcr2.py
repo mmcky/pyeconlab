@@ -500,40 +500,40 @@ class TestAgainstStataData():
         assert_allclose(self.obj.dataset['value'].values, self.F['value'].values) 
         del self.F
 
-    # #-Dataset G-#
+    #-Dataset G-#
 
-    # def test_bilateral_data_G(self):
-    #     #-pyeconlab-#
-    #     self.obj.construct_sitc_dataset(data_type='trade', dataset="G", product_level=3, sitc_revision=2, report=False, verbose=False)  
-    #     #-stata-#
-    #     self.G = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_trade_sitcr2l3_1962to2000_G.dta")
-    #     self.G = self.G.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
-    #     self.G = self.G.reset_index()
-    #     del self.G['index']
-    #     assert_allclose(self.obj.dataset['value'].values, self.G['value'].values)
-    #     del self.G
+    def test_bilateral_data_G(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='trade', dataset="G", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.G = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_trade_sitcr2l3_1962to2000_G.dta")
+        self.G = self.G.sort(['year', 'eiso3c', 'iiso3c', 'sitc3'])
+        self.G = self.G.reset_index()
+        del self.G['index']
+        assert_allclose(self.obj.dataset['value'].values, self.G['value'].values)
+        del self.G
 
-    # def test_export_data_G(self):
-    #     #-pyeconlab-#
-    #     self.obj.construct_sitc_dataset(data_type='export', dataset="G", product_level=3, sitc_revision=2, report=False, verbose=False)                                              
-    #     #-stata-#
-    #     self.G = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_export_sitcr2l3_1962to2000_G.dta")
-    #     self.G.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
-    #     self.G.reset_index(inplace=True)
-    #     del self.G['index']
-    #     assert_allclose(self.obj.dataset['value'].values, self.G['value'].values)
-    #     del self.G
+    def test_export_data_G(self):
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='export', dataset="G", product_level=3, sitc_revision=2, report=False, verbose=False)                                              
+        #-stata-#
+        self.G = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_export_sitcr2l3_1962to2000_G.dta")
+        self.G.sort(['year', 'eiso3c', 'sitc3'], inplace=True)
+        self.G.reset_index(inplace=True)
+        del self.G['index']
+        assert_allclose(self.obj.dataset['value'].values, self.G['value'].values)
+        del self.G
 
-    # def test_import_data_G(self):                                                                                   
-    #     #-pyeconlab-#
-    #     self.obj.construct_sitc_dataset(data_type='import', dataset="G", product_level=3, sitc_revision=2, report=False, verbose=False)  
-    #     #-stata-#
-    #     self.G = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_import_sitcr2l3_1962to2000_G.dta")
-    #     self.G.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
-    #     self.G.reset_index(inplace=True)
-    #     del self.G['index']
-    #     assert_allclose(self.obj.dataset['value'].values, self.G['value'].values) 
-    #     del self.G
+    def test_import_data_G(self):                                                                                   
+        #-pyeconlab-#
+        self.obj.construct_sitc_dataset(data_type='import', dataset="G", product_level=3, sitc_revision=2, report=False, verbose=False)  
+        #-stata-#
+        self.G = pd.read_stata(TEST_DATA_DIR + "nberwtf_stata_import_sitcr2l3_1962to2000_G.dta")
+        self.G.sort(['year', 'iiso3c', 'sitc3'], inplace=True)
+        self.G.reset_index(inplace=True)
+        del self.G['index']
+        assert_allclose(self.obj.dataset['value'].values, self.G['value'].values) 
+        del self.G
 
     # #-Dataset H-#
 
