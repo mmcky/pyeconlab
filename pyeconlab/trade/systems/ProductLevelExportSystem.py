@@ -984,7 +984,7 @@ class ProductLevelExportSystem(object):
 		E = self.total_export
 		Ei = self.total_country_export
 		Ej = self.total_product_export
-		Eij = self.data["export"]
+		Eij = self.data["export"].fillna(0.0)
 		EjEi = {}
 		for country, data in Ei.iteritems():
 			EjEi[country] = Ej.mul(data)
@@ -993,12 +993,14 @@ class ProductLevelExportSystem(object):
 		EjEi.name = "EjEi"
 		#-Compute NRCA-#
 		NEij = Eij.div(E)
+		NEij = NEij.unstack(level="productcode").fillna(0.0).stack()			#Ensure Zero Values into NEij for Subtraction
 		NEij.name = "NExport"
 		NEij = pd.DataFrame(NEij).reset_index()
 		NEjEi = EjEi.div(E*E)
+		NEjEi = NEjEi.unstack(level="productcode").fillna(0.0).stack()			#Ensure Zero Values into NEij for Subtraction
 		NEjEi.name = "NEjEi"
 		NEjEi = pd.DataFrame(NEjEi).reset_index()
-		NRCA = NEij.merge(NEjEi, on=["country","productcode"]) 	#Merge as MultiIndex is not Implemented for Merge
+		NRCA = NEij.merge(NEjEi, how="outer", on=["country","productcode"]) 	#Merge as MultiIndex is not Implemented for Merge
 		NRCA["NRCA"] = NRCA["NExport"] - NRCA["NEjEi"]
 		NRCA = NRCA.set_index(["country", "productcode"])["NRCA"].unstack("productcode")
 		if apply_factor:
