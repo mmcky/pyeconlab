@@ -59,7 +59,7 @@ cd $WORKINGDIR
 
 global DATASETS "A B C D E F" 	//G H I 
 
-//global DATASET="E"
+global DATASETS "G" //Run Single DATASET
 
 foreach item of global DATASETS {
 	
@@ -122,7 +122,6 @@ foreach item of global DATASETS {
 		global intertemporal_cntry_recode = 1
 		global incomplete_cntry_recode = 0
 	}
-/* 
 	else if "$DATASET" == "G" {
 		global dropAX 	= 1
 		global dropNonSITCR2 = 1 
@@ -131,6 +130,7 @@ foreach item of global DATASETS {
 		global intertemporal_cntry_recode = 1
 		global incomplete_cntry_recode = 0
 	} 
+/*
 	else if "$DATASET" == "H" {
 		global dropAX 	= 1
 		global dropNonSITCR2 = 0 
