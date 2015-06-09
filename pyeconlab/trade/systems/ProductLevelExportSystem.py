@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Project: 	PyEconLab
-Class: 		ProductLevelExportSystem - Cross Section [Pandas Core Data Structure]
-Author: 	Matthew McKay <mamckay@gmail.com> 	
+Project:    PyEconLab
+Class:      ProductLevelExportSystem - Cross Section [Pandas Core Data Structure]
+Author:     Matthew McKay <mamckay@gmail.com>   
 
-**Status**: 	IN-WORK
+**Status**:     IN-WORK
 				<FUTURE WORK -> Migrate NetworkX Objects to ProductLevelExportNetwork.py>
 
 
@@ -67,10 +67,10 @@ from numbapro import double
 from numbapro.decorators import jit
 
 ### -- Project Imports --- ###
-import pyeconlab.wdi as wdi 								#Should this be relative?
-from Countries import Country, Countries 					#Migrate these to Country Subpackage
-from Products import Product 								#Migrate these to Trade.Products Subpackage
-from Classification import WITSSITCR2L4 					#Migrate these to Trade.Classification Package
+import pyeconlab.wdi as wdi                                 #Should this be relative?
+from Countries import Country, Countries                    #Migrate these to Country Subpackage
+from Products import Product                                #Migrate these to Trade.Products Subpackage
+from Classification import WITSSITCR2L4                     #Migrate these to Trade.Classification Package
 
 ### --- ProductLevelExport System --- ###
 
@@ -80,9 +80,9 @@ class ProductLevelExportSystem(object):
 
 	Base Data Structures
 	--------------------
-		[1] DataFrame 																	[Based on an instance of pd.DataFrame()]
-		[2] BiPartiteGraph('country' -> 'product', edge = export value) 				[Based on an instance of nx.Graph()]
-		[3] MultiDiGraph('country' -> 'world', key=productcode, edge = export value) 	[Based on an instance of nx.MultiDiGraph()]
+		[1] DataFrame                                                                   [Based on an instance of pd.DataFrame()]
+		[2] BiPartiteGraph('country' -> 'product', edge = export value)                 [Based on an instance of nx.Graph()]
+		[3] MultiDiGraph('country' -> 'world', key=productcode, edge = export value)    [Based on an instance of nx.MultiDiGraph()]
 			[**Convention**: Incoming Edge = Import]
 
 	Notes & Questions
@@ -97,11 +97,11 @@ class ProductLevelExportSystem(object):
 	--------------------
 		[1] Impliment the following change to the Architecture (Using Property Constructor)
 			
-			self._matrix = None 								#Last Computed Matrix
+			self._matrix = None                                 #Last Computed Matrix
 			
 			Note using _matrix.name or _matrix.notes as Pandas Operations can remove these attributes from the underlying object!
 			self._matrix_name = ''
-			self._matrix_notes = '' 							#Last Computed Matrix_Notes
+			self._matrix_notes = ''                             #Last Computed Matrix_Notes
 
 			@def matrix():
 				doc = "The matrix property."
@@ -149,52 +149,52 @@ class ProductLevelExportSystem(object):
 	
 	def __init__(self):
 		## -- Indicator of Core Data Type -- ##
-		self.core_type = 'network'	 				# Core Data Type {Used for __getitem__}
+		self.core_type = 'network'                  # Core Data Type {Used for __getitem__}
 		self.year = None
 
 		## -- Core Data -- ##
-		self.notes  		= ''
-		self.data 			= None					# In-Memory Core Data {Future Work: Make this immutable from external operations self._data}
-		self.data_type  	= 'Pandas'				# {'Pandas' Long Table of (Country, ProductCode) -> <Export>}
-		self.data_notes 	= ''
-		self.data_file 		= None
-		self.data_preserve 	= dict() 				# Preserve Dictionary {**Future Work:** Impliment On-Disk Storage}
-		self.complete_trade_network = False 		# If loaded data is a complete trade network
-		self.supp_data 		= dict() 				# Data Store for Supplimentary Data {if trade network is incomplete}
-		self.country_classification = None 			# Country Classification (i.e. 'ISO3C')
-		self.product_classification = None 			# Product Classification (i.e 'SITCR2L4')
+		self.notes          = ''
+		self.data           = None                  # In-Memory Core Data {Future Work: Make this immutable from external operations self._data}
+		self.data_type      = 'Pandas'              # {'Pandas' Long Table of (Country, ProductCode) -> <Export>}
+		self.data_notes     = ''
+		self.data_file      = None
+		self.data_preserve  = dict()                # Preserve Dictionary {**Future Work:** Impliment On-Disk Storage}
+		self.complete_trade_network = False         # If loaded data is a complete trade network
+		self.supp_data      = dict()                # Data Store for Supplimentary Data {if trade network is incomplete}
+		self.country_classification = None          # Country Classification (i.e. 'ISO3C')
+		self.product_classification = None          # Product Classification (i.e 'SITCR2L4')
 		 
 		## -- Network Models -- ##
 		## -- Note: Should this be Migrated to self.data for better memory management at the expense of checking data types? -- ##
-		## -- 		Answer: **No** Keep self.data as raw data which will be useful as a base for many other operations. If space becomes a problem, then use self.data_preserve to write to HDFStore or Shelf -- ##		
-		self.network = None 						# Network Representation of Product Level Export System
-		self.network_type = None 		
+		## --       Answer: **No** Keep self.data as raw data which will be useful as a base for many other operations. If space becomes a problem, then use self.data_preserve to write to HDFStore or Shelf -- ##     
+		self.network = None                         # Network Representation of Product Level Export System
+		self.network_type = None        
 		self.use_objects = None
-		self.network_attrs = dict() 				#Useful when not using Objects on the Core Network Structure to have attribute tables coded by 'ISO3C' or 'SITCR2' etc
+		self.network_attrs = dict()                 #Useful when not using Objects on the Core Network Structure to have attribute tables coded by 'ISO3C' or 'SITCR2' etc
 		self.network_preserve = dict()
 		# Optional Pointers to data_preserve to hold in-memory copies
 		self.pandas = None
 		self.bipartitegraph = None
 		self.multidigraph = None
 
-		## -- Country & Product Objects -- ##  		# A Dictionary or List of Countries and Products used within the Data Structure
-		self.countries 	= None 
-		self.products 	= None
+		## -- Country & Product Objects -- ##       # A Dictionary or List of Countries and Products used within the Data Structure
+		self.countries  = None 
+		self.products   = None
 
 		## -- Matrix Attributes -- ##
 		self.matrix = None
 		self.matrix_type = None
 		self.matrix_preserve = dict()
 		# OR #
-		self.cp_matrix = None 						# Matrix of Values (c x p)
-		self.adj_matrix = None 						# Adjacency Matrix (node x node)
+		self.cp_matrix = None                       # Matrix of Values (c x p)
+		self.adj_matrix = None                      # Adjacency Matrix (node x node)
 		
 		## -- ProductSpace Attributes -- ##
-		self.productspace = None 					#ProductSpace(ProductLevelExportSystem) Object
+		self.productspace = None                    #ProductSpace(ProductLevelExportSystem) Object
 		## OR ##
 		self.rca = None
-		self.rca_notes = '' 						# Place for writing any notes about the construction of self.rca (i.e. 3yrma-smoothing)
-		self.rca_num = None 						
+		self.rca_notes = ''                         # Place for writing any notes about the construction of self.rca (i.e. 3yrma-smoothing)
+		self.rca_num = None                         
 		self.rca_den = None
 		self.mcp = None
 		self.mcp_notes = ''
@@ -244,7 +244,7 @@ class ProductLevelExportSystem(object):
 		'''
 		if self.use_objects == True:
 			return True
-		elif isinstance(self.network.nodes()[0], Country) or isinstance(self.network.nodes()[0], Product): 			#BiPartite Networks have Country() and Product() as Nodes
+		elif isinstance(self.network.nodes()[0], Country) or isinstance(self.network.nodes()[0], Product):          #BiPartite Networks have Country() and Product() as Nodes
 			self.use_objects = True
 			return True
 		else:
@@ -256,16 +256,16 @@ class ProductLevelExportSystem(object):
 			Notes:
 			------
 				[1] This current returns a dict() object of edges. **Q: What should it return?**
-		'''	
+		''' 
 		if verbose: print "__getitem__ for core type = %s" % self.core_type
 		## -- Base Object Structure is network -- ##
 
 		if self.core_type == 'network':
-			if isinstance(val, Country) or isinstance(val, Product) and self.use_objects==True:  		
+			if isinstance(val, Country) or isinstance(val, Product) and self.use_objects==True:         
 				return self.network[val]
 			if type(val) == str:
 				# - Test if Network Contains Objects - #
-				if self.use_objects == True:															
+				if self.use_objects == True:                                                            
 					try: 
 						c = self.countries[val]
 						return self.network[c]
@@ -282,9 +282,9 @@ class ProductLevelExportSystem(object):
 						raise ValueError("Item: %s is not either a Country or a Product within the network!" % val)
 				# - Network must be simple network - #
 				else:
-					return self.network[val] 	
+					return self.network[val]    
 		else:
-			raise ValueError('Core Type!')																			
+			raise ValueError('Core Type!')                                                                          
 
 
 	@property
@@ -335,7 +335,7 @@ class ProductLevelExportSystem(object):
 			Incoming DataFrame:
 			-------------------
 										'export'
-			<country>, <productcode> 	 value
+			<country>, <productcode>     value
 
 			Future Work:
 			-----------
@@ -355,7 +355,7 @@ class ProductLevelExportSystem(object):
 			Incoming DataFrame:
 			-------------------
 										'export'
-			<country>, <productcode> 	 value
+			<country>, <productcode>     value
 
 			Future Work:
 			-----------
@@ -388,7 +388,7 @@ class ProductLevelExportSystem(object):
 		self.data = df
 		self.data_type = 'DataFrame'
 		self.data_notes = df_notes
-		self.countries = self.get_countries_from_df(df, verbose)									
+		self.countries = self.get_countries_from_df(df, verbose)                                    
 		self.products = self.get_products_from_df(df, verbose)
 		#return True
 
@@ -399,23 +399,23 @@ class ProductLevelExportSystem(object):
 		Incoming DataFrame
 		------------------
 									'export'
-		<country>, <productcode> 	 value
+		<country>, <productcode>     value
 
 		Parameters
 		----------
-		country_classification  	: 	str
+		country_classification      :   str
 										Specify Country Classification (i.e. "ISO3C")
-		product_classification 		: 	str
+		product_classification      :   str
 										Specify Product Classification (i.e. "SITCR2")
-		compile_dtypes 	: 	list(str)
+		compile_dtypes  :   list(str)
 							['DataFrame', 'BiPartiteGraph', 'MultiPartiteGraph']
 							Warning: Only specify 1 x Network Structure ** The Last Specified Network is Constructed **
-		year 			: 	int
-		use_objects 	: 	bool, optional(default=False)
+		year            :   int
+		use_objects     :   bool, optional(default=False)
 							Use Country and Product Objects in Network
-		cntry_obj	 	: 	Country Objects
-		prod_obj	 	: 	Product Objects
-		df_notes 		: 	Notes for DataFrame
+		cntry_obj       :   Country Objects
+		prod_obj        :   Product Objects
+		df_notes        :   Notes for DataFrame
 
 		Notes
 		-----
@@ -447,7 +447,7 @@ class ProductLevelExportSystem(object):
 				self.network_type = dtype
 				if isinstance(cntry_obj, Countries):
 					# - Country Objects - #
-					self.use_objects = True 											#Useful for Algorithms wanting to Know if objects are used in network structure
+					self.use_objects = True                                             #Useful for Algorithms wanting to Know if objects are used in network structure
 					self.network = self.construct_bipartite_with_cobjects(cntry_obj, verbose)
 				else:
 					# - Simple Network Layout of countrynames as nodes and productcode, values as edges - #
@@ -459,8 +459,8 @@ class ProductLevelExportSystem(object):
 				# - Compute Network - #
 				self.network_type = dtype
 				if isinstance(cntry_obj, Countries):
-					# - Countries as Objects - #  												
-					self.use_objects = True 											#Useful for Algorithms wanting to Know if objects are used in network structure
+					# - Countries as Objects - #                                                
+					self.use_objects = True                                             #Useful for Algorithms wanting to Know if objects are used in network structure
 					self.network = self.construct_multidi_with_cobjects(cntry_obj, verbose)
 				else:
 					# - Simple Network Layout of countrycodes as nodes and productcode, values as edges - #
@@ -494,7 +494,7 @@ class ProductLevelExportSystem(object):
 			Notes:
 			------
 				[1] self.network_preserve = tuple(self.network, self.network_type, self.use_objects) [Important when restoring from self.network_preserve]
-		'''	
+		''' 
 		# - Type Testing and Preserving - #
 		if type(self.network) == type(None):
 			return True
@@ -534,7 +534,7 @@ class ProductLevelExportSystem(object):
 			Method for Loading Object with Supplimentary Data
 			Options:
 			-------
-				[1] series_name 	=> 	specify
+				[1] series_name     =>  specify
 		'''
 		self.supp_data[series_name] = df
 
@@ -556,7 +556,7 @@ class ProductLevelExportSystem(object):
 		'''
 		if verbose: print "Constructing a Network of Type: %s" % ntype
 		# - No Country Objects Provided - #
-		if c == None: 																	#IS this going to cause comparison isues when c != None? Better to test isinstance(c, Country())
+		if c == None:                                                                   #IS this going to cause comparison isues when c != None? Better to test isinstance(c, Country())
 			if ntype == 'bipartitegraph':
 				self.construct_bipartite(verbose)
 			elif ntype == 'multidigraph':
@@ -584,7 +584,7 @@ class ProductLevelExportSystem(object):
 			
 			Options:
 			-------
-				[1] verbose_limit 	: 	number of lines to show as example computation
+				[1] verbose_limit   :   number of lines to show as example computation
 		'''
 		if verbose: print "Constructing BiPartiteGraph: %s (with verbose_limit: %s)" % (self.year, verbose_limit)
 		n = nx.Graph()
@@ -607,7 +607,7 @@ class ProductLevelExportSystem(object):
 
 			Notes:
 			------
-				[1] In BiPartiteGraph 	=> 	product() are node objects (Knowing this allows for __repr__ to correctly represent the object as a code rather tham a value)
+				[1] In BiPartiteGraph   =>  product() are node objects (Knowing this allows for __repr__ to correctly represent the object as a code rather tham a value)
 				[2] Added a verbose_limit for large datasets
 
 			Future Work:
@@ -616,16 +616,16 @@ class ProductLevelExportSystem(object):
 		'''
 		if verbose: print "Constructing BiPartiteGraph with Country Objects (from cobjects) and Product Objects (generated): %s (with verbose_limit: %s)" % (self.year, verbose_limit)
 		# - Construct Internal Dict of Country Objects - #
-		countries = self.countries 								#Save List of Countries
-		self.countries = dict() 			
-		products = self.products  								#Save List of Countries
+		countries = self.countries                              #Save List of Countries
+		self.countries = dict()             
+		products = self.products                                #Save List of Countries
 		self.products = dict()
 		n = nx.Graph()
 		#Declare Country Nodes
-		for country in countries:  							#Generate a list within the object?
+		for country in countries:                           #Generate a list within the object?
 			try:
 				if verbose: print "Adding Country %s and is an instance of Country(): %s" % (country, isinstance(c[country], Country))
-				self.countries[country] = c[country] 												#Build Local Dict of Used Country Objects
+				self.countries[country] = c[country]                                                #Build Local Dict of Used Country Objects
 				n.add_node(self.countries[country], bipartite='countries')
 			except:
 				# - Construct Heterogenous Network - #
@@ -635,7 +635,7 @@ class ProductLevelExportSystem(object):
 				self.countries[country] = country
 				n.add_node(country, bipartite='countries')
 				# - Raise ValueError - #
-				#raise ValueError("Country (%s) is not found in countries object" % country) 			#Probably should create empty country? OR return simple object str
+				#raise ValueError("Country (%s) is not found in countries object" % country)            #Probably should create empty country? OR return simple object str
 		#Declare Product Nodes
 		for productcode in products:
 			self.products[productcode] = Product(code=productcode, classification=self.product_classification, ntype='node')
@@ -644,10 +644,10 @@ class ProductLevelExportSystem(object):
 		verbose_counter = 0
 		for idx, val in self.data.iterrows():
 			(country, productcode) = idx
-			export = val['export'] 	
+			export = val['export']  
 			n.add_edge(self.countries[country], self.products[productcode], export=export)
 			if verbose_counter <= verbose_limit:
-				if verbose: print "Adding %s from %s to %s" % (export, self.countries[country], self.products[productcode]) 			#removed  self.products[productcode].code as __repr__ should handle this
+				if verbose: print "Adding %s from %s to %s" % (export, self.countries[country], self.products[productcode])             #removed  self.products[productcode].code as __repr__ should handle this
 			verbose_counter += 1
 		self.network = n
 		return n 
@@ -678,20 +678,20 @@ class ProductLevelExportSystem(object):
 		return n
 
 	def construct_multidi_with_cobjects(self, c, verbose=False, verbose_limit=10):
-		'''	Construct a MultiDi Graph with Country Objects (from c) and Product Objects (Generated)
+		''' Construct a MultiDi Graph with Country Objects (from c) and Product Objects (Generated)
 			Notes:
-				[1] In MultiDiGraph 	=> 	product() are edge objects
+				[1] In MultiDiGraph     =>  product() are edge objects
 		'''
 		if verbose: print "Constructing MultiDiGraph using Country Objects as Nodes and Product Objects as Edges: %s (with verbose_limit: %s)" % (self.year, verbose_limit)
 		# - Construct Internal Dict of Country Objects - #
-		countries = self.countries 				#Save list of Countries
-		self.countries = dict() 				#Rather than rewriting self.countries this should be written to self.countries_obj for Object Catelog (Only and Issue if Run More than One Network Constructor)
-		n = nx.MultiDiGraph()	
+		countries = self.countries              #Save list of Countries
+		self.countries = dict()                 #Rather than rewriting self.countries this should be written to self.countries_obj for Object Catelog (Only and Issue if Run More than One Network Constructor)
+		n = nx.MultiDiGraph()   
 		#Declare Country Nodes
-		for country in countries:  							#Generate a list within the object?
+		for country in countries:                           #Generate a list within the object?
 			try:
 				if verbose: print "Adding Country %s and is an instance of Country(): %s" % (country, isinstance(c[country], Country))
-				self.countries[country] = c[country] 												#Build Local Dict of Used Country Objects
+				self.countries[country] = c[country]                                                #Build Local Dict of Used Country Objects
 				n.add_node(self.countries[country])
 			except:
 				# - Construct Heterogenous Network - #
@@ -701,13 +701,13 @@ class ProductLevelExportSystem(object):
 				self.countries[country] = country
 				n.add_node(country)
 				# - Raise ValueError - #
-				#raise ValueError("Country (%s) is not found in countries object" % country) 			#Probably should create empty country? OR return simple object str
+				#raise ValueError("Country (%s) is not found in countries object" % country)            #Probably should create empty country? OR return simple object str
 		#Declare World Node
 		if verbose: print "Adding World Node"
 		try:
 			self.countries['WLD'] = c['WLD']
 		except:
-			raise ValueError('WLD Country() object not found!') 									#Could Create an Empty Instance?
+			raise ValueError('WLD Country() object not found!')                                     #Could Create an Empty Instance?
 		n.add_node(self.countries['WLD'])
 		#Declare Edges
 		verbose_counter = 0
@@ -718,7 +718,7 @@ class ProductLevelExportSystem(object):
 			p = Product(ntype='edge')
 			p.code = productcode
 			p.value = export 
-			n.add_edge(self.countries[country], self.countries['WLD'], key=productcode, export=p)	 								#From Country to World - Export Value
+			n.add_edge(self.countries[country], self.countries['WLD'], key=productcode, export=p)                                   #From Country to World - Export Value
 			if verbose: 
 				if verbose_counter <= verbose_limit:
 					print "Adding %s (%s) from %s to %s" % (p, p.code, self.countries[country], self.countries['WLD'])
@@ -738,15 +738,15 @@ class ProductLevelExportSystem(object):
 
 		Parameters
 		----------
-		series_name 	: 	str, optional(default='export')
+		series_name     :   str, optional(default='export')
 							Allow specification of the series_name
-		fillna 			: 	bool, optional(default=False)
+		fillna          :   bool, optional(default=False)
 							Fill np.NaN values with 0.0
-		clear_temp 		: 	bool, optional(default=True)
+		clear_temp      :   bool, optional(default=True)
 							Delete temporary data that is generated in the process of computing RCA
-		complete_data 	: 	bool, optional(default=False)
+		complete_data   :   bool, optional(default=False)
 							Allows for ALL RCA values to be computed using a complete trade system. (i.e. TotalWorldTrade is represented by the sample)
-		decomposition 	: 	bool, optional(default=False)
+		decomposition   :   bool, optional(default=False)
 							Saves Numerator (self.rca_num) and Denominator (self.rca_den) Values in respective properties
 
 		Notes:
@@ -765,8 +765,8 @@ class ProductLevelExportSystem(object):
 			## -- Endogenously Compute RCA -- ##
 			if verbose: print "Endogenously computing: TotalWorldExport, TotalProductExport, and TotalCountryExport"
 			self.supp_data['TotalWorldExport'] = self.data[series_name].sum()
-			self.supp_data['TotalProductExport'] = self.data.fillna(0.0).groupby(level=['productcode'])[series_name].transform(np.sum) 	#fillna(0.0) required to get correct return axis length
-			self.supp_data['TotalCountryExport'] = self.data.fillna(0.0).groupby(level=['country'])[series_name].transform(np.sum) 		#fillna(0.0) required to get correct return axis length
+			self.supp_data['TotalProductExport'] = self.data.fillna(0.0).groupby(level=['productcode'])[series_name].transform(np.sum)  #fillna(0.0) required to get correct return axis length
+			self.supp_data['TotalCountryExport'] = self.data.fillna(0.0).groupby(level=['country'])[series_name].transform(np.sum)      #fillna(0.0) required to get correct return axis length
 			self.rca_notes = 'Simple RCA computed from self.data [Assumption: Complete Trade Network]'
 			self.temp['rca_num'] = (self.data[series_name] / self.supp_data['TotalCountryExport'])
 			self.temp['rca_num'].name = 'rca_num'
@@ -795,12 +795,12 @@ class ProductLevelExportSystem(object):
 				if verbose: print "Data in self.supp is a DataFrame. Converting to pd.Series for 'TotalCountryExport'"
 				self.supp_data['TotalCountryExport'] = self.supp_data['TotalCountryExport']['TotalCountryExport']
 			# - Compute Numerator - #
-			self.temp['rca_num'] = self.data[series_name].div(self.supp_data['TotalCountryExport'], level='country') 		#Note TotalCountryExport Needs to be a pd.Series
+			self.temp['rca_num'] = self.data[series_name].div(self.supp_data['TotalCountryExport'], level='country')        #Note TotalCountryExport Needs to be a pd.Series
 			# - Type Checking - #
 			if type(self.supp_data['TotalProductExport']) == pd.DataFrame:
 				if verbose: print "Data in self.supp is a DataFrame. Converting to pd.Series for 'TotalProductExport'"
 				self.supp_data['TotalProductExport'] = self.supp_data['TotalProductExport']['TotalProductExport']
-			if type(self.supp_data['TotalWorldExport']) == pd.Series: 	#Should this be pd.DataFrame?
+			if type(self.supp_data['TotalWorldExport']) == pd.Series:   #Should this be pd.DataFrame?
 				if verbose: print "Data in self.supp is a Series. Converting to Value for 'TotalWorldExport'"
 				self.supp_data['TotalWorldExport'] = self.supp_data['TotalWorldExport']['TotalWorldExport']
 			# - Computing Denominator - #
@@ -841,7 +841,7 @@ class ProductLevelExportSystem(object):
 			self.rca_matrix(series_name=series_name, clear_temp=False, verbose=verbose)
 		# - Fraction Components - #
 		a = self.rca.unstack().reorder_levels(order=['country', 'productcode'])
-		b = self.temp['rca_num'] 												#Usually deleted but is contained in supp data due to clear_temp=False
+		b = self.temp['rca_num']                                                #Usually deleted but is contained in supp data due to clear_temp=False
 		c = self.temp['rca_den']
 		d = self.data['export']
 		e = self.supp_data['TotalCountryExport']
@@ -850,7 +850,7 @@ class ProductLevelExportSystem(object):
 		# - Build Single Pandas DataFrame - #
 		rca_table = pd.concat([a,b,c,d,e,f], axis=1)
 		rca_table.columns = ['RCA', 'RCA_NUM', 'RCA_DEN', 'Export', 'TotalCountryExport', 'TotalProductExport']
-		rca_table['TotalWorldExport'] = g		
+		rca_table['TotalWorldExport'] = g       
 		rca_table.name = 'RCA-DecompositionTable'
 		return rca_table
 
@@ -894,18 +894,18 @@ class ProductLevelExportSystem(object):
 		return rsca
 
 	# def special_rca_matrix(self, rca_type, fillna=False, verbose=False):
-	# 	"""
-	# 	Construct Special RCA Matrix
+	#   """
+	#   Construct Special RCA Matrix
 		
-	# 	Special Matrix Types
-	# 	--------------------
-	# 	'Yu' -> Yu et al (2009), "The normalized revealed comparative advantage index", Ann Reg Sci, 43, pg 267-282
+	#   Special Matrix Types
+	#   --------------------
+	#   'Yu' -> Yu et al (2009), "The normalized revealed comparative advantage index", Ann Reg Sci, 43, pg 267-282
 
-	# 	"""
-	# 	if rca_type == "yu":
-	# 		return self.yu_rca_matrix(self, fillna=fillna, verbose=verbose)
-	# 	else:
-	# 		raise ValueError("Must specify a matrix of type ['symmetric', 'yu']")
+	#   """
+	#   if rca_type == "yu":
+	#       return self.yu_rca_matrix(self, fillna=fillna, verbose=verbose)
+	#   else:
+	#       raise ValueError("Must specify a matrix of type ['symmetric', 'yu']")
 
 	def lafay_rca_matrix(self, import_data, gdp, return_intermediates=False, set_property=False, verbose=False):
 		"""
@@ -913,16 +913,16 @@ class ProductLevelExportSystem(object):
 		
 		Parameters
 		----------
-		import 	: 	pd.DataFrame(index="country", "productcode")
+		import  :   pd.DataFrame(index="country", "productcode")
 					Provide Import Data
-		gdp 	: 	pd.Series(index="country")
+		gdp     :   pd.Series(index="country")
 					Provide GDP Data
 
 		"""
 		#-Export Data-#
 		E = self.total_export 
 		Ei = self.total_country_export
-		Eij = self.data["export"]	
+		Eij = self.data["export"]   
 		#-Import Data-#
 		Iij = import_data["import"]
 		Ii = import_data.groupby(level="country").sum()["import"]
@@ -930,14 +930,14 @@ class ProductLevelExportSystem(object):
 		#-GDP Data-#
 		Yi = gdp
 		#-Compute Measure-#
-		Ei = Ei.fillna(0.0) 		#If np.NaN then will only consider Intra-Industry Trade 
+		Ei = Ei.fillna(0.0)         #If np.NaN then will only consider Intra-Industry Trade 
 		Eij = Eij.unstack().fillna(0.0).stack()
 		Eij = Eij
 		Ii = Ii.fillna(0.0)
 		Iij = Iij.unstack().fillna(0.0).stack()
 		Iij = Iij
 		T1 = 1000 / Yi 
-		T2 = Ii.mul(Eij, level="country") 	
+		T2 = Ii.mul(Eij, level="country")   
 		T3 = Ei.mul(Iij, level="country")
 		T4 = 2*(T2 - T3)
 		T5 = Ei + Ii
@@ -963,7 +963,7 @@ class ProductLevelExportSystem(object):
 			rca = self.rca 
 		except:
 			raise ValueError("RCA Matrix needs to be computed first")
-		mean = rca.fillna(0.0).mean(axis=1) 					 		#Fill NA to have a common divisor = Total Products
+		mean = rca.fillna(0.0).mean(axis=1)                             #Fill NA to have a common divisor = Total Products
 		proudman = rca.fillna(0.0).unstack().div(mean, level="country").unstack(level="productcode")
 		if set_property:
 			self.rca = proudman
@@ -996,14 +996,14 @@ class ProductLevelExportSystem(object):
 		EjEi.name = "EjEi"
 		#-Compute NRCA-#
 		NEij = Eij.div(E)
-		NEij = NEij.unstack(level="productcode").fillna(0.0).stack()			#Ensure Zero Values into NEij for Subtraction
+		NEij = NEij.unstack(level="productcode").fillna(0.0).stack()            #Ensure Zero Values into NEij for Subtraction
 		NEij.name = "NExport"
 		NEij = pd.DataFrame(NEij).reset_index()
 		NEjEi = EjEi.div(E*E)
-		NEjEi = NEjEi.unstack(level="productcode").fillna(0.0).stack()			#Ensure Zero Values into NEij for Subtraction
+		NEjEi = NEjEi.unstack(level="productcode").fillna(0.0).stack()          #Ensure Zero Values into NEij for Subtraction
 		NEjEi.name = "NEjEi"
 		NEjEi = pd.DataFrame(NEjEi).reset_index()
-		NRCA = NEij.merge(NEjEi, how="outer", on=["country","productcode"]) 	#Merge as MultiIndex is not Implemented for Merge
+		NRCA = NEij.merge(NEjEi, how="outer", on=["country","productcode"])     #Merge as MultiIndex is not Implemented for Merge
 		NRCA["NRCA"] = NRCA["NExport"] - NRCA["NEjEi"]
 		NRCA = NRCA.set_index(["country", "productcode"])["NRCA"].unstack("productcode")
 		if apply_factor:
@@ -1050,11 +1050,11 @@ class ProductLevelExportSystem(object):
 		
 		Parameters
 		----------
-		cutoff 	: 	numeric, optional(default=1.0)
+		cutoff  :   numeric, optional(default=1.0)
 					Specify a cutoff value in construction of Mcp Matrix
-		fillna 	: 	bool, optional(defaul=True)
+		fillna  :   bool, optional(defaul=True)
 					Fill np.nan values with 0
-		apply_hillman 	: 	bool, optional(default=False)
+		apply_hillman   :   bool, optional(default=False)
 							Apply Hillman (1980) Filter for Mcp Matrix
 							If Hillman == False then Mcp = 0 if Mcp == 1
 
@@ -1072,11 +1072,11 @@ class ProductLevelExportSystem(object):
 		if type(self.rca) != pd.DataFrame:
 			if verbose: print "RCA Matrix at (self.rca) is currently not available ... running self.rca_matrix()"
 			self.rca_matrix()
-		self.mcp = self.rca.applymap(lambda x: mapping(x, cutoff)) 	 		
+		self.mcp = self.rca.applymap(lambda x: mapping(x, cutoff))          
 		if fillna:
-			self.mcp = self.mcp.fillna(0) 											
+			self.mcp = self.mcp.fillna(0)                                           
 		if apply_hillman:
-			try: 												#This should probably be a property
+			try:                                                #This should probably be a property
 				hillman = self.hillman_conditions
 			except:
 				hillman = self.hillman_conditions()
@@ -1116,7 +1116,7 @@ class ProductLevelExportSystem(object):
 			if verbose: print "Mcp matrix at (self.mcp) is currently not available. Computing Mcp with default kwargs"
 			self.mcp = self.mcp_matrix()
 		## - Compute Symmetric Proximity - ##
-		self.proximity = pd.DataFrame(index=self.mcp.columns, columns=self.mcp.columns) 	 #np.nan initialised matrix
+		self.proximity = pd.DataFrame(index=self.mcp.columns, columns=self.mcp.columns)      #np.nan initialised matrix
 		products = self.mcp.columns
 		self.temp['column_sums'] = self.mcp.sum()
 		for product1 in products:
@@ -1151,8 +1151,8 @@ class ProductLevelExportSystem(object):
 		## - Compute Symmetric Proximity - ##
 		num_products = len(self.products)
 		self.proximity = np.zeros((num_products, num_products))
-		self.temp['col_sums'] = self.mcp.sum()	
-		self.temp['data'] = self.mcp.T.as_matrix()          		#This generates a c x p numpy array
+		self.temp['col_sums'] = self.mcp.sum()  
+		self.temp['data'] = self.mcp.T.as_matrix()                  #This generates a c x p numpy array
 		for index1 in range(0,num_products):
 			for index2 in range(0,num_products):
 				cond_prob = (self.temp['data'][index1] * self.temp['data'][index2]).sum() / max(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
@@ -1172,7 +1172,7 @@ class ProductLevelExportSystem(object):
 		if clear_temp:
 			del self.temp['col_sums']
 			del self.temp['data']
-		self.proximity.name = 'Proximity' 				#Good to name Objects last due to some Pandas behaviour through things like fillna(0) methods creating a new DF
+		self.proximity.name = 'Proximity'               #Good to name Objects last due to some Pandas behaviour through things like fillna(0) methods creating a new DF
 		return self.proximity
 
 	def proximity_matrix_numba(self, fillna=False, clear_temp=True, verbose=False):
@@ -1211,7 +1211,7 @@ class ProductLevelExportSystem(object):
 			for i in range(P):
 				for j in range(P):
 					# - Symmetry Condition - #
-					if j <= i: 			
+					if j <= i:          
 					# - Compute Elemental Pairwise Sums over each Product Vector - #
 						pws = 0
 						for c in range(C):
@@ -1228,9 +1228,9 @@ class ProductLevelExportSystem(object):
 		## - Compute Symmetric Proximity - ##
 		num_products = len(self.products)
 		## - Prepare Data -- ##
-		self.temp['data'] = self.remove_zero_relationships_matrix(self.mcp)  		#Remove np.nan relationships for iteration
+		self.temp['data'] = self.remove_zero_relationships_matrix(self.mcp)         #Remove np.nan relationships for iteration
 		product_index = copy.deepcopy(self.temp['data'].columns)
-		self.temp['data'] = self.temp['data'].as_matrix()       					#This generates a c x p numpy array
+		self.temp['data'] = self.temp['data'].as_matrix()                           #This generates a c x p numpy array
 
 		## -- Speed Up Loops Using NUMBA -- ##
 		self.proximity = coexport_probability(self.temp['data'])
@@ -1250,7 +1250,7 @@ class ProductLevelExportSystem(object):
 		if clear_temp:
 			del self.temp['data']
 			#del self.temp['pindex']
-		self.proximity.name = 'Proximity' 				#Good to name Objects last due to some Pandas behaviour through things like fillna(0) methods creating a new DF
+		self.proximity.name = 'Proximity'               #Good to name Objects last due to some Pandas behaviour through things like fillna(0) methods creating a new DF
 		self.proximity.index.set_names(names=['productcode1'], inplace=True)
 		self.proximity.columns.set_names(names=['productcode2'], inplace=True)
 		self.proximity_notes = 'symmetric'
@@ -1265,27 +1265,27 @@ class ProductLevelExportSystem(object):
 		# cimport numpy as np
 
 		# def coexport_probability_cy(double[:,:] X):
-		# 	'''
-		# 		IPython Method Using Cython Magic
-		# 		Notes:
-		# 		-----
-		# 			[1] timeit results: 1 loops, best of 3: 231 ms per loop (176 x 646) [Fairly Similar to Numba Solution]
-		# 				Sticking with Numba as it is easier to integrate using autojit()
-		# 	'''
-		# 	cdef int C, P, i, j, k
-		# 	C = X.shape[0]
-		# 	P = X.shape[1]
-		# 	cdef double pws
-		# 	cdef double [:] CS = np.sum(X, axis=0)
-		# 	cdef double [:,:] D = np.empty((P,P), dtype=np.float)
+		#   '''
+		#       IPython Method Using Cython Magic
+		#       Notes:
+		#       -----
+		#           [1] timeit results: 1 loops, best of 3: 231 ms per loop (176 x 646) [Fairly Similar to Numba Solution]
+		#               Sticking with Numba as it is easier to integrate using autojit()
+		#   '''
+		#   cdef int C, P, i, j, k
+		#   C = X.shape[0]
+		#   P = X.shape[1]
+		#   cdef double pws
+		#   cdef double [:] CS = np.sum(X, axis=0)
+		#   cdef double [:,:] D = np.empty((P,P), dtype=np.float)
 
-		# 	for i in range(P):
-		# 		for j in range(P):
-		# 			pws = 0.0
-		# 			for c in range(C):
-		# 				pws += (X[c, i] * X[c, j])
-		# 			D[i,j] = pws / max(CS[i], CS[j]) 
-		# 	return D
+		#   for i in range(P):
+		#       for j in range(P):
+		#           pws = 0.0
+		#           for c in range(C):
+		#               pws += (X[c, i] * X[c, j])
+		#           D[i,j] = pws / max(CS[i], CS[j]) 
+		#   return D
 
 
 	def compute_proximity(self, matrix_type='symmetric', clear_temp=True, fillna=False, verbose=False):
@@ -1294,7 +1294,7 @@ class ProductLevelExportSystem(object):
 			
 			Options:
 			-------
-				[1] type 	=> 	'symmetric', 'assymetric', 'minmax'
+				[1] type    =>  'symmetric', 'assymetric', 'minmax'
 			Notes:
 			------
 				[1] A more complex funtion for working with symmetric and assymetric matrices
@@ -1306,7 +1306,7 @@ class ProductLevelExportSystem(object):
 				Compute Symmetric Proximity Matrix 
 				Note: This is the same as using the STANDARD proximity_matrix() method
 			'''
-			return self.proximity_matrix(fillna=fillna, clear_temp=clear_temp, verbose=verbose) 		 			#Calling an External Function, Pass Parameters							
+			return self.proximity_matrix(fillna=fillna, clear_temp=clear_temp, verbose=verbose)                     #Calling an External Function, Pass Parameters                          
 
 		def proximity_matrix_asymmetric(self):
 			'''
@@ -1319,12 +1319,12 @@ class ProductLevelExportSystem(object):
 			# Initialise NumPy Array as results collector    
 			self.proximity = np.zeros((num_products, num_products))
 			self.temp['data'] = self.mcp.T.as_matrix()           
-			self.temp['col_sums'] = self.mcp.sum().values        				#Row Vector#
+			self.temp['col_sums'] = self.mcp.sum().values                       #Row Vector#
 			for index1 in xrange(0,num_products):
 				for index2 in xrange(0,num_products):                      
-					cond_prob = (self.temp['data'][index1] * self.temp['data'][index2]).sum() / self.temp['col_sums'][index2]   	# ProductCode 1 by convention (PP')/P [Nb: This is index2 in Numpy]
+					cond_prob = (self.temp['data'][index1] * self.temp['data'][index2]).sum() / self.temp['col_sums'][index2]       # ProductCode 1 by convention (PP')/P [Nb: This is index2 in Numpy]
 					self.proximity[index1][index2] = cond_prob
-			# Return DataFrame Representation		
+			# Return DataFrame Representation       
 			self.proximity = pd.DataFrame(self.proximity, index=self.products, columns=self.products)
 			self.proximity.index.name = 'productcode1'
 			self.proximity.columns.name = 'productcode2'
@@ -1351,14 +1351,14 @@ class ProductLevelExportSystem(object):
 			# Initialise NumPy Array as results collector    
 			self.proximity = np.zeros((num_products, num_products))
 			self.temp['data'] = self.mcp.T.as_matrix()           
-			self.temp['col_sums'] = self.mcp.sum().values        			#Row Vector#
+			self.temp['col_sums'] = self.mcp.sum().values                   #Row Vector#
 			for index1 in xrange(0,num_products):
 				for index2 in xrange(0,num_products):
 					joint_export_num = (self.temp['data'][index1] * self.temp['data'][index2]).sum()
-					if index2 < index1: 													#Placing Max Values in Top Right Diagonal Quadrant
+					if index2 < index1:                                                     #Placing Max Values in Top Right Diagonal Quadrant
 						max_exports_num  = max(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
 						cond_prob = joint_export_num / max_exports_num
-					else: 																	#Placing Min Values in Top Right Diagonal Quadrant
+					else:                                                                   #Placing Min Values in Top Right Diagonal Quadrant
 						min_exports_num = min(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
 						cond_prob = joint_export_num / min_exports_num
 					self.proximity[index1][index2] = cond_prob
@@ -1403,9 +1403,9 @@ class ProductLevelExportSystem(object):
 		
 		Parameters
 		----------
-		normalized 	: 	bool, optional(default=True)
+		normalized  :   bool, optional(default=True)
 						Normalize by the Total Number of Products; if False the denominator is the number of products exported by that country
-		sum_not_mean : 	bool, optional(default=False)
+		sum_not_mean :  bool, optional(default=False)
 						Sum's the mean proximity multiplied by country export basket
 
 		Notes
@@ -1434,7 +1434,7 @@ class ProductLevelExportSystem(object):
 		'''
 			Compute Ubiquity from Mcp Matrix (self.mcp)
 		'''
-		if type(self.mcp) != pd.DataFrame: 																			#Assume Mcp has been computed. Improve this
+		if type(self.mcp) != pd.DataFrame:                                                                          #Assume Mcp has been computed. Improve this
 			if verbose: print "No Mcp Matrix at self.mcp. Running mcp_matrix() method with default kwargs"
 			self.mcp = self.mcp_matrix()
 		self.ubiquity = self.mcp.sum()
@@ -1494,24 +1494,24 @@ class ProductLevelExportSystem(object):
 			'''
 			C = mcp.shape[0]
 			P = mcp.shape[1]
-			# - Row Sums - #								
-			RS = mcp.sum(axis=1) 							# - sum() seems to work faster - #
-				# RS = np.zeros((C,), dtype=np.int) 		# - Row Sum - #
+			# - Row Sums - #                                
+			RS = mcp.sum(axis=1)                            # - sum() seems to work faster - #
+				# RS = np.zeros((C,), dtype=np.int)         # - Row Sum - #
 				# for c in range(C):
-				# 	for p in range(P):
-				# 		RS[c] += mcp[c,p]
+				#   for p in range(P):
+				#       RS[c] += mcp[c,p]
 			# - Column Sum - # 
-			CS = mcp.sum(axis=0) 							# - sum() seems to work faster - #
-				# CS = np.zeros((P,), dtype=np.int) 		# - Column Sum - #
+			CS = mcp.sum(axis=0)                            # - sum() seems to work faster - #
+				# CS = np.zeros((P,), dtype=np.int)         # - Column Sum - #
 				# for p in range(P):
-				# 	for c in range(C):
-				# 		CS[p] += mcp[c,p]
+				#   for c in range(C):
+				#       CS[p] += mcp[c,p]
 
 			Mcc = np.empty((C, C), dtype=np.float)
-			for c in range(C): 								#Compute Combinations
+			for c in range(C):                              #Compute Combinations
 				for c_prime in range(C):
-					num = mcp[c] * mcp[c_prime] 				# Vector Multiply
-					den = RS[c] * CS 							# Row Sum for Item / Vector of Column Sums 
+					num = mcp[c] * mcp[c_prime]                 # Vector Multiply
+					den = RS[c] * CS                            # Row Sum for Item / Vector of Column Sums 
 					Mcc[c][c_prime] = (num / den).sum()
 			
 			####################################################
@@ -1519,24 +1519,24 @@ class ProductLevelExportSystem(object):
 			####################################################
 			# Mcc = np.empty((C,C), dtype=np.float)
 			# for c in range(C):
-			# 	for c_prime in range(C):
-			# 		# - Numerator Vector Multiplication - #
-			# 		num = np.empty((P,), dtype=np.int)
-			# 		for p in range(P):
-			# 			num[p] = mcp[c,p] * mcp[c_prime, p]
-			# 		# - Denominator Vector Multiplication - #
-			# 		den = np.empty((P,), dtype=np.int)
-			# 		for p in range(P):
-			# 			den[p] = RS[c] * CS[p]
-			# 		# - Numerator / Denominator Vector Multiplications - #
-			# 		num_div_den = np.empty((P,), dtype=np.float)
-			# 		for p in range(P):
-			# 			num_div_den[p] = num[p] / den[p]
-			# 		# - Result Sum over Vector - #
-			# 		result = 0
-			# 		for p in range(P):
-			# 			result += num_div_den[p]
-			# 		Mcc[c][c_prime] = result
+			#   for c_prime in range(C):
+			#       # - Numerator Vector Multiplication - #
+			#       num = np.empty((P,), dtype=np.int)
+			#       for p in range(P):
+			#           num[p] = mcp[c,p] * mcp[c_prime, p]
+			#       # - Denominator Vector Multiplication - #
+			#       den = np.empty((P,), dtype=np.int)
+			#       for p in range(P):
+			#           den[p] = RS[c] * CS[p]
+			#       # - Numerator / Denominator Vector Multiplications - #
+			#       num_div_den = np.empty((P,), dtype=np.float)
+			#       for p in range(P):
+			#           num_div_den[p] = num[p] / den[p]
+			#       # - Result Sum over Vector - #
+			#       result = 0
+			#       for p in range(P):
+			#           result += num_div_den[p]
+			#       Mcc[c][c_prime] = result
 			#####################################################
 			return Mcc
 
@@ -1551,12 +1551,12 @@ class ProductLevelExportSystem(object):
 		## -- Compute Mcc -- ##
 		if verbose: print "Computing: Mcc"
 		
-		# - Prepare Data for Numba - # 														#-Preparation Required to Handle np.Nan (Alternative would be to fill np.nan with 0.0)-#
+		# - Prepare Data for Numba - #                                                      #-Preparation Required to Handle np.Nan (Alternative would be to fill np.nan with 0.0)-#
 		self.temp['data'] = self.remove_zero_relationships_matrix(self.mcp)
 		self.temp['cindex'] = self.temp['data'].index
 
 		## --- NUMBA CALL --- ###
-		Mcc = mcc_numba(self.temp['data'].as_matrix()) 										
+		Mcc = mcc_numba(self.temp['data'].as_matrix())                                      
 		## --- END NUMBA CALL --- ###
 	
 		# Return DataFrame Representation #
@@ -1600,13 +1600,13 @@ class ProductLevelExportSystem(object):
 				numerator = self.mcp.ix[country].mul(self.mcp.ix[country_prime])
 				denominator = self.diversity[country] * (self.ubiquity)                   # Check This #
 				Mcc.set_value(index=country, col=country_prime, value=numerator.div(denominator).sum())
-				#Mcc[country_prime].ix[country] = numerator.div(denominator).sum() 		  # Is this Efficient? => Changed to set_value method#
+				#Mcc[country_prime].ix[country] = numerator.div(denominator).sum()        # Is this Efficient? => Changed to set_value method#
 		self.mcc = Mcc
 		return Mcc
 
 
 	def compute_eci(self, use_scipy=True, verbose=False):
-		'''	
+		''' 
 			Compute Country (Economic) Complexity (EigenVector, EigenValues Method)
 			Notes:
 			------
@@ -1619,7 +1619,7 @@ class ProductLevelExportSystem(object):
 			self.compute_mcc()
 		## -- Compute ECI -- ##
 		if verbose: print "Computing: ECI"
-		Mcc = self.mcc.fillna(0.0) 												
+		Mcc = self.mcc.fillna(0.0)                                              
 		if use_scipy:
 			eig_val, eig_vect = linalg.eig(Mcc.as_matrix())
 		else:
@@ -1637,7 +1637,7 @@ class ProductLevelExportSystem(object):
 			print "Left Hand: %s" % lh
 			print "Right Hand: %s" % rh
 			print "Test Result: %s" % test_result
-		self.eci = ECI['ECI']								#Store as Pd.Series
+		self.eci = ECI['ECI']                               #Store as Pd.Series
 		return self.eci
 
 	def compute_mpp(self, verbose=False):
@@ -1672,23 +1672,23 @@ class ProductLevelExportSystem(object):
 			'''
 			P = mpc.shape[0]
 			C = mpc.shape[1]
-			# - Row Sums - #								
-			RS = mpc.sum(axis=1) 							# - sum() seems to work faster - #
-				# RS = np.zeros((P,), dtype=np.int) 		# - Row Sum - #
+			# - Row Sums - #                                
+			RS = mpc.sum(axis=1)                            # - sum() seems to work faster - #
+				# RS = np.zeros((P,), dtype=np.int)         # - Row Sum - #
 				# for p in range(P):
-				# 	for c in range(C):
-				# 		RS[p] += mpc[p,c]
+				#   for c in range(C):
+				#       RS[p] += mpc[p,c]
 			# - Column Sums - #
-			CS = mpc.sum(axis=0) 							# - sum() seems to work faster - #
-				# CS = np.zeros((C,), dtype=np.int) 		# - Column Sum - #
+			CS = mpc.sum(axis=0)                            # - sum() seems to work faster - #
+				# CS = np.zeros((C,), dtype=np.int)         # - Column Sum - #
 				# for c in range(C):
-				# 	for p in range(P):
-				# 		CS[c] += mpc[p,c]
+				#   for p in range(P):
+				#       CS[c] += mpc[p,c]
 			Mpp = np.empty((P, P), dtype=np.float)
-			for p in range(P): 								#Compute Combinations
+			for p in range(P):                              #Compute Combinations
 				for p_prime in range(P):
-					num = mpc[p] * mpc[p_prime] 				# Vector Multiply
-					den = RS[p] * CS 							# Row Sum for Item / Vector of Column Sums 
+					num = mpc[p] * mpc[p_prime]                 # Vector Multiply
+					den = RS[p] * CS                            # Row Sum for Item / Vector of Column Sums 
 					Mpp[p][p_prime] = (num / den).sum()
 			return Mpp
 
@@ -1701,7 +1701,7 @@ class ProductLevelExportSystem(object):
 			self.compute_diversity()
 		## -- Compute Mpp -- ##
 		if verbose: print "Computing: Mpp"
-		# - Prepare Data for Numba - # 														#-Preparation Required to Handle np.Nan (Alternative would be to fill np.nan with 0.0)-#
+		# - Prepare Data for Numba - #                                                      #-Preparation Required to Handle np.Nan (Alternative would be to fill np.nan with 0.0)-#
 		self.temp['data'] = self.remove_zero_relationships_matrix(self.mcp)
 		self.temp['pindex'] = self.temp['data'].columns
 		
@@ -1723,7 +1723,7 @@ class ProductLevelExportSystem(object):
 			del self.temp['pindex']
 
 		self.mpp = Mpp
-		return Mpp	
+		return Mpp  
 
 
 	def compute_mpp_pandas(self, verbose=False):
@@ -1747,18 +1747,18 @@ class ProductLevelExportSystem(object):
 		## -- Compute Mpp -- ##
 		if verbose: print "Computing: Mpp"
 		Mpp = pd.DataFrame(np.empty([len(self.products), len(self.products)]), index=self.products, columns=self.products)  #Start with Zero's in DataFrame
-		Mpc = self.mcp.T                                            																#Need to turn original Mcp such that Products are Index's
+		Mpc = self.mcp.T                                                                                                            #Need to turn original Mcp such that Products are Index's
 		for product in self.products:                           #Product
 			for product_prime in self.products:                 #Product Prime
 				numerator = Mpc.ix[product].mul(Mpc.ix[product_prime])         
 				denominator = self.ubiquity[product] * self.diversity                   
 				Mpp.set_value(index=product, col=product_prime, value=numerator.div(denominator).sum())
-				#Mpp[product_prime].ix[product] = numerator.div(denominator).sum() 									#Improved Efficiency using set_value() method
+				#Mpp[product_prime].ix[product] = numerator.div(denominator).sum()                                  #Improved Efficiency using set_value() method
 		self.mpp = Mpp
-		return Mpp		
+		return Mpp      
 
 	def compute_pci(self, use_scipy=True, verbose=False):
-		'''	
+		''' 
 			Compute Product Complexity (EigenVector, EigenValues Method)
 			Notes:
 			------
@@ -1774,7 +1774,7 @@ class ProductLevelExportSystem(object):
 		Mpp = self.mpp.fillna(0.0)                                   #Note: Compare with Hidalgo
 		if use_scipy:
 			eig_val, eig_vect = linalg.eig(Mpp.as_matrix())
-		else:	
+		else:   
 			eig_val, eig_vect = np.linalg.eig(Mpp.as_matrix())                      #POSSIBLE ISSUE: NEED TO CONFIRM RESULT RETURNED IN SORTED ORDER?
 		PCI = (eig_vect[:,1] - eig_vect[:,1].mean())/(eig_vect[:,1].std())
 																				#PCI = -1 * PCI                                                       
@@ -1793,7 +1793,7 @@ class ProductLevelExportSystem(object):
 			print "Left Hand: %s" % lh
 			print "Right Hand: %s" % rh
 			print "Test Result: %s" % test_result
-		self.pci = PCI['PCI'] 											#Save as Pd.Series
+		self.pci = PCI['PCI']                                           #Save as Pd.Series
 		return self.pci
 
 
@@ -1803,11 +1803,11 @@ class ProductLevelExportSystem(object):
 
 			Options:
 			-------
-				[1] iterations 	:  	Int() 				number of iterations 	[Default Value = 20]
-									'rank_stability' 	iterate until Rank Stability is Achieved in Countries (Kcn) or ProductSpace (Kpn)
-									'rank_stability_country' 	iterate until Rank Stability is Achieved in Countries (Kcn)
-									'rank_stability_product' 	iterate until Rank Stability is Achieved in Products (Kpn)
-				[2] cpweights 	: 	Allows Specification of Weight Matrix (i.e. Export Shares)
+				[1] iterations  :   Int()               number of iterations    [Default Value = 20]
+									'rank_stability'    iterate until Rank Stability is Achieved in Countries (Kcn) or ProductSpace (Kpn)
+									'rank_stability_country'    iterate until Rank Stability is Achieved in Countries (Kcn)
+									'rank_stability_product'    iterate until Rank Stability is Achieved in Products (Kpn)
+				[2] cpweights   :   Allows Specification of Weight Matrix (i.e. Export Shares)
 
 			Notes:
 			-----
@@ -1839,27 +1839,27 @@ class ProductLevelExportSystem(object):
 		## -- Check Data is Available -- ##
 		if type(self.diversity) != pd.Series:
 			if verbose: print "self.diversity not found ... executing self.compute_diversity()"
-			self.compute_diversity(verbose=verbose) 	# DataFrame of Diversity
+			self.compute_diversity(verbose=verbose)     # DataFrame of Diversity
 		if type(self.ubiquity) != pd.Series:
 			if verbose: print "self.ubiquity not found ... executing self.compute_diversity()"
-			self.compute_ubiquity(verbose=verbose) 		# DataFrame of Ubiquity
+			self.compute_ubiquity(verbose=verbose)      # DataFrame of Ubiquity
 		if type(cpweights) == tuple:
 			cweights, pweights = cpweights
 		## -- Construct Kcn, and Kpn with Starting Values -- ##
 		Kcn = pd.DataFrame(self.diversity)
-		Kcn.columns = pd.Index(['Kc0'])  		
+		Kcn.columns = pd.Index(['Kc0'])         
 		Kpn = pd.DataFrame(self.ubiquity)
 		Kpn.columns = pd.Index(['Kp0'])
 		for num in range(1,max_iterations+1,1):
 			if verbose: print "[MethodOfReflections] Iteration: %s" % num
-			# - Weighted Option - #	
+			# - Weighted Option - # 
 			# - Global Weights - #
 			if type(cpweights) == pd.DataFrame:
 				if verbose: print "[Info] Computed Global Weighted Method of Reflections"
 				if cpweights.shape != self.mcp.shape:
 					raise ValueError("[Error] Weights Matrix is not the same shape as the Mcp Matrix")
-				Kcn['Kc'+ str(num)] = self.mcp.mul(Kpn['Kp'+str(num-1)]).mul(cpweights).sum(axis=1).div(Kcn['Kc0']) 		#.mul(cweights)
-				Kpn['Kp'+ str(num)] = self.mcp.T.mul(Kcn['Kc'+str(num-1)]).mul(cpweights.T).sum(axis=1).div(Kpn['Kp0'])  		
+				Kcn['Kc'+ str(num)] = self.mcp.mul(Kpn['Kp'+str(num-1)]).mul(cpweights).sum(axis=1).div(Kcn['Kc0'])         #.mul(cweights)
+				Kpn['Kp'+ str(num)] = self.mcp.T.mul(Kcn['Kc'+str(num-1)]).mul(cpweights.T).sum(axis=1).div(Kpn['Kp0'])         
 			# - Country and Product Weights - #
 			# More Work Needed here to establish if this is the correct weighting regime - #
 			elif type(cweights) == pd.Series and type(pweights) == pd.Series:
@@ -1867,16 +1867,16 @@ class ProductLevelExportSystem(object):
 				if len(cweights) != len(self.mcp.index) or len(pweights) != len(self.mcp.columns):
 					raise ValueError("[Error] Weights Matrices are not the same shape as Mcp Matrix")
 				### ---> IN WORK <--- ###
-				Kcn['Kc'+ str(num)] = self.mcp.mul(Kpn['Kp'+str(num-1)]).sum(axis=1).mul(cweights).div(Kcn['Kc0']) 		#.mul(cweights)
+				Kcn['Kc'+ str(num)] = self.mcp.mul(Kpn['Kp'+str(num-1)]).sum(axis=1).mul(cweights).div(Kcn['Kc0'])      #.mul(cweights)
 				Kpn['Kp'+ str(num)] = self.mcp.T.mul(Kcn['Kc'+str(num-1)]).sum(axis=1).mul(pweights.T).div(Kpn['Kp0'])
-				# Kcn['Kc'+ str(num)] = self.mcp.mul(Kpn['Kp'+str(num-1)]).mul(pweights).sum(axis=1).div(Kcn['Kc0']) 		#.mul(cweights)
+				# Kcn['Kc'+ str(num)] = self.mcp.mul(Kpn['Kp'+str(num-1)]).mul(pweights).sum(axis=1).div(Kcn['Kc0'])        #.mul(cweights)
 				# Kpn['Kp'+ str(num)] = self.mcp.T.mul(Kcn['Kc'+str(num-1)]).mul(cweights.T).sum(axis=1).div(Kpn['Kp0'])  #.mul(pweights.T) # Transpose to get Products as Rows, could also use axis
 				### ----------------- ###
 			# - Unweighted Iteration - #
 			else:
 				Kcn['Kc'+ str(num)] = self.mcp.mul(Kpn['Kp'+str(num-1)]).sum(axis=1).div(Kcn['Kc0'])
 				Kpn['Kp'+ str(num)] = self.mcp.T.mul(Kcn['Kc'+str(num-1)]).sum(axis=1).div(Kpn['Kp0'])           #mcp_year.T to get Products down the Index Axis in DataFrame
-			if num < 2:    		
+			if num < 2:         
 				continue
 			# - Iterator Types - #
 			if iterations == 'rank_stability':
@@ -1896,12 +1896,58 @@ class ProductLevelExportSystem(object):
 					break
 			else:
 				## -- Integer Iteration -- ##
-				if num == iterations: 				#This Iteration has already been computed
+				if num == iterations:               #This Iteration has already been computed
 					break
 		self.kcn = Kcn
 		self.kpn = Kpn
 		return Kcn, Kpn
 	
+	#-WORKING HERE-#
+
+	def identify_inefficient_trade(self, row_ascending=True, column_ascending=True, no_zero_relationships=True, verbose=False):
+		""" 
+		Identify Inefficient Trade Patterns
+		
+		Status: IN-TESTING
+		
+		Parameters
+		----------
+		no_zero_relationships   :   bool, optional(default=True)
+									Remove All Zero Relationships in Columns and Rows
+
+		"""
+		from pyeconlab.trade.util import prepare_scaling_vectors
+
+		if no_zero_relationships:
+			self.rca = self.remove_zero_relationships_matrix(self.rca)
+			self.mcp_matrix()
+		sort_mcp = self.sorted_matrix(self.mcp, row_sortby=self.eci, row_ascending=row_ascending, column_sortby=self.pci, column_ascending=column_ascending, verbose=False)
+		#-ScaleBy-#
+		data, row_scaleby, column_scaleby = prepare_scaling_vectors(sort_mcp, row_scaleby=self.total_country_export, column_scaleby=self.total_product_export)
+		#Scaling Vectors-#
+		yscale = np.array(row_scaleby)
+		yscale = yscale / np.sum(yscale)                    #Normalise (0,1) 
+		yscale = np.insert(yscale.cumsum(), 0, 0)           #Replace y with scaled vector
+		col_scales = pd.DataFrame(yscale[1:], index=data.index, columns=['yscale'])
+		xscale = np.array(column_scaleby)
+		xscale = xscale / np.sum(xscale)                    #Normalise (0,1)
+		xscale = np.insert(xscale.cumsum(), 0, 0)           #Replace x with scaled vector
+		row_scales = pd.DataFrame(xscale[1:], index=data.columns, columns=['xscale'])
+
+		for country in data.index:
+			if verbose: print "Computing for Country: %s" % country
+			location = col_scales.ix[country].values[0]                     #Location is the Countries location along the column axis in non-dimensional terms                     
+			sort_mcp_country = sort_mcp.ix[country]
+			for product in sort_mcp_country[sort_mcp_country == 1].index:
+				#Replace Mcp Information with Distance Information#
+				dist = row_scales.ix[product].values[0] - location          #Exports higher than expected based on country position are +ve and products lower than expected -ve
+				sort_mcp.set_value(index=country, col=product,  value=dist)
+
+		sort_mcp.index.name = 'country'
+		sort_mcp.columns.name = 'productcode'
+		return sort_mcp
+
+	#-END WORKING HERE-#
 
 	### -- ProductSpace: Network Functions -- ##
 	############################################
@@ -1926,8 +1972,8 @@ class ProductLevelExportSystem(object):
 			
 			Options:
 			--------
-				[1] matrix_type  	Output Matrix Type (Pandas / Numpy)
-				[2] value 			Edge Attribute (Default: 'export')
+				[1] matrix_type     Output Matrix Type (Pandas / Numpy)
+				[2] value           Edge Attribute (Default: 'export')
 
 			Future Work:
 			------------
@@ -1945,7 +1991,7 @@ class ProductLevelExportSystem(object):
 		# - Construct from Network data Structure - #
 		elif self.network_type == 'BiPartiteGraph':
 			if verbose: print "Computing cp matrix from self.network"
-			cntrys = set(n for n,d in self.network.nodes(data=True) if d['bipartite'] == 'countries') 									#Could Rely on self.countries and self.products?
+			cntrys = set(n for n,d in self.network.nodes(data=True) if d['bipartite'] == 'countries')                                   #Could Rely on self.countries and self.products?
 			prods = set(self.network) - cntrys
 			if matrix_type == 'pandas':
 				m = pd.DataFrame(np.zeros((len(cntrys), len(prods))), index = sorted(list(cntrys)), columns=sorted(list(prods)))
@@ -1973,7 +2019,7 @@ class ProductLevelExportSystem(object):
 		if self.network == None:
 			raise ValueError("Network Representation of Data must be computed")
 		if verbose: print "Computing Adjacency Matrix for Network in self.network"
-		m = nx.to_numpy_matrix(self.network) 					#Ordering based on G.nodes()
+		m = nx.to_numpy_matrix(self.network)                    #Ordering based on G.nodes()
 		if matrix_type == 'numpy':
 			# self.matrix = m
 			# self.matrix_type = 'adjacency'
@@ -1987,28 +2033,42 @@ class ProductLevelExportSystem(object):
 			self.adj_matrix = m
 			return m
 		else:
-			raise ValueError("matrix_type -> must be pandas or numpy")		
+			raise ValueError("matrix_type -> must be pandas or numpy")      
 
 	def sorted_matrix(self, df_matrix, row_sortby=None, row_ascending=True, column_sortby=None, column_ascending=True, strict_index=False, verbose=False):
-		''' 
-			Sort a Pandas Indexed Matrix
-			Sort Incoming DataFrame by row or column by passing a series to sort on (Default: Ascending Sort)
+		"""
+		Sort a Pandas Indexed Matrix
+		Sort Incoming DataFrame by row or column by passing a series to sort on (Default: Ascending Sort)
 
-			Notes: 
-			------
-				[1] Default behaviour is 'LEFT' Index Joining. Mcp matrix will be preserved ... if want matched between the two series then need to change default flag 'how' to 'inner' (intersection)
-				[2] df_matrix can be MultiIndex if there are concordances attached. Keep this function simple and make another method sorted_multiindex_matrix()
-				[3] This will Filter the results based on that found in the index of row_sortby and column_sortby series
-			
-			Future Work:
-			-----------
-				[1] This could be made more robust by using REGEXR to see if index1 and index2 contain the same basic info "country" vs "countrycode" - Currently issue's advice due to limited REGEXR exploration
-				[2] This Function could be re-written with new knowledge of index object creation (but not time urgent)
-				[3] Incorporate strict_index: where name of index is the same as the name of the incoming sortby series
-				[4] Reduce Code Complexity by removing column test for row_sortby vector. Could copy df_matrix to sorted_df_matrix and then operate on that item. 
-				[5] Allow row_sortby and column_sortby to be pd.DataFrame objects with series_name?
-				[6] Split Function into sorted_matrix_rows() and sorted_matrix_columns() and then get sorted_matrix() to parse the options and call relevant methods to simplify code?
-		'''
+		Parameters
+		----------
+		df_matrix   :   pd.DataFrame or Property
+						Provide DataFrame to Sort 
+		row_sortby  :   pd.Series, optional(default=None) 
+						Provide Labelled Series to sort by
+		row_ascending   :   bool, optional(default=True)
+							Sort Row Ascending 
+		column_sortby   :   pd.Series, optional(default=None)
+							Provide Labelled Series to sortby 
+		column_ascending :  bool, optional(default=True)
+							Sort Row Ascending
+
+		Notes: 
+		------
+			[1] Default behaviour is 'LEFT' Index Joining. Mcp matrix will be preserved ... if want matched between the two series then need to change default flag 'how' to 'inner' (intersection)
+			[2] df_matrix can be MultiIndex if there are concordances attached. Keep this function simple and make another method sorted_multiindex_matrix()
+			[3] This will Filter the results based on that found in the index of row_sortby and column_sortby series
+		
+		Future Work:
+		-----------
+			[1] This could be made more robust by using REGEXR to see if index1 and index2 contain the same basic info "country" vs "countrycode" - Currently issue's advice due to limited REGEXR exploration
+			[2] This Function could be re-written with new knowledge of index object creation (but not time urgent)
+			[3] Incorporate strict_index: where name of index is the same as the name of the incoming sortby series
+			[4] Reduce Code Complexity by removing column test for row_sortby vector. Could copy df_matrix to sorted_df_matrix and then operate on that item. 
+			[5] Allow row_sortby and column_sortby to be pd.DataFrame objects with series_name?
+			[6] Split Function into sorted_matrix_rows() and sorted_matrix_columns() and then get sorted_matrix() to parse the options and call relevant methods to simplify code?
+	
+		"""
 		## -- Sort Rows by Index -- ##
 		if type(row_sortby) == pd.Series:       
 			InMatrixRowIndex = set(df_matrix.index)
@@ -2017,7 +2077,7 @@ class ProductLevelExportSystem(object):
 			if RowItemsDropped: print "[WARNING] Items dropped from Matrix Row Index: %s (Not in row_sortby)" % RowItemsDropped
 			row_sortby.sort(ascending=row_ascending)
 			sorted_df_matrix = df_matrix.reindex(index=row_sortby.index)
-		elif row_sortby == None: 																#Pass if Nothing to Do [Default Value == None]; This will throw a ValueError if DataFrame is passed
+		elif row_sortby == None:                                                                #Pass if Nothing to Do [Default Value == None]; This will throw a ValueError if DataFrame is passed
 			pass
 		else:
 			raise ValueError("row_sortby must be a pd.Series")
@@ -2028,16 +2088,16 @@ class ProductLevelExportSystem(object):
 			ColItemsDropped = (InMatrixColIndex - InColSortbyIndex)
 			if ColItemsDropped: print "[WARNING] Items dropped from Matrix Column Index: %s (Not in column_sortby)" % ColItemsDropped
 			column_sortby.sort(ascending=column_ascending)
-			if type(row_sortby) == pd.Series:  													
-				sorted_df_matrix = sorted_df_matrix.reindex(columns=column_sortby.index) 		#Sort Already Sorted Matrix by row_matrix 
+			if type(row_sortby) == pd.Series:                                                   
+				sorted_df_matrix = sorted_df_matrix.reindex(columns=column_sortby.index)        #Sort Already Sorted Matrix by row_matrix 
 			else: 
-				sorted_df_matrix = df_matrix.reindex(columns=column_sortby.index) 				#Sort the column index
+				sorted_df_matrix = df_matrix.reindex(columns=column_sortby.index)               #Sort the column index
 		elif column_sortby == None:
-			pass 																				#Pass if Nothing to Do [Default Value == None]; This will throw a ValueError if DataFrame is passed
+			pass                                                                                #Pass if Nothing to Do [Default Value == None]; This will throw a ValueError if DataFrame is passed
 		else:
 			raise ValueError("column_sortby must be a pd.Series")
 		## -- Return Sorted Data -- ##
-		if type(row_sortby) != pd.Series and type(column_sortby) != pd.Series:					#Check Null input Condition
+		if type(row_sortby) != pd.Series and type(column_sortby) != pd.Series:                  #Check Null input Condition
 			raise ValueError("Need to specify a row_sortby series or column_sortby series or both")
 		return sorted_df_matrix
 
@@ -2046,7 +2106,7 @@ class ProductLevelExportSystem(object):
 		'''
 			Sort a Pandas Hierarchically Indexed Matrix
 
-			row_sortby, column_sortby 		: 	pd.Series or [pd.Series]
+			row_sortby, column_sortby       :   pd.Series or [pd.Series]
 
 		  **Status: This Function is currently UNTESTED**
 
@@ -2063,7 +2123,7 @@ class ProductLevelExportSystem(object):
 		## -- Helper Functions -- ##
 		def row_sorter(df_matrix, row_sortby, row_ascending):
 			## -- Check Input -- ##
-			if type(row_sortby) != pd.Series: raise ValueError("row_sortby must be a pd.Series") 																#Ensures all Passed List Items are Checked.
+			if type(row_sortby) != pd.Series: raise ValueError("row_sortby must be a pd.Series")                                                                #Ensures all Passed List Items are Checked.
 			if row_sortby.name not in df_matrix.index.levels: raise ValueError("row_sortby.name doesn't match any of the Row index level names")
 			row_sortby.sort(ascending=row_ascending)
 			### CHECK THIS ###
@@ -2073,32 +2133,32 @@ class ProductLevelExportSystem(object):
 
 		def column_sorter(df_matrix, column_sortby, column_ascending):
 			## - Check Input -- ##
-			if type(column_sortby) != pd.Series: raise ValueError("column_sortby must be a pd.Series") 															#Ensures all Passed List Items are Checked.
+			if type(column_sortby) != pd.Series: raise ValueError("column_sortby must be a pd.Series")                                                          #Ensures all Passed List Items are Checked.
 			if column_sortby.name not in df_matrix.columns.levels: raise ValueError("column_sortby.name doesn't match any of the Column index level names")
 			column_sortby.sort(ascending=column_ascending)
 			### CHECK THIS ###
 			sorted_df_matrix = df_matrix.reindex(columns=column_sortby.index, level=column_sortby.name)
 			### END ###
-			return sorted_df_matrix	
+			return sorted_df_matrix 
 
 		## -- Parse Types -- ##
 		if df_matrix.index != pd.MultiIndex:
 			raise ValueError("This Method Requires df_matrix to have a MultiIndex")
 		## -- Sort Rows -- ##
-		sorted_df_matrix = df_matrix.copy(deep=True) 												#Prepare a Copy of df_matrix
-		if type(row_sortby) == pd.Series: 															#Sort One Level
+		sorted_df_matrix = df_matrix.copy(deep=True)                                                #Prepare a Copy of df_matrix
+		if type(row_sortby) == pd.Series:                                                           #Sort One Level
 			sorted_df_matrix = row_sorter(sorted_df_matrix, row_sortby, row_ascending)
-		elif type(row_sortby) == list: 																#Sort Multiple Levels Sorting First by Item 1 and Last by Item n
+		elif type(row_sortby) == list:                                                              #Sort Multiple Levels Sorting First by Item 1 and Last by Item n
 			for row_sortby_item in row_sortby:
 				sorted_df_matrix = row_sortby(sorted_df_matrix, row_sortby_item, row_ascending)
 		## -- Sort Columns -- ##
 		if type(column_sortby) == pd.Series:
 			sorted_df_matrix = column_sorter(sorted_df_matrix, column_sortby, column_ascending)
 		elif type(column_sortby) == list:
-			for column_sortby_item in column_sortby: 												#Sort Multiple Levels Sorting First by Item 1 and Last by Item n
+			for column_sortby_item in column_sortby:                                                #Sort Multiple Levels Sorting First by Item 1 and Last by Item n
 				sorted_df_matrix = column_sorter(sorted_df_matrix, column_sortby, column_ascending)
 		## -- Return Sorted Data -- ##
-		try:  																						#Check Zero Sorting Series Condition
+		try:                                                                                        #Check Zero Sorting Series Condition
 			if row_sortby==None and column_sortby == None: raise ValueError("Must specify row_sortby or column_sortby or both")
 		except:
 			pass
@@ -2147,7 +2207,7 @@ class ProductLevelExportSystem(object):
 		ples = ProductLevelExportSystem()
 		ples.from_df(data.ix[CntryInDataset], self.country_classification, self.product_classification, ['DataFrame'], self.year, verbose=verbose)
 		ples.notes = note 
-		ples.complete_trade_network = False  				# This will always be False by Definition
+		ples.complete_trade_network = False                 # This will always be False by Definition
 		## -- Load Supp Data for Computing RCA -- ##
 		TotalWorldExport, TotalProductExport, TotalCountryExport = self.supp_data_from_complete_tn(verbose=verbose)
 		ples.supp_data['TotalWorldExport'] = TotalWorldExport
@@ -2176,10 +2236,10 @@ class ProductLevelExportSystem(object):
 		if verbose: 
 			print note
 		ples = ProductLevelExportSystem()
-		data = data.reorder_levels(order=['productcode', 'country']).ix[ProdInDataset] 		#Reorder for access through .ix
+		data = data.reorder_levels(order=['productcode', 'country']).ix[ProdInDataset]      #Reorder for access through .ix
 		ples.from_df(data.reorder_levels(order=['country', 'productcode']), self.country_classification, self.product_classification, ['DataFrame'], self.year, verbose=verbose)
 		ples.notes = note 
-		ples.complete_trade_network = False  	# This will always be False by Definition
+		ples.complete_trade_network = False     # This will always be False by Definition
 		## -- Load Supp Data for Computing RCA -- ##
 		TotalWorldExport, TotalProductExport, TotalCountryExport = self.supp_data_from_complete_tn(verbose=verbose)
 		ples.supp_data['TotalWorldExport'] = TotalWorldExport
@@ -2193,8 +2253,8 @@ class ProductLevelExportSystem(object):
 
 			Options:
 			--------
-				[1] over_index 		: 		'rows', 'columns', or 'both' [Default = 'both']
-				[2] new_df 			: 		return a Copy of the passed Matrix (So as not to replace internal matrices) [Default = True]
+				[1] over_index      :       'rows', 'columns', or 'both' [Default = 'both']
+				[2] new_df          :       return a Copy of the passed Matrix (So as not to replace internal matrices) [Default = True]
 
 		'''
 		if new_df == True:
@@ -2222,11 +2282,11 @@ class ProductLevelExportSystem(object):
 		
 			Options:
 			-------    
-				match_on    : 	Defines the Column or Index Level to match on
-				nw_code     :	Specifies which column is to be the new aggregated index
-				agg_series  :	Specifies which series or list of series to aggregate
-				aggregate 	: 	Aggregate Data or Return MultiIndex
-				merge_report:	Specifies if return a merge report
+				match_on    :   Defines the Column or Index Level to match on
+				nw_code     :   Specifies which column is to be the new aggregated index
+				agg_series  :   Specifies which series or list of series to aggregate
+				aggregate   :   Aggregate Data or Return MultiIndex
+				merge_report:   Specifies if return a merge report
 
 			Returns: 
 			--------
@@ -2348,21 +2408,21 @@ class ProductLevelExportSystem(object):
 	## -- Matrix Visualisations -- ##
 	#################################
 
-	def plot_mcp(self, row_sortby_label='', row_step=10, column_sortby_label='', column_step=20):
-		'''
-			Plot Mcp Matrix (Auto Generated Labels by Step Size)
+	def plot_mcp(self, row_sortby_label='', row_step=10, column_sortby_label='', column_step=20, tight_layout=True):
+		"""
+		Plot Mcp Matrix (Auto Generated Labels by Step Size)
 
-			Options:
-			--------
-				row_sortby_label	: Text for Y-Axis Label
-				row_step 			: Step Size for Automatic Data Label
-				column_sortby_label : Text for X-Axis Label
-				column_step 		: Step Size for Automatic Data Labels
+		Parameters
+		----------
+		row_sortby_label    : Text for Y-Axis Label
+		row_step            : Step Size for Automatic Data Label
+		column_sortby_label : Text for X-Axis Label
+		column_step         : Step Size for Automatic Data Labels
 
-			Future Work:
-			------------
-				[1] savefig option
-		'''
+		Future Work
+		-----------
+			1. savefig option
+		"""
 		# - Setup Plot - #
 		fig = plt.figure(1, figsize=(12,4))
 		ax1 = fig.add_subplot(1,1,1)
@@ -2373,12 +2433,12 @@ class ProductLevelExportSystem(object):
 		mat = ax1.matshow(self.mcp, origin='lower', cmap=cmap, norm=norm)
 		# - Select Ticks - #
 		num_countries = len(self.mcp.index)
-		ytick_step = int(num_countries / row_step) 									
-		if ytick_step == 0: ytick_step = 1 												#Low Dimensionality Case
-		yticks_index = range(0,num_countries,ytick_step) 						
+		ytick_step = int(num_countries / row_step)                                  
+		if ytick_step == 0: ytick_step = 1                                              #Low Dimensionality Case
+		yticks_index = range(0,num_countries,ytick_step)                        
 		num_products = len(self.mcp.columns)
 		xtick_step = int(num_products / column_step)
-		if xtick_step == 0: xtick_step = 1 												#Low Dimensionality Case
+		if xtick_step == 0: xtick_step = 1                                              #Low Dimensionality Case
 		xticks_index = range(0, num_products, xtick_step)
 		ax1.set_yticks(yticks_index)
 		ax1.set_yticklabels(self.mcp.index[yticks_index], fontsize='small')
@@ -2392,8 +2452,9 @@ class ProductLevelExportSystem(object):
 		xlabel = 'SITC4 Products [Sorted by ' + column_sortby_label + ']'
 		ax1.set_xlabel(xlabel)
 		note = self.product_classification + ': ' + str(num_products) + ' , Countries: ' + str(num_countries)
-		fig.text(0.72, 0.1, note) 																					#This formating is rather arbitrary!
-		fig.tight_layout()
+		fig.text(0.72, 0.1, note)                                                                                   #This formating is rather arbitrary!
+		if tight_layout:
+			fig.tight_layout()
 		return fig
 
 	def plot_mcp_simple(self, sortby_row_title='', sortby_col_title=''):
@@ -2508,7 +2569,7 @@ class ProductLevelExportSystem(object):
 			xlabel = self.product_classification + ' Products [Sorted by ' + column_sortby_label + ']'
 		ax1.set_xlabel(xlabel)
 		note = self.product_classification + ' Products: ' + str(num_products) + ' , Countries: ' + str(num_countries)
-		fig.text(0.72, 0.05, note) 	# Rather Arbitrary but Works for SITC
+		fig.text(0.72, 0.05, note)  # Rather Arbitrary but Works for SITC
 		fig.tight_layout()
 		return fig
 
@@ -2526,29 +2587,29 @@ class ProductLevelExportSystem(object):
 
 		Parameters    
 		----------
-		cpdata 				: 	Property that is C x P (i.e. RCA Matrix)
+		cpdata              :   Property that is C x P (i.e. RCA Matrix)
 								Specify Data as Either a Property or a CP Matrix
-		cpdata_name 		: 	str, optional(default="Data")
+		cpdata_name         :   str, optional(default="Data")
 								Name of Data being Passed in as cpdata
-		row_sortby_label 	:	str, optional(default='')
+		row_sortby_label    :   str, optional(default='')
 								Description of Row Sortby for Y-Axis [Warning: Requires Pre-Sorted cpdata]
-		row_step   			: 	int, optional(default=0)
+		row_step            :   int, optional(default=0)
 								Graduations for the step size on the Y-Axis
-		column_sortby_label : 	str, optioanl(default='') 
+		column_sortby_label :   str, optioanl(default='') 
 								Description of Column Sortby for X-Axis [Warning: Requires Pre-Sorted cpdata]
-		column_step     	: 	int, optional(default=0)
+		column_step         :   int, optional(default=0)
 								Graduations for the step size on the X-Axis
-		data_cutoff		 	: 	int, optional(default=None)
+		data_cutoff         :   int, optional(default=None)
 								Specifies a cutoff for the Data Gradient. [NB: Some RCA VAlues are very large and that degree isn't very important]
-		figsize     		: 	int, optional(default=5)
+		figsize             :   int, optional(default=5)
 								Specifies in inches the figure size [-1 let's the aspect ratio be chosen by the data dimensions]
-		aspect  			:  	Tuple(int,int), optional(default=(False, False))
+		aspect              :   Tuple(int,int), optional(default=(False, False))
 								Specify an Aspect Ratio (X, Y)
-		notes 				: 	str, optional(default='')
+		notes               :   str, optional(default='')
 								Add Notes to Figure
-		rem_zero_rel 		: 	bool, optional(default=True)
+		rem_zero_rel        :   bool, optional(default=True)
 								Remove Zero Relationships from both X and Y Axis
-		fillna 				: 	bool, optional(default=True)
+		fillna              :   bool, optional(default=True)
 								Fill np.NaN values with 0
 		
 		Notes:
@@ -2559,7 +2620,7 @@ class ProductLevelExportSystem(object):
 		-----------
 			1. Generalised Filter for ColorMap to Allow +/- Bounds (Currently Bounded by 0)
 		"""
-		from matplotlib import cm 			# Check if this is imported in the Header of file
+		from matplotlib import cm           # Check if this is imported in the Header of file
 		# - Pandas Work - #
 		if fillna:
 			cpdata = cpdata.fillna(0.0)
@@ -2569,7 +2630,7 @@ class ProductLevelExportSystem(object):
 		products = cpdata.columns
 		# - Apply Cutoff - #
 		if type(data_cutoff) == int:
-			matr = cpdata.applymap(lambda x: 0 if x < 1.0 else x).applymap(lambda x: data_cutoff if x >= data_cutoff else x).as_matrix()         	#One Sided (Build a Filter Method!)
+			matr = cpdata.applymap(lambda x: 0 if x < 1.0 else x).applymap(lambda x: data_cutoff if x >= data_cutoff else x).as_matrix()            #One Sided (Build a Filter Method!)
 			matr_note = 'Gradient Cutoff >= ' + str(data_cutoff)
 		else:
 			matr = cpdata.as_matrix() 
@@ -2579,7 +2640,7 @@ class ProductLevelExportSystem(object):
 		x = np.array(products)
 		y = np.array(countries)
 		xx, yy = np.meshgrid(np.arange(len(products)+1), np.arange(len(countries)+1))
-		if aspect==(False, False): 																	# Natural Aspect of the Data is Plotted by Default
+		if aspect==(False, False):                                                                  # Natural Aspect of the Data is Plotted by Default
 			aspect = ((len(products)/len(countries))*figsize, 1*figsize)
 		# - Generate Figure - #
 		fig = plt.figure(figsize=(aspect))
@@ -2587,31 +2648,31 @@ class ProductLevelExportSystem(object):
 		plot = axs.pcolormesh(xx, yy, matr, cmap=cm.Reds)
 
 		axs.set_ylim(0,len(y))
-		if row_step == 0: row_step = 1														#Display ALL Data [Default]
-		axs.set_yticks(np.arange(len(countries), step=row_step) + 0.5) 						#Center The Labels
+		if row_step == 0: row_step = 1                                                      #Display ALL Data [Default]
+		axs.set_yticks(np.arange(len(countries), step=row_step) + 0.5)                      #Center The Labels
 		axs.set_yticklabels(y[np.arange(len(countries), step=row_step)])
 		axs.set_xlim(0,len(x))
 		axs.xaxis.set_ticks_position('bottom')
 		if column_step == 0: column_step = 1
-		axs.set_xticks(np.arange(len(products), step=column_step) + 0.5) 					#Center The Labels
+		axs.set_xticks(np.arange(len(products), step=column_step) + 0.5)                    #Center The Labels
 		axs.set_xticklabels(x[np.arange(len(products), step=column_step)], rotation=xrot)
 		# - Construct Colorbar - #
-		cbar = plt.colorbar(plot, ticks=[0, matr.max()/2, matr.max()]) 			 			#This is bounded by 0 colorbar															
+		cbar = plt.colorbar(plot, ticks=[0, matr.max()/2, matr.max()])                      #This is bounded by 0 colorbar                                                          
 		cbar.set_ticklabels([cpdata_name + ' = 0', cpdata_name + ' = '+str(matr.max()/2), cpdata_name + ' >= '+str(int(matr.max()))])
 		# - Titles and Notes - #
 		figtitle = "Mcp [" + cpdata_name + " Values] Matrix [Yr: " + str(self.year) + "]"
 		plt.title(figtitle)
 		if notes != '':
 			notes = matr_note + "; "+ notes
-			plt.figtext(0.8, 0.01, notes) 							#Arbitary?
+			plt.figtext(0.8, 0.01, notes)                           #Arbitary?
 		else:
-			plt.figtext(0.8, 0.01, matr_note) 						#Arbitary?
+			plt.figtext(0.8, 0.01, matr_note)                       #Arbitary?
 			plt.tight_layout()
 		return fig
 
 
 	default_cntrys = ['JPN', 'USA', 'DEU', 'KOR', 'ITA', 'AUS', 'BRA', 'THA', 'GHA', 'GBR', 'TWN', 'FRA', 'MEX']
-	default_prods = ['8421', '3330', '7922', '8748', '7810', '7442', '7781'] 
+	default_prods = ['8421', '3330', '7922', '8748', '7810', '7781', '7924'] 
 	default_row_labels = ('ECI', 'Export Value Share')
 	default_column_labels = ('PCI', 'Product Value Share') 
 	def plot_scaled_mcp_heatmap(self, sorted_cpdata, cpdata_name='Data', row_scaleby=None, column_scaleby=None, row_label=default_row_labels, label_cntrys=default_cntrys, \
@@ -2623,38 +2684,38 @@ class ProductLevelExportSystem(object):
 
 		Parameters
 		----------
-		sorted_cpdata 	: 	Property (C x P), pd.DataFrame
+		sorted_cpdata   :   Property (C x P), pd.DataFrame
 							Provide a C x P Property or CP Data
-		cpdata_name 	: 	str, optional(default='Data')
+		cpdata_name     :   str, optional(default='Data')
 							Specify a Name for the Data (i.e. RCA)
-		row_scaleby     : 	pd.Series, optional(default=None) 
+		row_scaleby     :   pd.Series, optional(default=None) 
 							Specify a row_scaleby series (i.e. GDP or Country Exports etc.)
 							Note: To use this method you need to supply either a row or column scaleby vector
-		column_scaleby  : 	pd.Series, optional(default=None)
+		column_scaleby  :   pd.Series, optional(default=None)
 							Specify a column_scaleby series
 							Note: To use this method you need to supply either a row or column scaleby vector
-		row_label       : 	Tuple(str, str), optional(default=default_row_labels)
+		row_label       :   Tuple(str, str), optional(default=default_row_labels)
 							Text for Row (or Y Axis) Type('row_sortby', 'row_scaleby')
-		label_cntrys    : 	list(str), optional(default=default_cntrys)
+		label_cntrys    :   list(str), optional(default=default_cntrys)
 							Specify which countries to label
-		column_label    : 	Tuple(str, str), optional(default=default_column_labels)
+		column_label    :   Tuple(str, str), optional(default=default_column_labels)
 							Text for Column (or X Axis) Type('col_sortby', 'col_scaleby')
-		label_prods     : 	list(str), optional(default=default_prods)
+		label_prods     :   list(str), optional(default=default_prods)
 							Specify which products to label
-		low_value_cutoff: 	numeric, optional(default=None)
+		low_value_cutoff:   numeric, optional(default=None)
 							Specify a Low Value Cutoff for ColorBar
-		high_value_cutoff: 	numeric, optional(default=None)
+		high_value_cutoff:  numeric, optional(default=None)
 							Specify a High Value Cutoff for ColorBar
-		size            : 	int, optional(default=8)
+		size            :   int, optional(default=8)
 							Size of Heatmap Figure
-		axs_only        : 	bool, optional(default=False)
+		axs_only        :   bool, optional(default=False)
 							Allows axs to be an input and return graph axs only. 
 							Note: Useful when compiling evolution of graph via Kpn and Kcn
-		cmap 			:  	ColorMap, optional(default=cm.Reds)
+		cmap            :   ColorMap, optional(default=cm.Reds)
 							Specify a colormap from Matplotlib
-		rem_zero_rel 	: 	bool, optional(default=True)
+		rem_zero_rel    :   bool, optional(default=True)
 							Remove complete Zero Data Relationships (Full Rows and Columns) from the Data
-		fillna 			: 	bool, optional(default=True)
+		fillna          :   bool, optional(default=True)
 							Fill Missing Values with 0
 
 		Notes
@@ -2676,7 +2737,7 @@ class ProductLevelExportSystem(object):
 		from matplotlib import cm
 
 		# - Helper Functions - #
-		def index_array(labels, items):           													## ==> CODE DUPLICATED: Move to Common File for Plotting Helper Functions <== ##
+		def index_array(labels, items):                                                             ## ==> CODE DUPLICATED: Move to Common File for Plotting Helper Functions <== ##
 			""" 
 			Take np.array and return appropriate index positions for items
 			"""
@@ -2706,9 +2767,9 @@ class ProductLevelExportSystem(object):
 			"""
 			if type(row_scaleby) == pd.Series:
 				rownames = cpdata.index
-				row_scaleby = row_scaleby[rownames]        			#Select Appropriate Data
+				row_scaleby = row_scaleby[rownames]                 #Select Appropriate Data
 				row_scaleby = row_scaleby[row_scaleby.notnull()]
-				sorted_df_year = cpdata.ix[row_scaleby.index]  		#Get the Matching Data
+				sorted_df_year = cpdata.ix[row_scaleby.index]       #Get the Matching Data
 			if type(column_scaleby) == pd.Series:
 				colnames = cpdata.columns
 				column_scaleby = column_scaleby[colnames]
@@ -2751,7 +2812,7 @@ class ProductLevelExportSystem(object):
 		matr_note = value_note
 
 		# - Scaling Vectors - #
-		if type(row_scaleby) == pd.Series: 						
+		if type(row_scaleby) == pd.Series:                      
 			yscale = np.array(row_scaleby)
 			yscale = yscale / np.sum(yscale)                    #Normalise (0,1) 
 			yscale = np.insert(yscale.cumsum(), 0, 0)           #Replace y with scaled vector
@@ -2763,7 +2824,7 @@ class ProductLevelExportSystem(object):
 		if type(column_scaleby) == pd.Series: 
 			xscale = np.array(column_scaleby)
 			xscale = xscale / np.sum(xscale)                    #Normalise (0,1)
-			xscale = np.insert(xscale.cumsum(), 0, 0)       	#Replace x with scaled vector
+			xscale = np.insert(xscale.cumsum(), 0, 0)           #Replace x with scaled vector
 			xlabel = np.array(products)              
 		else:
 			x = np.array(products)
@@ -2827,7 +2888,7 @@ class ProductLevelExportSystem(object):
 		figtitle = "Mcp [" + cpdata_name + " Values] Matrix [Yr: " + str(self.year) + "]"
 		plt.title(figtitle)
 		sortby, scaleby = row_label
-		ylabel = 'Countries [Ordered by ' + sortby + ', Scaled by ' + scaleby + ']' 	# - Assuming sortby and scaleby are always used here - #
+		ylabel = 'Countries [Ordered by ' + sortby + ', Scaled by ' + scaleby + ']'     # - Assuming sortby and scaleby are always used here - #
 		axs.set_ylabel(ylabel)
 		sortby, scaleby = column_label
 		xlabel = 'Products [Ordered by ' + sortby + ', Scaled by ' + scaleby + ']'
@@ -3237,23 +3298,23 @@ class ProductLevelExportSystem(object):
 
 		Parameters
 		----------
-		sortby  		: 	pd.Series, optional(default=None)
+		sortby          :   pd.Series, optional(default=None)
 							Provide a SortBy Series
-		sortby_text 	: 	str, option(default='')
+		sortby_text     :   str, option(default='')
 							Text to Add to the Labels
-		scaleby 		: 	pd.Series, optional(default=None)
+		scaleby         :   pd.Series, optional(default=None)
 							Provide a Scaling Vector (Heterogenous Row and Column Sizes)
-		scaleby_text 	: 	str, optional(default='')
+		scaleby_text    :   str, optional(default='')
 							Text to Add to the Labels for Scaleby
-		label_prods 	: 	list(str), optional(default=default_prods)
+		label_prods     :   list(str), optional(default=default_prods)
 							List of Products to Label
-		prox_cutoff 	: 	int, optional(default=-1)
+		prox_cutoff     :   int, optional(default=-1)
 							Proximity Cutoff (-1 = No Cutoff)
-		step    		:	int, optional(default=0)
+		step            :   int, optional(default=0)
 							Step for Row and Column Labels
-		xlabel_rot 		: 	int, optional(default=0)
+		xlabel_rot      :   int, optional(default=0)
 							Rotate xlabel by degrees
-		size 			: 	int, optional(default=6)
+		size            :   int, optional(default=6)
 							Figure Size 
 
 		Notes
@@ -3262,7 +3323,7 @@ class ProductLevelExportSystem(object):
 
 		"""
 		# - Standard Library Imports - #
-		from matplotlib import cm 						#Note: Check if it is in header as no need to import twice
+		from matplotlib import cm                       #Note: Check if it is in header as no need to import twice
 
 		# - Helper Functions - #
 		def index_array(labels, items):
@@ -3282,7 +3343,7 @@ class ProductLevelExportSystem(object):
 		# - Function Code - # 
 		
 		# - Sorting Work in Pandas - #
-		if type(sortby) != pd.Series:             				# By Default this should be sorted by ProductCode
+		if type(sortby) != pd.Series:                           # By Default this should be sorted by ProductCode
 			sorted_proximity = self.proximity 
 		else:
 			sorted_proximity = self.sorted_matrix(self.proximity, row_sortby=sortby, column_sortby=sortby)
@@ -3298,7 +3359,7 @@ class ProductLevelExportSystem(object):
 			matr = sorted_proximity.as_matrix()
 
 		# - Plot Generation - #    
-		fig = plt.figure(figsize=(1.2*size,size))       	#Allow space for colobar
+		fig = plt.figure(figsize=(1.2*size,size))           #Allow space for colobar
 		axs = fig.add_subplot(1,1,1)
 		products = sorted_proximity.index
 		# - Scaling Vectors - #
@@ -3328,7 +3389,7 @@ class ProductLevelExportSystem(object):
 		# - Labeling Axes - #
 		if type(step) == int:
 			num_products = len(products)
-			if step == 0:  										#Case where all products should be labelled [Default]
+			if step == 0:                                       #Case where all products should be labelled [Default]
 				step = num_products
 			tick_step = int(num_products / step)
 			ticks_index = np.array(range(0, num_products, tick_step))
@@ -3353,7 +3414,7 @@ class ProductLevelExportSystem(object):
 		plt.title(figtitle)
 		if type(sortby) == pd.Series and type(scaleby) == pd.Series:
 			xylabel = 'Products [Ordered by ' + sortby_text + ', Scaled by ' + scaleby_text + ']'
-		elif type(sortby) == pd.Series: 																#Could Add this: str(sortby).lower() == 'sorted'
+		elif type(sortby) == pd.Series:                                                                 #Could Add this: str(sortby).lower() == 'sorted'
 			xylabel = 'Products [Ordered by ' + sortby_text + ']'
 		elif type(scaleby) == pd.Series:
 			xylabel = 'Products [Scaled by ' + scaleby_text + ']'
@@ -3373,7 +3434,7 @@ class ProductLevelExportSystem(object):
 
 		Parameters
 		----------
-		sortby_label : 	str, optional(default='')
+		sortby_label :  str, optional(default='')
 						Specify a sortby label
 						Warning: To use sortby_label then you should presort the data
 
@@ -3407,11 +3468,11 @@ class ProductLevelExportSystem(object):
 			Future Work:
 			----------- 
 				[1] Make BiPartiteGraph Representation
-				[2] Cleaner View of MultiDiGraph 			=> Currently use Cytoscape and Gephi for Viz
-		'''	
+				[2] Cleaner View of MultiDiGraph            => Currently use Cytoscape and Gephi for Viz
+		''' 
 		fig = nx.draw(self.network)
 		if show: plt.show() 
-		else: return fig							
+		else: return fig                            
 
 	#################################
 	## -- Data Export Functions -- ##
@@ -3519,9 +3580,9 @@ if __name__ == '__main__':
 	#################################
 	### --- Testing DataFrame --- ###
 	#################################
-	A = DynProductLevelExportSystem() 	# Use DynProductLevelExportSystem for reading in test csv
+	A = DynProductLevelExportSystem()   # Use DynProductLevelExportSystem for reading in test csv
 	A.from_csv(data, dtypes=['DataFrame'])
-	A = A[2000] 						#Tests here should only focus on A
+	A = A[2000]                         #Tests here should only focus on A
 	
 	# - A = ProductLevelExportSystem - #
 	print A
@@ -3529,7 +3590,7 @@ if __name__ == '__main__':
 	print A.data
 	print type(A.data)
 	print "CP Matrix"
-	print A.as_cp_matrix()  			#Need to write a as_cp_matrix from self.data option rather than just from bipartite network
+	print A.as_cp_matrix()              #Need to write a as_cp_matrix from self.data option rather than just from bipartite network
 	print "Adjaceny Matrix: Test Error"
 	try:
 		print A.as_adj_matrix()
@@ -3554,7 +3615,7 @@ if __name__ == '__main__':
 	print "Error test for NO supp_data"
 	print "Testing RCA Matrix"
 	try:
-		print A.rca_matrix() 			#Base Object has self.complete_trade_network = False
+		print A.rca_matrix()            #Base Object has self.complete_trade_network = False
 	except:
 		print "Test Passed!"
 
@@ -3616,7 +3677,7 @@ if __name__ == '__main__':
 	A.ubiquity = A.ubiquity.reindex(np.random.permutation(A.ubiquity.index)) 
 	print A.ubiquity
 	print "self.compute_iterated_countryproduct_complexity(verbose=True)"
-	print A.compute_iterated_countryproduct_complexity(verbose=True) 	#Default to 20 Iterations
+	print A.compute_iterated_countryproduct_complexity(verbose=True)    #Default to 20 Iterations
 	print "self.compute_iterated_countryproduct_complexity(iterations='rank_stability', verbose=True)"
 	print A.compute_iterated_countryproduct_complexity(iterations='rank_stability', verbose=True)
 	print "self.compute_iterated_countryproduct_complexity(iterations='rank_stability_country', verbose=True)"
@@ -3668,7 +3729,7 @@ if __name__ == '__main__':
 	### --- Test Sorting Methods --- ###
 	print
 	print "Test Sorting Methods"
-	r = pd.Series([3,2,1], index=['AUS', 'USA', 'AFG']) 			#Produce a Random Ordering According to 3,2,1
+	r = pd.Series([3,2,1], index=['AUS', 'USA', 'AFG'])             #Produce a Random Ordering According to 3,2,1
 	c = pd.Series([3,2,1], index=['0001', '0002', '0003'])
 	print "Original Matrix"
 	print A.mcp
@@ -3695,15 +3756,15 @@ if __name__ == '__main__':
 	print
 	print "Testing Network Object Creation"
 	print "dtypes=['DataFrame', 'BiPartiteGraph']"
-	B = DynProductLevelExportSystem() 	# Use DynProductLevelExportSystem for reading in test csv
+	B = DynProductLevelExportSystem()   # Use DynProductLevelExportSystem for reading in test csv
 	B.from_csv(data, dtypes=['DataFrame', 'BiPartiteGraph'], verbose=True)
 	print
 	print "dtypes=['DataFrame', 'MultiDiGraph']"
-	B = DynProductLevelExportSystem() 	# Use DynProductLevelExportSystem for reading in test csv
+	B = DynProductLevelExportSystem()   # Use DynProductLevelExportSystem for reading in test csv
 	B.from_csv(data, dtypes=['DataFrame', 'MultiDiGraph'], verbose=True)
 	print
 	print "dtypes=['DataFrame', 'BiPartiteGraph', 'MultiDiGraph']"
-	B = DynProductLevelExportSystem() 	# Use DynProductLevelExportSystem for reading in test csv
+	B = DynProductLevelExportSystem()   # Use DynProductLevelExportSystem for reading in test csv
 	B.from_csv(data, dtypes=['DataFrame', 'BiPartiteGraph', 'MultiDiGraph'], verbose=True)
 
 	print "--------"
@@ -3717,9 +3778,9 @@ if __name__ == '__main__':
 	######################################
 	
 	### --- Simple Objects --- ###
-	A = DynProductLevelExportSystem() 	# Use DynProductLevelExportSystem for reading in test csv
+	A = DynProductLevelExportSystem()   # Use DynProductLevelExportSystem for reading in test csv
 	A.from_csv(data, dtypes=['BiPartiteGraph'])
-	A = A[2000] 						#Tests here should only focus on A
+	A = A[2000]                         #Tests here should only focus on A
 	print
 	print "[Bipartite] Testing Simple Objects"
 
@@ -3733,7 +3794,7 @@ if __name__ == '__main__':
 	C.build_from_wdi(W)
 	print
 	A = DynProductLevelExportSystem()
-	A.from_csv(data, use_objects=True, countries_obj=C, td_classification='SITCR2L4', verbose=True)  		#td_classification is example only
+	A.from_csv(data, use_objects=True, countries_obj=C, td_classification='SITCR2L4', verbose=True)         #td_classification is example only
 	print A
 	
 
@@ -3775,7 +3836,7 @@ if __name__ == '__main__':
 	print A[2001].matrix
 
 	print "as_adj_matrix()"
-	A[2000].as_adj_matrix() 		#Note: Adjacency Matrix is the CP Matrix
+	A[2000].as_adj_matrix()         #Note: Adjacency Matrix is the CP Matrix
 	print A[2000].matrix
 
 	### --- Test Sortedness of Products --- ###
@@ -3783,10 +3844,10 @@ if __name__ == '__main__':
 	print
 	print "Test Sortedness of Products"
 	l = [A[2000].products[prod] for prod in A[2000].products.keys()]
-	print  "List of Products" 		
+	print  "List of Products"       
 	print l
 	print "Sorted List of Products"
-	print sorted(l) 								#Sortedness Works
+	print sorted(l)                                 #Sortedness Works
 	print l[0].classification
 
 	print
@@ -3811,15 +3872,15 @@ if __name__ == '__main__':
 	print
 	print "Testing without Objects"
 	A = DynProductLevelExportSystem()
-	A.network_type = 'MultiDiGraph' 						
-	A.from_csv(data, verbose=True)  		
+	A.network_type = 'MultiDiGraph'                         
+	A.from_csv(data, verbose=True)          
 
 	if graphics: A[2000].draw_network()
 	print "Edges:"
 	print A[2000].network.edges(data=True)
 	print "Edge between AUS and WLD"
 	print A[2000].network['AUS']['WLD']
-	A[2000].as_adj_matrix() 		#Note: Adjacency Matrix is the CP Matrix
+	A[2000].as_adj_matrix()         #Note: Adjacency Matrix is the CP Matrix
 	print A[2000].matrix
 
 
@@ -3829,14 +3890,14 @@ if __name__ == '__main__':
 	print "Testing with Objects"
 	A = DynProductLevelExportSystem()
 	A.network_type = 'MultiDiGraph'
-	A.from_csv(data, use_objects=True, countries_obj=C, td_classification='SITCR2L4', verbose=True)  		#td_classification is example only
+	A.from_csv(data, use_objects=True, countries_obj=C, td_classification='SITCR2L4', verbose=True)         #td_classification is example only
 
 	if graphics: A[2000].draw_network()
 	print "Edges:"
 	print A[2000].network.edges(data=True)
 	print "Edge between AUS and WLD"
 	print A[2000].network[A[2000].countries['AUS']][A[2000].countries['WLD']]
-	A[2000].as_adj_matrix() 		#Note: Adjacency Matrix is the CP Matrix
+	A[2000].as_adj_matrix()         #Note: Adjacency Matrix is the CP Matrix
 	print A[2000].matrix
 
 	### --- NEED TO WRITE TEST CASES FOR --- ###
