@@ -1605,13 +1605,22 @@ class ProductLevelExportSystem(object):
 		return Mcc
 
 
-	def compute_eci(self, use_scipy=True, verbose=False):
+	def compute_eci(self, use_scipy=True, auto_adjust_sign=False, verbose=False):
 		''' 
-			Compute Country (Economic) Complexity (EigenVector, EigenValues Method)
-			Notes:
-			------
-				[1] Convention of ECI => High ECI == High Complexity [TODO: Check this during error testing then delete comment]
-				[2] Not finding a big difference between %timeit results between numpy and scipy
+		Compute Country (Economic) Complexity (EigenVector, EigenValues Method)
+		
+		Parameters
+		----------
+		use_scipy 	: 	bool, optional(default=True)
+						Specify if use Scipy for EignenValue Computations 
+		auto_adjust_sign 	: 	bool, optional(default=False)
+								Auto adjust sign of eci due to sign inversion issues
+
+		Notes
+		-----
+			1. Convention of ECI => High ECI == High Complexity [TODO: Check this during error testing then delete comment]
+			2. Not finding a big difference between %timeit results between numpy and scipy
+			3. auto_adjust_sign only currently works for SITC L4 Data
 		'''
 		## -- Check Required Data -- ##
 		if type(self.mcc) != pd.DataFrame:
@@ -1638,6 +1647,8 @@ class ProductLevelExportSystem(object):
 			print "Right Hand: %s" % rh
 			print "Test Result: %s" % test_result
 		self.eci = ECI['ECI']                               #Store as Pd.Series
+		if auto_adjust_sign:
+			self.auto_adjust_eci_sign()
 		return self.eci
 
 	def compute_mpp(self, verbose=False):
@@ -1757,14 +1768,23 @@ class ProductLevelExportSystem(object):
 		self.mpp = Mpp
 		return Mpp      
 
-	def compute_pci(self, use_scipy=True, verbose=False):
-		''' 
-			Compute Product Complexity (EigenVector, EigenValues Method)
-			Notes:
-			------
-				[1] Convention of PCI => High PCI == High Complexity [TODO: Check this during error testing then delete comment]
-				[2] Not finding a big difference between %timeit results between numpy and scipy
-		'''
+	def compute_pci(self, use_scipy=True, auto_adjust_sign=False, verbose=False):
+		""" 
+		Compute Product Complexity (EigenVector, EigenValues Method)
+
+		Parameters
+		----------
+		use_scipy 	: 	bool, optional(default=True)
+						Specify if use Scipy for EignenValue Computations 
+		auto_adjust_sign 	: 	bool, optional(default=False)
+								Auto adjust sign of pci due to sign inversion issue
+		Notes:
+		------
+			1. Convention of PCI => High PCI == High Complexity [TODO: Check this during error testing then delete comment]
+			2. Not finding a big difference between %timeit results between numpy and scipy
+			3. Currently auto_adjust_sign only works for SITC Level 4 Data
+			
+		"""
 		## -- Check Required Data -- ##
 		if type(self.mpp) != pd.DataFrame:
 			if verbose: print "self.mpp is not a DataFrame ... running self.compute_mpp() with default kwargs"
@@ -1794,6 +1814,8 @@ class ProductLevelExportSystem(object):
 			print "Right Hand: %s" % rh
 			print "Test Result: %s" % test_result
 		self.pci = PCI['PCI']                                           #Save as Pd.Series
+		if auto_adjust_sign:
+			self.auto_adjust_pci_sign()
 		return self.pci
 
 
@@ -1902,7 +1924,6 @@ class ProductLevelExportSystem(object):
 		self.kpn = Kpn
 		return Kcn, Kpn
 	
-	#-WORKING HERE-#
 
 	def identify_inefficient_trade(self, row_ascending=True, column_ascending=True, no_zero_relationships=True, verbose=False):
 		""" 
@@ -1947,7 +1968,72 @@ class ProductLevelExportSystem(object):
 		sort_mcp.columns.name = 'productcode'
 		return sort_mcp
 
-	#-END WORKING HERE-#
+	def auto_adjust_eci_sign(self, cntry_datum=('DEU', '+ve'), verbose=False):
+		"""
+		Auto Adjust ECI computations based on a Country Datum
+		Convention: +ve is higher complexity
+
+		Parameters
+		-----------
+		cntry_datum 	: 	Tuple(ISO3C, '+ve' or '-ve'), optional(default=('DEU', '+ve'))
+
+		"""
+		if verbose: print "Applying .auto_adjust to ECI sign"
+		cntry, sign = cntry_datum
+		# - Error Check the Country - #
+		if cntry not in self.countries:
+			raise ValueError("(%s) not found in Country List for year: %s") % (cntry, year)
+		# - Correct Signs using Datum - #
+		if sign == '+ve':
+			if self.eci[cntry] > 0:
+				pass
+			else:
+				if verbose: print "Switching sign of Year: %s" % year 
+				self.eci = self.eci * -1
+		elif sign == '-ve':
+			if self.eci[cntry] < 0:
+				pass
+			else:
+				if verbose: print "Switching sign of Year: %s" % year 
+				self.eci = self.eci * -1
+		else:
+			raise ValueError("sign must be either '+ve' or '-ve'")
+
+	def auto_adjust_pci_sign(self, product_datum=('3330', '-ve'), verbose=False):
+		"""
+		Auto Adjust PCI computations based on a Product Datum
+		Convention: +ve is higher complexity
+
+		Parameters
+		----------
+		product_datum 	: 	Tuple(SITCR2L4, '+ve' or '-ve'), optional(default=('3330', '-ve'))
+
+		Notes
+		-----
+			1. current default product_datum is using SITCR2L4!
+		"""
+		warnings.warn("Current Default uses SITC L4")
+		if verbose: print "Applying .auto_adjust to PCI signs"
+		productcode, sign = product_datum
+		# - Error Check the Productcode - #
+		if productcode not in self.products:
+			raise ValueError("(%s) is not found in the Product List for year: %s") % (productcode, year)
+		# - Correct Signs using datum - #
+		if sign == '+ve':
+			if self.pci[productcode] > 0:
+				pass
+			else:
+				if verbose: print "Switching sign of Year: %s" % year 
+				self.pci = self.pci * -1
+		elif sign == '-ve':
+			if self.pci[productcode] < 0:
+				pass
+			else:
+				if verbose: print "Switching sign of Year: %s" % year 
+				self.pci = self.pci * -1
+		else:
+			raise ValueError("sign must be either '+ve' or '-ve'")
+
 
 	### -- ProductSpace: Network Functions -- ##
 	############################################

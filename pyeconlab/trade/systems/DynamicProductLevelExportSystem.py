@@ -1407,7 +1407,8 @@ class DynamicProductLevelExportSystem(object):
 
 			Future Work:
 			-----------
-				1. Check if Country is in the dataset. 
+				1. Check if Country is in the dataset.
+				2. Added to ProductLevelExportSystem so could rework this function to use that in each PLES 
 		"""
 		if verbose: print "Applying .auto_adjust to ECI sign"
 		cntry, sign = cntry_datum
