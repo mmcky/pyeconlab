@@ -1783,7 +1783,7 @@ class ProductLevelExportSystem(object):
 			1. Convention of PCI => High PCI == High Complexity [TODO: Check this during error testing then delete comment]
 			2. Not finding a big difference between %timeit results between numpy and scipy
 			3. Currently auto_adjust_sign only works for SITC Level 4 Data
-			
+
 		"""
 		## -- Check Required Data -- ##
 		if type(self.mpp) != pd.DataFrame:
@@ -2052,25 +2052,29 @@ class ProductLevelExportSystem(object):
 	## -- Data Reshape Functions -- ##
 	##################################
 
-	def as_cp_matrix(self, matrix_type='pandas', value_name='export', verbose=False):
-		'''
-			Construct and Return an Value Matrix that is Country x Product (CP)
-			
-			Options:
-			--------
-				[1] matrix_type     Output Matrix Type (Pandas / Numpy)
-				[2] value           Edge Attribute (Default: 'export')
+	def as_cp_matrix(self, matrix_type='pandas', value_name='export', droplevel=True, verbose=False):
+		"""
+		Construct and Return an Value Matrix that is Country x Product (CP)
+		
+		STATUS: IN-WORK
 
-			Future Work:
-			------------
-				[1] Add source for generating an mcp of different types [source = 'rca' or self.rca]
-				[2] Add Filter to Allow Masking of the Matrix Values
-		'''
+		Parameters
+		----------
+		1. matrix_type     Output Matrix Type (Pandas / Numpy)
+		2. value           Edge Attribute (Default: 'export')
+
+		Future Work
+		------------
+			1. Add source for generating an mcp of different types [source = 'rca' or self.rca]
+			2. Add Filter to Allow Masking of the Matrix Values
+		"""
 		# - Construct from self.data - #
 		if type(self.data) == pd.DataFrame:
 			if verbose: print "Computing cp matrix from self.data"
 			self.cp_matrix = self.data.unstack()
 			if matrix_type == 'pandas':
+				if droplevel:
+					self.cp_matrix.columns = self.cp_matrix.columns.droplevel()
 				return self.cp_matrix
 			else:
 				raise NotImplementedError
