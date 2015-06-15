@@ -103,6 +103,16 @@ class PENN(object):
         store.close()
         return fl
 
+    def to_stata(self, fl="", target_dir="./"):
+        """
+        Make STATA File
+        """
+        if fl == "":
+            fl = "penn_data.dta"
+        fl = os.path.expanduser(target_dir)+fl
+        self.data.to_stata(fl)
+        return fl
+
     ## -- Getter Methods -- ##
 
     def get(self, cntry, series_code, year, verbose=False):
