@@ -1410,7 +1410,7 @@ class ProductLevelExportSystem(object):
 
 		Notes
 		----- 
-			1. sum_not_mean = Haussman uses SUM() rather than normalised mean -> Same Overall Graph Shape!
+			1. sum_not_mean = Hausmann uses SUM() rather than normalised mean -> Same Overall Graph Shape!
 		
 		Return
 		------
