@@ -38,11 +38,11 @@ CodeToName = {
 	r'NY.GDP.PCAP.CD' 		: 'GDPPC',
 	r'NY.GDP.MKTP.KD.ZG' 	: 'GDPGrowth',
 	r'NY.GDP.PCAP.KD.ZG' 	: 'GDPPCGrowth',
-	r'NY.GDP.PCAP.PP.CD' 	: 'GDPPC-PPP',
+	r'NY.GDP.PCAP.PP.CD' 	: 'GDPPCPPP',
 	#-GNP-#
-	r'NY.GNP.ATLS.CD' 		: 'GNI-Atlas',
-	r'NY.GNP.MKTP.PP.CD' 	: 'GNI-PPP',
-	r'NY.GNP.PCAP.CD' 		: 'GNIPC-Atlas',
+	r'NY.GNP.ATLS.CD' 		: 'GNIAtlas',
+	r'NY.GNP.MKTP.PP.CD' 	: 'GNIPPP',
+	r'NY.GNP.PCAP.CD' 		: 'GNIPCAtlas',
 	#-Terms of Trade-#
 	r'TT.PRI.MRCH.XD.WD' 	: 'NetBarterTot',
 	#-Infrastructure-#
