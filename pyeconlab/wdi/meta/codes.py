@@ -13,6 +13,7 @@ class WDISeriesCodes():
 	#-GDP Per Capita-#
 	GDPPC = r'NY.GDP.PCAP.CD'
 	GDPPCPPP = r'NY.GDP.PCAP.PP.CD'
+	GDPPCPPPConst = r'NY.GDP.PCAP.PP.KD'
 	#-GDP Growth-#
 	GDPGrowth = r'NY.GDP.MKTP.KD.ZG'
 	GDPPCGrowth = r'NY.GDP.PCAP.KD.ZG'
@@ -36,9 +37,11 @@ CodeToName = {
 	#-GDP-#
 	r'NY.GDP.MKTP.CD' 		: 'GDP',
 	r'NY.GDP.PCAP.CD' 		: 'GDPPC',
+	r'NY.GDP.PCAP.KD'		: 'GDPPCConst',
 	r'NY.GDP.MKTP.KD.ZG' 	: 'GDPGrowth',
 	r'NY.GDP.PCAP.KD.ZG' 	: 'GDPPCGrowth',
 	r'NY.GDP.PCAP.PP.CD' 	: 'GDPPCPPP',
+	r'NY.GDP.PCAP.PP.KD'	: 'GDPPCPPPConst',
 	#-GNP-#
 	r'NY.GNP.ATLS.CD' 		: 'GNIAtlas',
 	r'NY.GNP.MKTP.PP.CD' 	: 'GNIPPP',
