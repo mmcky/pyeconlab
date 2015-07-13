@@ -1392,6 +1392,152 @@ class ProductLevelExportSystem(object):
 		else:
 			raise ValueError("Proximity type must be either symmetric, asymmetric, or minmax")
 
+
+	def compute_country_proximity(self, matrix_type='symmetric', clear_temp=True, fillna=False, verbose=False):
+		"""
+		ProductSpace Funtion for Generating Different Country Proximity Matrix Types ('Symmetric', #'Assymetric', 'MinMax')
+		
+		Options:
+		-------
+			[1] type    =>  'symmetric', #'assymetric', 'minmax'
+		"""
+		## -- Helper Functions -- ##
+		def proximity_matrix_symmetric(self):
+			'''
+			ProductSpace Funtion for Computing Proximity Matrix
+			Notes:
+			-----
+				[1] Pandas Method for Computing a Symmetrix Proximity Matrix
+				[2] 100 loops, best of 3: 2.84 ms per loop (4 x 3 Example)
+			'''
+			## - Check Mcp State - ##
+			if type(self.mcp) != pd.DataFrame:
+				if verbose: print "Mcp matrix at (self.mcp) is currently not available. Computing Mcp with default kwargs"
+				self.mcp = self.mcp_matrix()
+			## - Compute Symmetric Proximity - ##
+			self.country_proximity = pd.DataFrame(index=self.mcp.index, columns=self.mcp.index)      #np.nan initialised matrix
+			countries = self.mcp.index
+			self.temp['index_sums'] = self.mcp.sum(axis=1)
+			for cntry1 in countries:
+				for cntry2 in countries:
+					cond_prob = (self.mcp.ix[cntry1] * self.mcp.ix[cntry2]).sum() / max(self.temp['index_sums'].ix[cntry1], self.temp['index_sums'].ix[cntry2])
+					self.country_proximity.set_value(index=cntry1, col=cntry2, value=cond_prob)
+			self.country_proximity_notes = 'symmetric'
+			## - Fill Na Option - ##
+			if fillna:
+				self.country_proximity = self.country_proximity.fillna(0.0)
+			## - Remove Temp Data - ##
+			if clear_temp:
+				del self.temp['index_sums']
+			self.country_proximity.name = 'CntryProximity'
+			return self.country_proximity
+		
+		def proximity_matrix_pearsons(self):
+			## - Check Mcp State - ##
+			if type(self.mcp) != pd.DataFrame:
+				if verbose: print "Mcp matrix at (self.mcp) is currently not available. Computing Mcp with default kwargs"
+				self.mcp = self.mcp_matrix()
+			## - Compute Symmetric Proximity - ##
+			self.country_proximity = pd.DataFrame(index=self.mcp.index, columns=self.mcp.index)      #np.nan initialised matrix
+			countries = self.mcp.index
+			for cntry1 in countries:
+				for cntry2 in countries:
+					pearsons = self.mcp.ix[cntry1].corr(self.mcp.ix[cntry2])
+					self.country_proximity.set_value(index=cntry1, col=cntry2, value=pearsons)
+			self.country_proximity_notes = 'symmetric'
+			## - Fill Na Option - ##
+			if fillna:
+				self.country_proximity = self.country_proximity.fillna(0.0)
+			self.country_proximity.name = 'CntryProximity'
+			return self.country_proximity
+
+		# def proximity_matrix_asymmetric(self):
+		# 	'''
+		# 		ProductSpace Function to Compute an Assymetric Proximity Matrix
+		# 		Notes:
+		# 		-----
+		# 			[1] This have not been optimised with NUMBA
+		# 	'''
+		# 	num_products = len(self.products)
+		# 	# Initialise NumPy Array as results collector    
+		# 	self.proximity = np.zeros((num_products, num_products))
+		# 	self.temp['data'] = self.mcp.T.as_matrix()           
+		# 	self.temp['col_sums'] = self.mcp.sum().values                       #Row Vector#
+		# 	for index1 in xrange(0,num_products):
+		# 		for index2 in xrange(0,num_products):                      
+		# 			cond_prob = (self.temp['data'][index1] * self.temp['data'][index2]).sum() / self.temp['col_sums'][index2]       # ProductCode 1 by convention (PP')/P [Nb: This is index2 in Numpy]
+		# 			self.proximity[index1][index2] = cond_prob
+		# 	# Return DataFrame Representation       
+		# 	self.proximity = pd.DataFrame(self.proximity, index=self.products, columns=self.products)
+		# 	self.proximity.index.name = 'productcode1'
+		# 	self.proximity.columns.name = 'productcode2'
+		# 	self.proximity_notes = 'assymetric'
+		# 	if verbose: print "Index: %s (%s); Columns: %s (%s)" % (self.proximity.index.name, len(self.proximity.index), self.proximity.columns.name, len(self.proximity.columns))
+		# 	## - Fill Na Option - ##
+		# 	if fillna:
+		# 		self.proximity.fillna(0.0)
+		# 	## - Remove Temp Data - ##
+		# 	if clear_temp:
+		# 		del self.temp['col_sums']
+		# 		del self.temp['data']
+		# 	self.proximity.name = 'Proximity'
+		# 	return self.proximity
+
+		# def proximity_matrix_minmax(self):
+		# 	'''
+		# 		ProductSpace Function to Compute a MinMax Proximity Matrix
+		# 		Notes:
+		# 		-----
+		# 			[1] This have not been optimised with NUMBA
+		# 	'''
+		# 	num_products = len(self.products)
+		# 	# Initialise NumPy Array as results collector    
+		# 	self.proximity = np.zeros((num_products, num_products))
+		# 	self.temp['data'] = self.mcp.T.as_matrix()           
+		# 	self.temp['col_sums'] = self.mcp.sum().values                   #Row Vector#
+		# 	for index1 in xrange(0,num_products):
+		# 		for index2 in xrange(0,num_products):
+		# 			joint_export_num = (self.temp['data'][index1] * self.temp['data'][index2]).sum()
+		# 			if index2 < index1:                                                     #Placing Max Values in Top Right Diagonal Quadrant
+		# 				max_exports_num  = max(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
+		# 				cond_prob = joint_export_num / max_exports_num
+		# 			else:                                                                   #Placing Min Values in Top Right Diagonal Quadrant
+		# 				min_exports_num = min(self.temp['col_sums'][index1], self.temp['col_sums'][index2])
+		# 				cond_prob = joint_export_num / min_exports_num
+		# 			self.proximity[index1][index2] = cond_prob
+		# 	# Return DataFrame Representation
+		# 	self.proximity = pd.DataFrame(self.proximity, index=self.products, columns=self.products)
+		# 	self.proximity.index.name = 'productcode1'
+		# 	self.proximity.columns.name = 'productcode2'
+		# 	self.proximity_notes = 'minmax'
+		# 	if verbose: print "Index: %s (%s); Columns: %s (%s)" % (self.proximity.index.name, len(self.proximity.index), self.proximity.columns.name, len(self.proximity.columns))
+		# 	## - Fill Na Option - ##
+		# 	if fillna:
+		# 		self.proximity.fillna(0.0)
+		# 	## - Remove Temp Data - ##
+		# 	if clear_temp:
+		# 		del self.temp['col_sums']
+		# 		del self.temp['data']
+		# 	self.proximity.name = 'Proximity'
+		# 	return self.proximity
+
+		## -- Funtion Code -- ##
+		if type(self.mcp) != pd.DataFrame:
+			if verbose: print "Mcp matrix at (self.mcp) is currently not available. Computing Mcp (with default KWARGS)"
+			self.mcp = self.mcp_matrix()
+		# - Output - #
+		if matrix_type == 'symmetric':
+			return proximity_matrix_symmetric(self)
+		elif matrix_type == 'asymmetric':
+			return proximity_matrix_asymmetric(self)
+		elif matrix_type == 'minmax':
+			return proximity_matrix_minmax(self)
+		elif matrix_type == 'pearsons':
+			return proximity_matrix_pearsons(self)
+		else:
+			raise ValueError("Proximity type must be either symmetric, asymmetric, minmax, or pearsons")
+	
+
 	### --- Centrality Measures --- ###
 	### --------------------------- ###
 
