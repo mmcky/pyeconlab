@@ -2088,7 +2088,7 @@ class ProductLevelExportSystem(object):
 		if no_zero_relationships:
 			self.rca = self.remove_zero_relationships_matrix(self.rca)
 			self.mcp_matrix()
-		sort_mcp = self.sorted_matrix(self.mcp, row_sortby=self.eci, row_ascending=row_ascending, column_sortby=self.pci, column_ascending=column_ascending, verbose=False)
+		sort_mcp = self.sorted_matrix(self.mcp.copy(), row_sortby=self.eci.copy(), row_ascending=row_ascending, column_sortby=self.pci.copy(), column_ascending=column_ascending, verbose=False)
 		#-ScaleBy-#
 		data, row_scaleby, column_scaleby = prepare_scaling_vectors(sort_mcp, row_scaleby=self.total_country_export, column_scaleby=self.total_product_export)
 		#Scaling Vectors-#
