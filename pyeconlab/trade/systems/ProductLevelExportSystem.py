@@ -2128,7 +2128,7 @@ class ProductLevelExportSystem(object):
 		cntry, sign = cntry_datum
 		# - Error Check the Country - #
 		if cntry not in self.countries:
-			raise ValueError("(%s) not found in Country List for year: %s") % (cntry, year)
+			raise ValueError("(%s) not found in Country List for year: %s") % (cntry, self.year)
 		# - Correct Signs using Datum - #
 		if sign == '+ve':
 			if self.eci[cntry] > 0:
