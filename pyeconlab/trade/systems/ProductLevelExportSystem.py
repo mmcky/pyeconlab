@@ -60,11 +60,11 @@ import cPickle as pickle
 import copy
 
 ### --- Accelerators --- ###
-# from numba import double
-# from numba.decorators import jit
+from numba import double
+from numba.decorators import jit
 
-from numbapro import double
-from numbapro.decorators import jit
+# from numbapro import double
+# from numbapro.decorators import jit
 
 ### -- Project Imports --- ###
 import pyeconlab.wdi as wdi                                 #Should this be relative?
