@@ -1156,7 +1156,7 @@ class DynamicProductLevelExportSystem(object):
 		if years == None: years = self.years
 		for year in years:
 			if verbose: print "Computing Mcp matrix for year: %s" % year
-			self.ples[year].mcp_matrix(cutoff, fillna, verbose) 				
+			self.ples[year].mcp_matrix(cutoff=cutoff, fillna=fillna, verbose=verbose) 				
 		## -- Q: Should I Return Getter Method? -- ##
 		#return self.mcp
 
@@ -1172,7 +1172,7 @@ class DynamicProductLevelExportSystem(object):
 		# - Disabled MultiCore => No Significant Performance Boost (Overheads ~= Performance Gain) for this type of Matrix - #
 			# if self.multicore == True:
 			# 	return self.multicore_proximity_matrices(years=years, verbose=verbose)
-		return self.serial_proximity_matrices(years, matrix_type, clear_temp, fillna, verbose)
+		return self.serial_proximity_matrices(years=years, matrix_type=matrix_type, clear_temp=clear_temp, fillna=fillna, verbose=verbose)
 		
 	def serial_proximity_matrices(self, years=None, matrix_type='symmetric', clear_temp=True, fillna=False, verbose=False):
 		"""

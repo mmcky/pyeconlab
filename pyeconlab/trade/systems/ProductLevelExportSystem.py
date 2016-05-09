@@ -1192,11 +1192,11 @@ class ProductLevelExportSystem(object):
 		'''
 		# - Computational Helper Functions - #
 
-		# from numba import double
-		# from numba.decorators import jit
+		from numba import double
+		from numba.decorators import jit
 
-		from numbapro import double
-		from numbapro.decorators import jit
+		# from numbapro import double
+		# from numbapro.decorators import jit
 
 		@jit
 		def coexport_probability(X):
