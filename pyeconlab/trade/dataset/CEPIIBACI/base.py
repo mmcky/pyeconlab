@@ -27,7 +27,7 @@ class BACI(object):
     """
 
     #-Updatable Attributes-#
-    END_YEAR = { 'HS92' : 2012, 'HS96' : 2012, 'HS02' : 2011 } 
+    END_YEAR = { 'HS92' : 2012, 'HS96' : 2015, 'HS02' : 2011 } 
 
     #-Source Attributes-#
     source_name                     = u'CEPII BACI Trade Dataset'
