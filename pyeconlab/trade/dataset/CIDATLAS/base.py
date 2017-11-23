@@ -14,7 +14,7 @@ class AtlasOfComplexity(object):
     """
     #-Source Information-#
     source_classifications=["SITCR2", "HS92"]
-    source_years = {"HS92" : xrange(1995,2012+1,1), "SITCR2" : xrange(1962,2012+1,1)}
+    source_years = {"HS92" : xrange(1995,2016+1,1), "SITCR2" : xrange(1962,2016+1,1)}
     source_level = {"HS92" : 4, "SITCR2" : 4}
     source_dtypes = ["trade", "export", "import"]
     source_trade_datafl = {"HS92" : "year_origin_destination_hs.tsv", "SITCR2" : "year_origin_destination_sitc.tsv"}
