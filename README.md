@@ -1,3 +1,5 @@
+This should now be considered in **archive** mode and will no longer recieve edits
+
 PyEconLab 
 ===========
 
